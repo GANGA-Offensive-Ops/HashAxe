@@ -172,6 +172,7 @@ jobs:
 
       - name: Generate test SSH keys
         run: |
+          mkdir -p tests/keys
           cd tests/keys
           # RSA legacy PEM encrypted with 'puppet'
           ssh-keygen -t rsa -b 2048 -f rsa_legacy_puppet.key \

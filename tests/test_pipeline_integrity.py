@@ -120,11 +120,11 @@ class TestRegistryIntegrity(unittest.TestCase):
 
 
 class TestGPURoutingSync(unittest.TestCase):
-    """Verify HASHCAT_MODES in fast_hash_hashaxeer derives from registry."""
+    """Verify HASHCAT_MODES in fast_hash_cracker derives from registry."""
 
     def test_gpu_modes_match_registry(self):
         from hashaxe.core.hash_registry import get_all_hashcat_modes
-        from hashaxe.gpu.fast_hash_hashaxeer import HASHCAT_MODES
+        from hashaxe.gpu.fast_hash_cracker import HASHCAT_MODES
 
         registry_modes = get_all_hashcat_modes()
         # Every registry GPU format must be in HASHCAT_MODES
@@ -137,14 +137,14 @@ class TestGPURoutingSync(unittest.TestCase):
             )
 
     def test_gpu_mode_count(self):
-        from hashaxe.gpu.fast_hash_hashaxeer import HASHCAT_MODES
+        from hashaxe.gpu.fast_hash_cracker import HASHCAT_MODES
 
         # Should have 42+ entries (41 from registry + hash.raw fallback)
         self.assertGreaterEqual(len(HASHCAT_MODES), 42)
 
     def test_is_fast_hash_consistent(self):
         from hashaxe.core.hash_registry import HASH_REGISTRY
-        from hashaxe.gpu.fast_hash_hashaxeer import is_fast_hash
+        from hashaxe.gpu.fast_hash_cracker import is_fast_hash
 
         for fmt_id, ht in HASH_REGISTRY.items():
             if ht.gpu_supported and ht.hashcat_mode is not None:
@@ -247,7 +247,7 @@ class TestE2EPipelineIntegrity(unittest.TestCase):
     def test_md5_full_pipeline(self):
         """MD5 hash identified → parsed → verified correctly."""
         from hashaxe.formats.hash_raw import RawHashFormat
-        from hashaxe.gpu.fast_hash_hashaxeer import HASHCAT_MODES, is_fast_hash
+        from hashaxe.gpu.fast_hash_cracker import HASHCAT_MODES, is_fast_hash
         from hashaxe.identify import auto_identify
 
         md5_hash = hashlib.md5(b"password").hexdigest()
@@ -270,7 +270,7 @@ class TestE2EPipelineIntegrity(unittest.TestCase):
     def test_sha256_full_pipeline(self):
         """SHA-256 hash identified → parsed → verified correctly."""
         from hashaxe.formats.hash_raw import RawHashFormat
-        from hashaxe.gpu.fast_hash_hashaxeer import HASHCAT_MODES, is_fast_hash
+        from hashaxe.gpu.fast_hash_cracker import HASHCAT_MODES, is_fast_hash
         from hashaxe.identify import auto_identify
 
         sha_hash = hashlib.sha256(b"admin123").hexdigest()
@@ -288,7 +288,7 @@ class TestE2EPipelineIntegrity(unittest.TestCase):
 
     def test_bcrypt_identification_and_routing(self):
         """bcrypt identified → routed to GPU (was missing before refactor)."""
-        from hashaxe.gpu.fast_hash_hashaxeer import HASHCAT_MODES, is_fast_hash
+        from hashaxe.gpu.fast_hash_cracker import HASHCAT_MODES, is_fast_hash
         from hashaxe.identify import auto_identify
 
         bcrypt_hash = "$2b$12$LJ3m4ys3Lk0TdcjFOIZFT.ZjFp8H.8xKJGo9/rviO78AxVfab/fq6"
@@ -302,7 +302,7 @@ class TestE2EPipelineIntegrity(unittest.TestCase):
 
     def test_netntlm_naming_consistency(self):
         """NetNTLMv2 hash_patterns emits network.ntlmv2 (not hash.netntlmv2)."""
-        from hashaxe.gpu.fast_hash_hashaxeer import HASHCAT_MODES
+        from hashaxe.gpu.fast_hash_cracker import HASHCAT_MODES
         from hashaxe.identify.hash_patterns import identify_best
 
         ntlm_hash = (
@@ -317,7 +317,7 @@ class TestE2EPipelineIntegrity(unittest.TestCase):
 
     def test_new_gpu_formats_routable(self):
         """Verify all 13 previously-missing formats are now GPU-routable."""
-        from hashaxe.gpu.fast_hash_hashaxeer import is_fast_hash
+        from hashaxe.gpu.fast_hash_cracker import is_fast_hash
 
         new_formats = [
             "hash.bcrypt",

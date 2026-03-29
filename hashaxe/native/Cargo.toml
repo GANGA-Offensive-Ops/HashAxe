@@ -2,7 +2,7 @@
 name = "hashaxe_native"
 version = "0.1.0"
 edition = "2021"
-description = "High-performance Rust extensions for CRACK password hashaxeer"
+description = "High-performance Rust extensions for CRACK password cracker"
 
 [lib]
 name = "hashaxe_native"

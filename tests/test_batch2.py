@@ -480,7 +480,7 @@ class TestCrackerBatch2(unittest.TestCase):
 
     def test_hashaxe_with_no_gpu_flag(self):
         """hashaxe() with use_gpu=False runs CPU path and finds passphrase."""
-        from hashaxe.hashaxeer import hashaxe
+        from hashaxe.cracker import hashaxe
 
         wl = self._mini_wordlist(["wrong1", "puppet", "wrong2"])
         try:
@@ -498,7 +498,7 @@ class TestCrackerBatch2(unittest.TestCase):
 
     def test_hashaxe_with_smart_order_enabled(self):
         """hashaxe() with use_smart_order=True finds passphrase."""
-        from hashaxe.hashaxeer import hashaxe
+        from hashaxe.cracker import hashaxe
 
         wl = self._mini_wordlist(["PUPPET", "Puppet1", "puppet"])
         try:
@@ -516,7 +516,7 @@ class TestCrackerBatch2(unittest.TestCase):
 
     def test_hashaxe_with_smart_order_disabled(self):
         """hashaxe() with use_smart_order=False still finds passphrase."""
-        from hashaxe.hashaxeer import hashaxe
+        from hashaxe.cracker import hashaxe
 
         wl = self._mini_wordlist(["wrong1", "puppet"])
         try:
@@ -534,7 +534,7 @@ class TestCrackerBatch2(unittest.TestCase):
 
     def test_hashaxe_unencrypted_returns_empty_string(self):
         """hashaxe() on unencrypted key returns '' with gpu flags."""
-        from hashaxe.hashaxeer import hashaxe
+        from hashaxe.cracker import hashaxe
 
         result = hashaxe(
             key_path=self.NOPASS,
@@ -550,7 +550,7 @@ class TestCrackerBatch2(unittest.TestCase):
 
         from hashaxe.display import Display
         from hashaxe.formats import FormatRegistry
-        from hashaxe.hashaxeer import benchmark
+        from hashaxe.cracker import benchmark
 
         registry = FormatRegistry()
         data = pathlib.Path(self.RSA_KEY).read_bytes()
@@ -560,7 +560,7 @@ class TestCrackerBatch2(unittest.TestCase):
         speed = benchmark(pk, match.handler, disp, n_workers=1)
         self.assertGreater(speed, 0)
 
-    def test_gpu_hashaxeer_falls_back_to_cpu(self):
+    def test_gpu_cracker_falls_back_to_cpu(self):
         """GPUCracker in no-GPU environment uses CPU fallback path."""
         from hashaxe.gpu.accelerator import GPUCracker
 
@@ -628,7 +628,7 @@ class TestIntegrationB2(unittest.TestCase):
 
     def test_e2e_wordlist_no_gpu_rsa(self):
         """End-to-end: RSA key hashaxeed via wordlist, use_gpu=False."""
-        from hashaxe.hashaxeer import hashaxe
+        from hashaxe.cracker import hashaxe
 
         wl = self._wl(["wrong", "puppet"])
         try:
@@ -639,7 +639,7 @@ class TestIntegrationB2(unittest.TestCase):
 
     def test_e2e_wordlist_no_gpu_ecdsa(self):
         """End-to-end: ECDSA key hashaxeed via wordlist, use_gpu=False."""
-        from hashaxe.hashaxeer import hashaxe
+        from hashaxe.cracker import hashaxe
 
         wl = self._wl(["nope", "abc123", "wrong"])
         try:
@@ -650,7 +650,7 @@ class TestIntegrationB2(unittest.TestCase):
 
     def test_e2e_smart_order_rsa(self):
         """End-to-end: smart ordering brings 'puppet' to front and finds it."""
-        from hashaxe.hashaxeer import hashaxe
+        from hashaxe.cracker import hashaxe
 
         # Put puppet last — smart order should elevate it
         wl = self._wl(["ZZZZZ9999", "AAAAA!!!!!", "puppet"])
@@ -669,7 +669,7 @@ class TestIntegrationB2(unittest.TestCase):
 
     def test_e2e_rules_and_no_gpu(self):
         """End-to-end: rules mode + no GPU finds 'puppet' via mutations."""
-        from hashaxe.hashaxeer import hashaxe
+        from hashaxe.cracker import hashaxe
 
         wl = self._wl(["Puppet", "PUPPET"])  # mutations of capitalised forms
         try:
@@ -689,7 +689,7 @@ class TestIntegrationB2(unittest.TestCase):
 
     def test_e2e_not_found_no_gpu(self):
         """End-to-end: wordlist without correct pw returns None."""
-        from hashaxe.hashaxeer import hashaxe
+        from hashaxe.cracker import hashaxe
 
         wl = self._wl(["nope1", "nope2", "nope3"])
         try:

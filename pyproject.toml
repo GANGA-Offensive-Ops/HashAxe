@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name        = "hashaxe"
 version     = "1.0.0"
-description = "Multi-format password & passphrase hashaxeer — 30+ formats · GPU · AI · Distributed"
+description = "Multi-format password & passphrase cracker — 30+ formats · GPU · AI · Distributed"
 readme      = "README.md"
 license     = { text = "MIT" }
 requires-python = ">=3.8"
@@ -16,32 +16,32 @@ authors = [
 
 keywords = [
     # Core identity
-    "password-hashaxeer", "password-recovery", "hash-hashaxeer", "passphrase-hashaxeer",
+    "password-cracker", "password-recovery", "hash-cracker", "passphrase-cracker",
     # Alternatives
     "hashcat-alternative", "john-the-ripper-alternative", "john-alternative",
     # SSH & Keys
-    "ssh-key-hashaxeer", "ppk-hashaxeer", "putty-private-key", "openhashaxeer",
-    "ssh-passphrase", "id-rsa-hashaxeer", "ed25519-hashaxeer", "ssh-key-recovery",
+    "ssh-key-cracker", "ppk-cracker", "putty-private-key", "opencracker",
+    "ssh-passphrase", "id-rsa-cracker", "ed25519-cracker", "ssh-key-recovery",
     # Kerberos & Windows
-    "kerberoasting", "kerberos-hashaxeer", "kerberos-tgs", "asrep-roasting",
-    "dpapi", "dpapi-hashaxeer", "netntlm", "netntlmv2", "ntlm-hashaxeer",
+    "kerberoasting", "kerberos-cracker", "kerberos-tgs", "asrep-roasting",
+    "dpapi", "dpapi-cracker", "netntlm", "netntlmv2", "ntlm-cracker",
     # Hash types
-    "bcrypt-hashaxeer", "argon2-hashaxeer", "argon2id", "scrypt-hashaxeer",
-    "md5-hashaxeer", "sha256-hashaxeer", "sha512-hashaxeer", "ntlm-hash",
+    "bcrypt-cracker", "argon2-cracker", "argon2id", "scrypt-cracker",
+    "md5-cracker", "sha256-cracker", "sha512-cracker", "ntlm-hash",
     # Archives & Documents
-    "zip-hashaxeer", "7z-hashaxeer", "rar-hashaxeer", "pdf-hashaxeer",
-    "keepass-hashaxeer", "office-hashaxeer", "ansible-vault-hashaxeer",
+    "zip-cracker", "7z-cracker", "rar-cracker", "pdf-cracker",
+    "keepass-cracker", "office-cracker", "ansible-vault-cracker",
     # Databases
-    "mysql-hash", "postgres-hash", "mssql-hashaxeer", "database-password",
+    "mysql-hash", "postgres-hash", "mssql-cracker", "database-password",
     # Security & Pentest
     "pentest-tool", "ctf-tool", "red-team-tool", "security-tool",
     "kali-linux", "ethical-hacking", "password-audit",
     # Advanced features
-    "gpu-hashaxeing", "cuda-hashaxeer", "opencl-hashaxeer", "distributed-hashaxeing",
-    "ai-password", "osint-hashaxeer", "wordlist-attack", "mask-attack",
+    "gpu-hashaxeing", "cuda-cracker", "opencl-cracker", "distributed-hashaxeing",
+    "ai-password", "osint-cracker", "wordlist-attack", "mask-attack",
     # Unique features
-    "ppk-v3", "ppk-v3-hashaxeer", "argon2id-hashaxeer", "ethereum-wallet-hashaxeer",
-    "bip39-recovery", "wpa-hashaxeer", "jwt-hashaxeer",
+    "ppk-v3", "ppk-v3-cracker", "argon2id-cracker", "ethereum-wallet-cracker",
+    "bip39-recovery", "wpa-cracker", "jwt-cracker",
 ]
 
 classifiers = [

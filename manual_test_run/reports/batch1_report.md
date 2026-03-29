@@ -1,111 +1,97 @@
 # Testing Report: Batch 1
 
-### python3 -m hashaxe --hash 4762aaa5e83ec22af033c810ef30bf29 -w /home/bhanu/htb/hashaxe/manual_test_run/test_words.txt
-
+### python3 -m hashaxe --hash 4762aaa5e83ec22af033c810ef30bf29 -w /home/bhanu/htb/HashAxe/manual_test_run/test_words.txt
 **Status:** PASS
-**Execution Time:** 1.85s
-**Root Cause / Error:**
-
+**Execution Time:** 0.98s
+**Root Cause / Error:** 
 ```text
 
 
-           ██████╗██████╗  █████╗  ██████╗██╗  ██╗
-          ██╔════╝██╔══██╗██╔══██╗██╔════╝██║ ██╔╝
-          ██║     ██████╔╝███████║██║     █████╔╝
-          ██║     ██╔══██╗██╔══██║██║     ██╔═██╗
-          ╚██████╗██║  ██║██║  ██║╚██████╗██║  ██╗
-           ╚═════╝╚═╝  ╚═╝╚═╝  ╚═╝ ╚═════╝╚═╝  ╚═╝
- ──────────────────────────────────────────────────────────
-          Crack V2 — Multi-Format Password Cracker
- 43 Formats · SSH/PPK/Archives/Docs/DB/Network/Kerberos/DPAPI
-   GPU-Accelerated · 
+     ██╗  ██╗ █████╗ ███████╗██╗  ██╗ █████╗ ██╗  ██╗███████╗
+     ██║  ██║██╔══██╗██╔════╝██║  ██║██╔══██╗╚██╗██╔╝██╔════╝
+     ███████║███████║███████╗███████║███████║ ╚███╔╝ █████╗  
+     ██╔══██║██╔══██║╚════██║██╔══██║██╔══██║ ██╔██╗ ██╔══╝  
+     ██║  ██║██║  ██║███████║██║  ██║██║  ██║██╔╝ ██╗███████╗
+     ╚═╝  ╚═╝╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═╝╚══════╝
+ ────────────────────────────────────────────────────────────────
+              HashAxe V1  Multi-Format Hash Cracker
+  43 For
 ...
 ```
 
-### python3 -m hashaxe -k /home/bhanu/htb/hashaxe/manual_test_run/md5_hash.txt -w /home/bhanu/htb/hashaxe/manual_test_run/test_words.txt
-
+### python3 -m hashaxe -k /home/bhanu/htb/HashAxe/manual_test_run/md5_hash.txt -w /home/bhanu/htb/HashAxe/manual_test_run/test_words.txt
 **Status:** PASS
-**Execution Time:** 0.99s
-**Root Cause / Error:**
-
+**Execution Time:** 0.93s
+**Root Cause / Error:** 
 ```text
 
 
-           ██████╗██████╗  █████╗  ██████╗██╗  ██╗
-          ██╔════╝██╔══██╗██╔══██╗██╔════╝██║ ██╔╝
-          ██║     ██████╔╝███████║██║     █████╔╝
-          ██║     ██╔══██╗██╔══██║██║     ██╔═██╗
-          ╚██████╗██║  ██║██║  ██║╚██████╗██║  ██╗
-           ╚═════╝╚═╝  ╚═╝╚═╝  ╚═╝ ╚═════╝╚═╝  ╚═╝
- ──────────────────────────────────────────────────────────
-          Crack V2 — Multi-Format Password Cracker
- 43 Formats · SSH/PPK/Archives/Docs/DB/Network/Kerberos/DPAPI
-   GPU-Accelerated · 
+     ██╗  ██╗ █████╗ ███████╗██╗  ██╗ █████╗ ██╗  ██╗███████╗
+     ██║  ██║██╔══██╗██╔════╝██║  ██║██╔══██╗╚██╗██╔╝██╔════╝
+     ███████║███████║███████╗███████║███████║ ╚███╔╝ █████╗  
+     ██╔══██║██╔══██║╚════██║██╔══██║██╔══██║ ██╔██╗ ██╔══╝  
+     ██║  ██║██║  ██║███████║██║  ██║██║  ██║██╔╝ ██╗███████╗
+     ╚═╝  ╚═╝╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═╝╚══════╝
+ ────────────────────────────────────────────────────────────────
+              HashAxe V1  Multi-Format Hash Cracker
+  43 For
 ...
 ```
 
 ### python3 -m hashaxe --hash 4762aaa5e83ec22af033c810ef30bf29 --mask xr7kQ?d?d?d
-
-**Status:** PASS
-**Execution Time:** 6.84s
-**Root Cause / Error:**
-
+**Status:** FAIL
+**Execution Time:** 7.16s
+**Root Cause / Error:** Non-zero exit
 ```text
 
 
-           ██████╗██████╗  █████╗  ██████╗██╗  ██╗
-          ██╔════╝██╔══██╗██╔══██╗██╔════╝██║ ██╔╝
-          ██║     ██████╔╝███████║██║     █████╔╝
-          ██║     ██╔══██╗██╔══██║██║     ██╔═██╗
-          ╚██████╗██║  ██║██║  ██║╚██████╗██║  ██╗
-           ╚═════╝╚═╝  ╚═╝╚═╝  ╚═╝ ╚═════╝╚═╝  ╚═╝
- ──────────────────────────────────────────────────────────
-          Crack V2 — Multi-Format Password Cracker
- 43 Formats · SSH/PPK/Archives/Docs/DB/Network/Kerberos/DPAPI
-   GPU-Accelerated · 
+     ██╗  ██╗ █████╗ ███████╗██╗  ██╗ █████╗ ██╗  ██╗███████╗
+     ██║  ██║██╔══██╗██╔════╝██║  ██║██╔══██╗╚██╗██╔╝██╔════╝
+     ███████║███████║███████╗███████║███████║ ╚███╔╝ █████╗  
+     ██╔══██║██╔══██║╚════██║██╔══██║██╔══██║ ██╔██╗ ██╔══╝  
+     ██║  ██║██║  ██║███████║██║  ██║██║  ██║██╔╝ ██╗███████╗
+     ╚═╝  ╚═╝╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═╝╚══════╝
+ ────────────────────────────────────────────────────────────────
+              HashAxe V1  Multi-Format Hash Cracker
+  43 For
 ...
 ```
 
-### python3 -m hashaxe -k /home/bhanu/htb/hashaxe/manual_test_run/md5_hash.txt -w /home/bhanu/htb/hashaxe/manual_test_run/test_words.txt --mask ?d?d?d
-
-**Status:** PASS
-**Execution Time:** 6.81s
-**Root Cause / Error:**
-
+### python3 -m hashaxe -k /home/bhanu/htb/HashAxe/manual_test_run/md5_hash.txt -w /home/bhanu/htb/HashAxe/manual_test_run/test_words.txt --mask ?d?d?d
+**Status:** FAIL
+**Execution Time:** 10.36s
+**Root Cause / Error:** Non-zero exit
 ```text
 
 
-           ██████╗██████╗  █████╗  ██████╗██╗  ██╗
-          ██╔════╝██╔══██╗██╔══██╗██╔════╝██║ ██╔╝
-          ██║     ██████╔╝███████║██║     █████╔╝
-          ██║     ██╔══██╗██╔══██║██║     ██╔═██╗
-          ╚██████╗██║  ██║██║  ██║╚██████╗██║  ██╗
-           ╚═════╝╚═╝  ╚═╝╚═╝  ╚═╝ ╚═════╝╚═╝  ╚═╝
- ──────────────────────────────────────────────────────────
-          Crack V2 — Multi-Format Password Cracker
- 43 Formats · SSH/PPK/Archives/Docs/DB/Network/Kerberos/DPAPI
-   GPU-Accelerated · 
+     ██╗  ██╗ █████╗ ███████╗██╗  ██╗ █████╗ ██╗  ██╗███████╗
+     ██║  ██║██╔══██╗██╔════╝██║  ██║██╔══██╗╚██╗██╔╝██╔════╝
+     ███████║███████║███████╗███████║███████║ ╚███╔╝ █████╗  
+     ██╔══██║██╔══██║╚════██║██╔══██║██╔══██║ ██╔██╗ ██╔══╝  
+     ██║  ██║██║  ██║███████║██║  ██║██║  ██║██╔╝ ██╗███████╗
+     ╚═╝  ╚═╝╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═╝╚══════╝
+ ────────────────────────────────────────────────────────────────
+              HashAxe V1  Multi-Format Hash Cracker
+  43 For
 ...
 ```
 
 ### python3 -m hashaxe --list-sessions
-
 **Status:** PASS
 **Execution Time:** 0.14s
-**Root Cause / Error:**
-
+**Root Cause / Error:** 
 ```text
 
 
-           ██████╗██████╗  █████╗  ██████╗██╗  ██╗
-          ██╔════╝██╔══██╗██╔══██╗██╔════╝██║ ██╔╝
-          ██║     ██████╔╝███████║██║     █████╔╝
-          ██║     ██╔══██╗██╔══██║██║     ██╔═██╗
-          ╚██████╗██║  ██║██║  ██║╚██████╗██║  ██╗
-           ╚═════╝╚═╝  ╚═╝╚═╝  ╚═╝ ╚═════╝╚═╝  ╚═╝
- ──────────────────────────────────────────────────────────
-          Crack V2 — Multi-Format Password Cracker
- 43 Formats · SSH/PPK/Archives/Docs/DB/Network/Kerberos/DPAPI
-   GPU-Accelerated · 
+     ██╗  ██╗ █████╗ ███████╗██╗  ██╗ █████╗ ██╗  ██╗███████╗
+     ██║  ██║██╔══██╗██╔════╝██║  ██║██╔══██╗╚██╗██╔╝██╔════╝
+     ███████║███████║███████╗███████║███████║ ╚███╔╝ █████╗  
+     ██╔══██║██╔══██║╚════██║██╔══██║██╔══██║ ██╔██╗ ██╔══╝  
+     ██║  ██║██║  ██║███████║██║  ██║██║  ██║██╔╝ ██╗███████╗
+     ╚═╝  ╚═╝╚═╝  ╚═╝╚══════╝╚═╝  ╚═╝╚═╝  ╚═╝╚═╝  ╚═╝╚══════╝
+ ────────────────────────────────────────────────────────────────
+              HashAxe V1  Multi-Format Hash Cracker
+  43 For
 ...
 ```
+

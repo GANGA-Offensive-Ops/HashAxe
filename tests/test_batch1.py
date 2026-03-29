@@ -86,7 +86,7 @@ for c in commands:
                     if status == "TIMEOUT"
                     else ("Non-zero exit" if status == "FAIL" else "")
                 ),
-                "Related Module": "cli.py, hashaxeer.py",
+                "Related Module": "cli.py, cracker.py",
             }
         )
     except Exception as e:

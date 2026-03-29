@@ -719,7 +719,7 @@ class TestIntegration:
 
     def test_hashaxe_rsa_wordlist_hit(self):
         """Should find 'puppet' in a small wordlist."""
-        from hashaxe.hashaxeer import hashaxe
+        from hashaxe.cracker import hashaxe
 
         wl = _wordlist(["wrong1", "wrong2", "puppet", "wrong3"])
         try:
@@ -735,7 +735,7 @@ class TestIntegration:
 
     def test_hashaxe_rsa_wordlist_miss(self):
         """Should return None when passphrase not in wordlist."""
-        from hashaxe.hashaxeer import hashaxe
+        from hashaxe.cracker import hashaxe
 
         wl = _wordlist(["wrong1", "wrong2", "wrong3"])
         try:
@@ -751,7 +751,7 @@ class TestIntegration:
 
     def test_hashaxe_with_rules_hit(self):
         """'Puppet123!' should be found via --rules mutations of 'puppet'."""
-        from hashaxe.hashaxeer import hashaxe
+        from hashaxe.cracker import hashaxe
 
         # rsa_legacy_puppet.key has passphrase 'puppet'
         # with rules, 'puppet123!' will be generated but won't match 'puppet'
@@ -771,7 +771,7 @@ class TestIntegration:
 
     def test_hashaxe_unencrypted_returns_empty(self):
         """Unencrypted key should return empty string immediately."""
-        from hashaxe.hashaxeer import hashaxe
+        from hashaxe.cracker import hashaxe
 
         wl = _wordlist(["anything"])
         try:
@@ -787,7 +787,7 @@ class TestIntegration:
 
     def test_hashaxe_ecdsa_wordlist_hit(self):
         """Should find 'abc123' for ECDSA key."""
-        from hashaxe.hashaxeer import hashaxe
+        from hashaxe.cracker import hashaxe
 
         wl = _wordlist(["wrong", "abc123", "other"])
         try:
@@ -803,7 +803,7 @@ class TestIntegration:
 
     def test_hashaxe_mask_hit(self):
         """Mask '?l?l?l?d?d?d' should find 'abc123'."""
-        from hashaxe.hashaxeer import hashaxe
+        from hashaxe.cracker import hashaxe
 
         result = hashaxe(
             key_path=str(KEYS_DIR / "ecdsa_legacy_abc123.key"),
@@ -816,7 +816,7 @@ class TestIntegration:
 
     def test_hashaxe_output_file(self):
         """Result should be written to output file."""
-        from hashaxe.hashaxeer import hashaxe
+        from hashaxe.cracker import hashaxe
 
         wl = _wordlist(["puppet"])
         out_tmp = _tmp_file(b"")

@@ -93,13 +93,13 @@ class TestRESTAPI:
         _JOBS.clear()
         _RESULTS.clear()
 
-    @patch("hashaxe.hashaxeer.hashaxe")
+    @patch("hashaxe.cracker.hashaxe")
     def test_read_root(self, hashaxe_mock):
         response = client.get("/")
         assert response.status_code == 200
         assert "v1.0.0" in response.json()["status"]
 
-    @patch("hashaxe.hashaxeer.hashaxe")
+    @patch("hashaxe.cracker.hashaxe")
     def test_submit_job(self, hashaxe_mock):
         hashaxe_mock.return_value = "autopwn_fixture_3j"
         req = {
@@ -114,12 +114,12 @@ class TestRESTAPI:
         assert "job_id" in data
         assert data["status"] == "queued"
 
-    @patch("hashaxe.hashaxeer.hashaxe")
+    @patch("hashaxe.cracker.hashaxe")
     def test_get_job_status_not_found(self, hashaxe_mock):
         response = client.get("/jobs/nonexistent-id")
         assert response.status_code == 404
 
-    @patch("hashaxe.hashaxeer.hashaxe")
+    @patch("hashaxe.cracker.hashaxe")
     def test_get_job_status(self, hashaxe_mock):
         hashaxe_mock.return_value = "autopwn_fixture_3j"
         req = {"target": "hash123"}
@@ -132,7 +132,7 @@ class TestRESTAPI:
         assert data["job_id"] == job_id
         assert data["status"] in ("queued", "running", "completed")
 
-    @patch("hashaxe.hashaxeer.hashaxe")
+    @patch("hashaxe.cracker.hashaxe")
     def test_cancel_job(self, hashaxe_mock):
         hashaxe_mock.return_value = None
         req = {"target": "hash123"}
@@ -143,7 +143,7 @@ class TestRESTAPI:
         assert del_response.status_code == 200
         assert _JOBS[job_id]["status"] == "cancelled"
 
-    @patch("hashaxe.hashaxeer.hashaxe")
+    @patch("hashaxe.cracker.hashaxe")
     def test_cancel_job_not_found(self, hashaxe_mock):
         response = client.delete("/jobs/fake-id")
         assert response.status_code == 404

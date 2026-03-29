@@ -76,7 +76,7 @@ Format: [Semantic Versioning](https://semver.org/)
 
 - `hashaxe/__init__.py` — version bumped to 1.0.0
 - `hashaxe/cli.py` — 15+ new arguments, improved validation logic
-- `hashaxe/hashaxeer.py` — `ai_candidates` parameter flow
+- `hashaxe/cracker.py` — `ai_candidates` parameter flow
 - `hashaxe/attacks/__init__.py` — `ai_candidates` field in `AttackConfig`
 
 ---
@@ -156,7 +156,7 @@ Format: [Semantic Versioning](https://semver.org/)
 
 ### Changed
 
-- `hashaxe/hashaxeer.py` — FormatRegistry integration for all 30+ formats
+- `hashaxe/cracker.py` — FormatRegistry integration for all 30+ formats
 - `hashaxe/cli.py` — 20+ new arguments for formats, attacks, database
 
 ---
@@ -215,7 +215,7 @@ Format: [Semantic Versioning](https://semver.org/)
 
 - `hashaxe/parser.py` — OpenSSH new format, legacy PEM, PPK v2/v3
 - `hashaxe/engine.py` — fast-path checkints + full key-load confirmation
-- `hashaxe/hashaxeer.py` — multiprocessing orchestrator
+- `hashaxe/cracker.py` — multiprocessing orchestrator
 - `hashaxe/wordlist.py` — streaming byte-range chunker (OOM-safe)
 - `hashaxe/session.py` — save/resume sessions
 - `hashaxe/display.py` — progress bar, result boxes, benchmark output

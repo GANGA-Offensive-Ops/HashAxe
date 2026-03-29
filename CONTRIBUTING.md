@@ -1,6 +1,6 @@
 # Contributing to hashaxe
 
-Thank you for contributing to the world's fastest open-source SSH key hashaxeer.
+Thank you for contributing to the world's fastest open-source SSH key cracker.
 
 ---
 
@@ -85,7 +85,7 @@ Commits to `main` require PRs — direct push is blocked.
 
 1. Add candidate generator in `hashaxe/rules/` or `hashaxe/cpu/`
 2. Expose CLI flag in `hashaxe/cli.py`
-3. Wire into `hashaxe/hashaxeer.py` worker dispatch
+3. Wire into `hashaxe/cracker.py` worker dispatch
 4. Add tests — minimum 5 unit tests + 2 integration tests
 5. Update `docs/BENCHMARKS.md` with speed data
 6. Update `CHANGELOG.md` under `[Unreleased]`

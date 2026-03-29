@@ -59,8 +59,8 @@ COPY . /app/
 RUN pip install --no-cache-dir -e .
 
 # ── Non-root user ─────────────────────────────────────────────────────────────
-RUN useradd -m -u 1000 hashaxeer
-USER hashaxeer
+RUN useradd -m -u 1000 cracker
+USER cracker
 
 # ── Volume mount for keys + wordlists ─────────────────────────────────────────
 VOLUME ["/work"]
