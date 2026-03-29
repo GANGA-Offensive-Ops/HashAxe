@@ -1,0 +1,1 @@
+$krb5tgs$17$user$DOMAIN.COM$SPN/cifs/server.domain.com$c1db810367fecc8698d5ac9c$579089134c3841fc46b8dffa3d1ba491db199a38e621055345f5a151b25bf3df

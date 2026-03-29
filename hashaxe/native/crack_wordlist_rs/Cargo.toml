@@ -1,0 +1,15 @@
+[package]
+name = "hashaxe_wordlist_rs"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+name = "hashaxe_wordlist_rs"
+crate-type = ["cdylib"]
+
+[dependencies]
+pyo3 = { version = "0.21", features = ["extension-module"] }
+memchr = "2"
+lz4 = "1"
+zstd = "0.13"
+memmap2 = "0.9"

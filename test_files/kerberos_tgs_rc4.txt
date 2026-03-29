@@ -1,0 +1,1 @@
+$krb5tgs$23$*user@DOMAIN.COM$DOMAIN.COM$SPN/cifs/server.domain.com*$80628a025fa99a4d8594a4a9ededa7ed$f88eec745f4bb7823a245e07c14545e41a363f38ee61a2a530454c77545a835d

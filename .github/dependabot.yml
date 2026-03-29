@@ -1,0 +1,38 @@
+# .github/dependabot.yml
+# ─────────────────────────────────────────────────────────────────────────────
+# Dependabot — automated dependency security updates
+# ─────────────────────────────────────────────────────────────────────────────
+
+version: 2
+
+updates:
+
+  # Python dependencies
+  - package-ecosystem: pip
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: monday
+      time: "08:00"
+      timezone: "Asia/Kathmandu"
+    open-pull-requests-limit: 5
+    labels:
+      - dependencies
+      - security
+    reviewers:
+      - Bh4nu
+    commit-message:
+      prefix: "chore(deps)"
+
+  # GitHub Actions
+  - package-ecosystem: github-actions
+    directory: "/"
+    schedule:
+      interval: weekly
+      day: monday
+    open-pull-requests-limit: 3
+    labels:
+      - dependencies
+      - ci
+    commit-message:
+      prefix: "chore(ci)"

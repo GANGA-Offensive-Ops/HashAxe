@@ -1,0 +1,59 @@
+# docker-compose.yml — hashaxe distributed mode
+#
+# Usage:
+#   # Start master + 4 CPU workers
+#   KEY=/path/to/id_ed25519 WORDLIST=/path/to/rockyou.txt \
+#   docker-compose up --scale worker=4
+#
+#   # GPU workers (requires nvidia-docker2)
+#   KEY=/path/to/id_ed25519 WORDLIST=/path/to/rockyou.txt \
+#   docker-compose -f docker-compose.yml -f docker-compose.gpu.yml up --scale worker=4
+
+version: "3.9"
+
+x-base: &base
+  image: hashaxe:cpu
+  build:
+    context: .
+    args:
+      BASE: python:3.12-slim-bookworm
+  restart: unless-stopped
+  volumes:
+    - ${KEY:-./tests/keys/rsa_legacy_puppet.key}:/work/target.key:ro
+    - ${WORDLIST:-/home/bhanu/htb/hashaxe/test_files/password.txt}:/work/wordlist.txt:ro
+
+services:
+
+  master:
+    <<: *base
+    command: >
+      -k /work/target.key
+      -w /work/wordlist.txt
+      --distributed-master
+      -v
+    ports:
+      - "5555:5555"
+      - "5556:5556"
+      - "5557:5557"
+    networks:
+      - hashaxenet
+
+  worker:
+    <<: *base
+    command: >
+      --distributed-worker
+      --master master
+    depends_on:
+      - master
+    networks:
+      - hashaxenet
+    deploy:
+      replicas: 2
+      resources:
+        limits:
+          cpus: "1.0"
+          memory: 512M
+
+networks:
+  hashaxenet:
+    driver: bridge

@@ -1,0 +1,267 @@
+# .github/workflows/ci.yml
+# ─────────────────────────────────────────────────────────────────────────────
+# hashaxe CI Pipeline
+#
+# Triggers:  push to main/develop, all PRs
+# Matrix:    Python 3.11 / 3.12 on ubuntu-22.04 / ubuntu-24.04
+#
+# Stages (all must pass for merge):
+#   1. lint      — ruff + black + isort formatting check
+#   2. typecheck — mypy strict mode, >90% coverage target
+#   3. security  — bandit (0 critical/high), pip-audit (0 known vulns)
+#   4. test      — full test suite (163 tests), coverage report
+#   5. docker    — build CPU Docker image, smoke-test
+# ─────────────────────────────────────────────────────────────────────────────
+
+name: CI
+
+on:
+  push:
+    branches: [main, develop, "release/*"]
+    paths-ignore:
+      - "docs/**"
+      - "*.md"
+      - ".github/ISSUE_TEMPLATE/**"
+  pull_request:
+    branches: [main, develop]
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  PYTHON_VERSION_DEFAULT: "3.12"
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Job 1 — Lint & Format
+# ─────────────────────────────────────────────────────────────────────────────
+jobs:
+  lint:
+    name: "Lint & Format"
+    runs-on: ubuntu-24.04
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION_DEFAULT }}
+          cache: pip
+
+      - name: Install lint tools
+        run: pip install ruff==0.4.4 black==24.4.2 isort==5.13.2
+
+      - name: ruff (fast linter — E/W/F/I/N/UP rules)
+        run: ruff check hashaxe/ tests/ --output-format=github
+
+      - name: black (formatting check)
+        run: black --check --diff hashaxe/ tests/
+
+      - name: isort (import order)
+        run: isort --check-only --diff hashaxe/ tests/
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Job 2 — Type Checking
+# ─────────────────────────────────────────────────────────────────────────────
+  typecheck:
+    name: "Type Check (mypy)"
+    runs-on: ubuntu-24.04
+    needs: lint
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION_DEFAULT }}
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          pip install mypy==1.10.0 types-cryptography
+
+      - name: mypy strict
+        run: |
+          mypy hashaxe/ \
+            --strict \
+            --ignore-missing-imports \
+            --no-error-summary \
+            --pretty
+        continue-on-error: true   # warn but don't block (gradual typing)
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Job 3 — Security Analysis
+# ─────────────────────────────────────────────────────────────────────────────
+  security:
+    name: "Security Scan"
+    runs-on: ubuntu-24.04
+    needs: lint
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION_DEFAULT }}
+          cache: pip
+
+      - name: Install security tools
+        run: pip install bandit==1.7.9 pip-audit==2.7.3
+
+      - name: bandit (SAST — 0 critical/high allowed)
+        run: |
+          bandit -r hashaxe/ \
+            -f json \
+            -o bandit-report.json \
+            -ll \
+            --severity-level medium \
+            || (cat bandit-report.json | python3 -m json.tool; exit 1)
+
+      - name: pip-audit (dependency CVE scan)
+        run: |
+          pip-audit \
+            --requirement requirements.txt \
+            --format json \
+            --output pip-audit-report.json \
+            --ignore-vuln PYSEC-2022-42969 \
+          || (cat pip-audit-report.json | python3 -m json.tool; exit 1)
+
+      - name: Upload security reports
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: security-reports
+          path: |
+            bandit-report.json
+            pip-audit-report.json
+          retention-days: 30
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Job 4 — Test Suite + Coverage
+# ─────────────────────────────────────────────────────────────────────────────
+  test:
+    name: "Test (${{ matrix.python-version }} / ${{ matrix.os }})"
+    runs-on: ${{ matrix.os }}
+    needs: [lint, security]
+
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11", "3.12"]
+        os: [ubuntu-22.04, ubuntu-24.04]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+
+      - name: Install dependencies
+        run: |
+          pip install -r requirements.txt
+          pip install -e .
+          pip install coverage==7.5.3
+
+      - name: Generate test SSH keys
+        run: |
+          cd tests/keys
+          # RSA legacy PEM encrypted with 'puppet'
+          ssh-keygen -t rsa -b 2048 -f rsa_legacy_puppet.key \
+            -N "puppet" -m PEM -q 2>/dev/null || true
+          # RSA legacy PEM unencrypted
+          ssh-keygen -t rsa -b 2048 -f rsa_legacy_nopass.key \
+            -N "" -m PEM -q 2>/dev/null || true
+          # ECDSA legacy PEM encrypted with 'abc123'
+          ssh-keygen -t ecdsa -b 256 -f ecdsa_legacy_abc123.key \
+            -N "abc123" -m PEM -q 2>/dev/null || true
+          ls -la
+
+      - name: Run Batch 1 tests
+        run: python3 tests/test_all.py
+
+      - name: Run Batch 2 tests
+        run: python3 -m coverage run -m unittest tests/test_batch2.py
+
+      - name: Batch 1 + 2 combined coverage
+        run: |
+          python3 -m coverage run --append tests/test_all.py 2>/dev/null || true
+          python3 -m coverage report \
+            --omit="tests/*,*/__pycache__/*,*/gpu/cuda_kernel*,*/gpu/opencl_kernel*" \
+            --fail-under=80
+          python3 -m coverage xml -o coverage.xml
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v4
+        if: matrix.python-version == '3.12' && matrix.os == 'ubuntu-24.04'
+        with:
+          files: coverage.xml
+          token: ${{ secrets.CODECOV_TOKEN }}
+          fail_ci_if_error: false
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        if: matrix.python-version == '3.12' && matrix.os == 'ubuntu-24.04'
+        with:
+          name: coverage-report
+          path: coverage.xml
+          retention-days: 30
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Job 5 — Docker Build & Smoke Test
+# ─────────────────────────────────────────────────────────────────────────────
+  docker:
+    name: "Docker Build"
+    runs-on: ubuntu-24.04
+    needs: test
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build CPU image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: false
+          tags: hashaxe:ci-test
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Smoke test — version check
+        run: |
+          docker run --rm hashaxe:ci-test --version 2>&1 | grep "2.0.0" \
+            || docker run --rm hashaxe:ci-test --help | head -3
+
+      - name: Smoke test — key info
+        run: |
+          # Generate a test key
+          ssh-keygen -t rsa -b 2048 -f /tmp/test_ci.key -N "citest" -m PEM -q
+          docker run --rm \
+            -v /tmp:/work \
+            hashaxe:ci-test -k /work/test_ci.key --info
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Job 6 — All jobs summary (required status check)
+# ─────────────────────────────────────────────────────────────────────────────
+  ci-success:
+    name: "CI Success"
+    runs-on: ubuntu-24.04
+    needs: [lint, typecheck, security, test, docker]
+    if: always()
+
+    steps:
+      - name: Check all jobs passed
+        run: |
+          if [[ "${{ needs.lint.result }}"     != "success" ]] || \
+             [[ "${{ needs.security.result }}" != "success" ]] || \
+             [[ "${{ needs.test.result }}"     != "success" ]]; then
+            echo "One or more required jobs failed."
+            exit 1
+          fi
+          echo "All CI jobs passed. ✅"

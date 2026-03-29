@@ -1,0 +1,263 @@
+# .github/workflows/release.yml
+# ─────────────────────────────────────────────────────────────────────────────
+# PyPI Release Pipeline
+#
+# Triggers:  push of version tag  v*.*.*  (e.g. v1, v2.1.0-rc1)
+#
+# Stages:
+#   1. build    — build wheel + sdist, verify contents
+#   2. sign     — Sigstore cosign signature (supply chain security)
+#   3. test-pypi— upload to TestPyPI, install, smoke-test
+#   4. pypi     — upload to production PyPI (manual approval gate)
+#   5. github   — create GitHub Release with changelog notes + assets
+#
+# Required secrets:
+#   PYPI_API_TOKEN        — PyPI trusted publisher token
+#   TEST_PYPI_API_TOKEN   — TestPyPI token
+# ─────────────────────────────────────────────────────────────────────────────
+
+name: Release
+
+on:
+  push:
+    tags:
+      - "v[0-9]+.[0-9]+.[0-9]+"
+      - "v[0-9]+.[0-9]+.[0-9]+-rc[0-9]+"
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: "Dry run (skip PyPI upload)"
+        type: boolean
+        default: true
+
+permissions:
+  contents: write        # GitHub Release creation
+  id-token: write        # Sigstore OIDC signing
+
+env:
+  PYTHON_VERSION: "3.12"
+
+jobs:
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Job 1 — Build wheel + sdist
+# ─────────────────────────────────────────────────────────────────────────────
+  build:
+    name: "Build Distribution"
+    runs-on: ubuntu-24.04
+
+    outputs:
+      version: ${{ steps.version.outputs.version }}
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # full history for changelog generation
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+
+      - name: Extract version from tag
+        id: version
+        run: |
+          VERSION=${GITHUB_REF_NAME#v}
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "Building version: $VERSION"
+
+      - name: Verify version matches package
+        run: |
+          PKG_VERSION=$(python3 -c "import hashaxe; print(hashaxe.__version__)")
+          TAG_VERSION="${{ steps.version.outputs.version }}"
+          if [[ "$PKG_VERSION" != "$TAG_VERSION" ]]; then
+            echo "ERROR: package version ($PKG_VERSION) != tag ($TAG_VERSION)"
+            exit 1
+          fi
+          echo "Version check passed: $PKG_VERSION"
+
+      - name: Install build tools
+        run: pip install build==1.2.1 twine==5.1.0
+
+      - name: Build wheel and sdist
+        run: python3 -m build
+
+      - name: Verify distribution
+        run: |
+          twine check dist/*
+          ls -lh dist/
+          # Verify wheel contents
+          python3 -m zipfile -l dist/*.whl | grep -E "(hashaxe|METADATA|RECORD)"
+
+      - name: Upload build artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist-${{ steps.version.outputs.version }}
+          path: dist/
+          retention-days: 30
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Job 2 — Sigstore signing (supply chain security)
+# ─────────────────────────────────────────────────────────────────────────────
+  sign:
+    name: "Sign with Sigstore"
+    runs-on: ubuntu-24.04
+    needs: build
+
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist-${{ needs.build.outputs.version }}
+          path: dist/
+
+      - name: Sign with Sigstore
+        uses: sigstore/gh-action-sigstore-python@v2.1.1
+        with:
+          inputs: >-
+            ./dist/*.tar.gz
+            ./dist/*.whl
+
+      - name: Upload signed artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: dist-signed-${{ needs.build.outputs.version }}
+          path: dist/
+          retention-days: 30
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Job 3 — TestPyPI upload + install test
+# ─────────────────────────────────────────────────────────────────────────────
+  test-pypi:
+    name: "TestPyPI Smoke Test"
+    runs-on: ubuntu-24.04
+    needs: [build, sign]
+    environment: test-pypi
+
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist-signed-${{ needs.build.outputs.version }}
+          path: dist/
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+
+      - name: Upload to TestPyPI
+        if: ${{ !inputs.dry_run }}
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          repository-url: https://test.pypi.org/legacy/
+          password: ${{ secrets.TEST_PYPI_API_TOKEN }}
+          skip-existing: true
+          verbose: true
+
+      - name: Install from TestPyPI and smoke-test
+        if: ${{ !inputs.dry_run }}
+        run: |
+          # Wait for index propagation
+          sleep 30
+          pip install \
+            --index-url https://test.pypi.org/simple/ \
+            --extra-index-url https://pypi.org/simple/ \
+            hashaxe==${{ needs.build.outputs.version }}
+          # Smoke tests
+          python3 -c "import hashaxe; print('Version:', hashaxe.__version__)"
+          hashaxe --help | grep "SSH Private Key"
+          echo "TestPyPI smoke test PASSED ✅"
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Job 4 — Production PyPI (requires manual approval)
+# ─────────────────────────────────────────────────────────────────────────────
+  pypi:
+    name: "Publish to PyPI"
+    runs-on: ubuntu-24.04
+    needs: [build, sign, test-pypi]
+    environment: production-pypi   # GitHub environment with required reviewer
+    if: ${{ !inputs.dry_run && !contains(github.ref_name, 'rc') }}
+
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist-signed-${{ needs.build.outputs.version }}
+          path: dist/
+
+      - name: Publish to PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
+        with:
+          password: ${{ secrets.PYPI_API_TOKEN }}
+          verbose: true
+
+      - name: Verify PyPI publication
+        run: |
+          sleep 60
+          pip install hashaxe==${{ needs.build.outputs.version }}
+          python3 -c "import hashaxe; assert hashaxe.__version__ == '${{ needs.build.outputs.version }}'"
+          echo "PyPI publication verified ✅"
+
+# ─────────────────────────────────────────────────────────────────────────────
+# Job 5 — GitHub Release
+# ─────────────────────────────────────────────────────────────────────────────
+  github-release:
+    name: "GitHub Release"
+    runs-on: ubuntu-24.04
+    needs: [build, sign, pypi]
+    if: always() && needs.build.result == 'success'
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: dist-signed-${{ needs.build.outputs.version }}
+          path: dist/
+
+      - name: Extract changelog for this version
+        id: changelog
+        run: |
+          VERSION=${{ needs.build.outputs.version }}
+          # Extract changelog block between version headers
+          NOTES=$(awk "/## \[$VERSION\]/,/## \[/" CHANGELOG.md \
+            | head -n -1 | tail -n +2)
+          echo "notes<<EOF" >> $GITHUB_OUTPUT
+          echo "$NOTES" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: "hashaxe v${{ needs.build.outputs.version }}"
+          body: |
+            ## hashaxe v${{ needs.build.outputs.version }}
+
+            ${{ steps.changelog.outputs.notes }}
+
+            ---
+
+            ### Install
+
+            ```bash
+            pip install hashaxe==${{ needs.build.outputs.version }}
+            ```
+
+            ### Docker
+
+            ```bash
+            docker pull ghcr.io/bh4nu/hashaxe:${{ needs.build.outputs.version }}
+            ```
+
+            ### Verify (Sigstore)
+
+            ```bash
+            pip install sigstore
+            sigstore verify dist/hashaxe-${{ needs.build.outputs.version }}-py3-none-any.whl
+            ```
+          draft: false
+          prerelease: ${{ contains(github.ref_name, 'rc') }}
+          files: |
+            dist/*.whl
+            dist/*.tar.gz
+            dist/*.sigstore
+          generate_release_notes: false
