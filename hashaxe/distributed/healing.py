@@ -45,21 +45,23 @@ from __future__ import annotations
 import logging
 import threading
 import time
+from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import Any, Callable
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
 # Default timeouts
-_HEARTBEAT_INTERVAL = 5.0    # workers send heartbeat every N seconds
-_HEARTBEAT_TIMEOUT = 15.0    # consider worker dead after N seconds silence
-_STALE_JOB_TIMEOUT = 60.0   # re-queue job if no result after N seconds
-_CLEANUP_INTERVAL = 10.0     # run cleanup cycle every N seconds
+_HEARTBEAT_INTERVAL = 5.0  # workers send heartbeat every N seconds
+_HEARTBEAT_TIMEOUT = 15.0  # consider worker dead after N seconds silence
+_STALE_JOB_TIMEOUT = 60.0  # re-queue job if no result after N seconds
+_CLEANUP_INTERVAL = 10.0  # run cleanup cycle every N seconds
 
 
 @dataclass
 class WorkerHealth:
     """Health tracking data for a single worker."""
+
     worker_id: str
     host: str = "unknown"
     gpu: str = ""
@@ -85,9 +87,8 @@ class WorkerHealth:
         self.total_jobs_completed += 1
         self.total_tried += tried
         self.avg_speed = (
-            (self.avg_speed * (self.total_jobs_completed - 1) + speed)
-            / self.total_jobs_completed
-        )
+            self.avg_speed * (self.total_jobs_completed - 1) + speed
+        ) / self.total_jobs_completed
         self._recalculate_score()
 
     def record_failure(self) -> None:
@@ -119,6 +120,7 @@ class WorkerHealth:
 @dataclass
 class InFlightJob:
     """Tracking data for a work item currently being processed."""
+
     job_id: str
     worker_id: str
     dispatched_at: float = field(default_factory=time.time)
@@ -182,18 +184,20 @@ class WorkerHealthManager:
             self._monitor_thread.join(timeout=5.0)
         logger.info("Worker health monitor stopped")
 
-    def register_worker(
-        self, worker_id: str, host: str = "unknown", gpu: str = ""
-    ) -> None:
+    def register_worker(self, worker_id: str, host: str = "unknown", gpu: str = "") -> None:
         """Register a new worker node."""
         with self._lock:
             if worker_id not in self._workers:
                 self._workers[worker_id] = WorkerHealth(
-                    worker_id=worker_id, host=host, gpu=gpu,
+                    worker_id=worker_id,
+                    host=host,
+                    gpu=gpu,
                 )
                 logger.info(
                     "Worker registered: %s (%s, GPU: %s)",
-                    worker_id, host, gpu or "none",
+                    worker_id,
+                    host,
+                    gpu or "none",
                 )
 
     def heartbeat(self, worker_id: str) -> None:
@@ -248,7 +252,9 @@ class WorkerHealthManager:
                     dead_workers.append(wid)
                     logger.warning(
                         "Worker %s (%s) declared DEAD (no heartbeat for %.1fs)",
-                        wid, w.host, now - w.last_heartbeat,
+                        wid,
+                        w.host,
+                        now - w.last_heartbeat,
                     )
 
             # Re-queue jobs from dead workers
@@ -260,7 +266,8 @@ class WorkerHealthManager:
                     jobs_to_requeue.append(jid)
                     logger.warning(
                         "Job %s stale (%.1fs old), re-queuing",
-                        jid, job.age,
+                        jid,
+                        job.age,
                     )
 
             for jid in jobs_to_requeue:
@@ -288,8 +295,7 @@ class WorkerHealthManager:
                 "dead": len(dead),
                 "in_flight_jobs": len(self._in_flight),
                 "avg_health_score": (
-                    sum(w.health_score for w in self._workers.values())
-                    / len(self._workers)
+                    sum(w.health_score for w in self._workers.values()) / len(self._workers)
                     if self._workers
                     else 0
                 ),

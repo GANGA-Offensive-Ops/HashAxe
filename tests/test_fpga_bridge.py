@@ -22,7 +22,8 @@ class TestSimulationMode:
     """Test FPGA bridge in explicit simulation mode."""
 
     def test_simulation_init(self):
-        from hashaxe.fpga.bridge import FPGABridge, EnvironmentState
+        from hashaxe.fpga.bridge import EnvironmentState, FPGABridge
+
         bridge = FPGABridge(simulation=True)
         assert bridge.is_available
         assert bridge.environment_state == EnvironmentState.SIMULATION_ONLY
@@ -30,20 +31,23 @@ class TestSimulationMode:
 
     def test_device_created(self):
         from hashaxe.fpga.bridge import FPGABridge
+
         bridge = FPGABridge(simulation=True)
         assert bridge.device is not None
         assert bridge.device.name == "Crack FPGA Simulator"
         assert bridge.device.vendor == "Simulation"
 
     def test_load_bitstream(self):
-        from hashaxe.fpga.bridge import FPGABridge, FPGAAlgorithm
+        from hashaxe.fpga.bridge import FPGAAlgorithm, FPGABridge
+
         bridge = FPGABridge(simulation=True)
         assert bridge.load_bitstream(FPGAAlgorithm.MD5)
         assert bridge.device.loaded_algorithm == FPGAAlgorithm.MD5
         assert bridge.device.hash_rate > 0
 
     def test_all_algorithms_load(self):
-        from hashaxe.fpga.bridge import FPGABridge, FPGAAlgorithm
+        from hashaxe.fpga.bridge import FPGAAlgorithm, FPGABridge
+
         bridge = FPGABridge(simulation=True)
         for algo in FPGAAlgorithm:
             assert bridge.load_bitstream(algo)
@@ -54,7 +58,8 @@ class TestDispatch:
     """Test FPGA work dispatch with actual hash verification."""
 
     def test_dispatch_md5_found(self):
-        from hashaxe.fpga.bridge import FPGABridge, FPGAAlgorithm, FPGAWorkUnit
+        from hashaxe.fpga.bridge import FPGAAlgorithm, FPGABridge, FPGAWorkUnit
+
         bridge = FPGABridge(simulation=True)
         bridge.load_bitstream(FPGAAlgorithm.MD5)
 
@@ -70,7 +75,8 @@ class TestDispatch:
         assert result.candidates_checked == 4
 
     def test_dispatch_sha256_found(self):
-        from hashaxe.fpga.bridge import FPGABridge, FPGAAlgorithm, FPGAWorkUnit
+        from hashaxe.fpga.bridge import FPGAAlgorithm, FPGABridge, FPGAWorkUnit
+
         bridge = FPGABridge(simulation=True)
         bridge.load_bitstream(FPGAAlgorithm.SHA256)
 
@@ -85,7 +91,8 @@ class TestDispatch:
         assert result.password == b"fpga_secret_fixture_9y"
 
     def test_dispatch_not_found(self):
-        from hashaxe.fpga.bridge import FPGABridge, FPGAAlgorithm, FPGAWorkUnit
+        from hashaxe.fpga.bridge import FPGAAlgorithm, FPGABridge, FPGAWorkUnit
+
         bridge = FPGABridge(simulation=True)
         bridge.load_bitstream(FPGAAlgorithm.SHA256)
 
@@ -100,7 +107,8 @@ class TestDispatch:
         assert result.candidates_checked == 2
 
     def test_dispatch_provenance(self):
-        from hashaxe.fpga.bridge import FPGABridge, FPGAAlgorithm, FPGAWorkUnit
+        from hashaxe.fpga.bridge import FPGAAlgorithm, FPGABridge, FPGAWorkUnit
+
         bridge = FPGABridge(simulation=True)
         bridge.load_bitstream(FPGAAlgorithm.MD5)
 
@@ -120,7 +128,8 @@ class TestBenchmark:
     """Test benchmark functionality."""
 
     def test_benchmark_bcrypt(self):
-        from hashaxe.fpga.bridge import FPGABridge, FPGAAlgorithm
+        from hashaxe.fpga.bridge import FPGAAlgorithm, FPGABridge
+
         bridge = FPGABridge(simulation=True)
         result = bridge.benchmark(FPGAAlgorithm.BCRYPT)
         assert result["algorithm"] == "bcrypt"
@@ -129,13 +138,15 @@ class TestBenchmark:
         assert result["measured"] is False
 
     def test_benchmark_md5(self):
-        from hashaxe.fpga.bridge import FPGABridge, FPGAAlgorithm
+        from hashaxe.fpga.bridge import FPGAAlgorithm, FPGABridge
+
         bridge = FPGABridge(simulation=True)
         result = bridge.benchmark(FPGAAlgorithm.MD5)
         assert result["hash_rate"] == 500_000_000.0
 
     def test_benchmark_provenance(self):
-        from hashaxe.fpga.bridge import FPGABridge, FPGAAlgorithm
+        from hashaxe.fpga.bridge import FPGAAlgorithm, FPGABridge
+
         bridge = FPGABridge(simulation=True)
         result = bridge.benchmark(FPGAAlgorithm.SHA256)
         assert result["mode"] == "SIMULATOR"
@@ -149,18 +160,21 @@ class TestEnvironmentDetection:
 
     def test_no_hardware_mode(self):
         from hashaxe.fpga.bridge import FPGABridge
+
         bridge = FPGABridge(simulation=False)
         info = bridge.info()
         assert "available" in info
         assert "environment_state" in info
 
     def test_simulation_state(self):
-        from hashaxe.fpga.bridge import FPGABridge, EnvironmentState
+        from hashaxe.fpga.bridge import EnvironmentState, FPGABridge
+
         bridge = FPGABridge(simulation=True)
         assert bridge.environment_state == EnvironmentState.SIMULATION_ONLY
 
     def test_toolchain_in_info(self):
         from hashaxe.fpga.bridge import FPGABridge
+
         bridge = FPGABridge(simulation=True)
         info = bridge.info()
         assert "toolchain" in info
@@ -174,6 +188,7 @@ class TestInfoStructure:
 
     def test_all_fields_present(self):
         from hashaxe.fpga.bridge import FPGABridge
+
         bridge = FPGABridge(simulation=True)
         info = bridge.info()
         assert "available" in info
@@ -186,13 +201,15 @@ class TestInfoStructure:
         assert "implementation_status" in info
 
     def test_supported_algorithms_complete(self):
-        from hashaxe.fpga.bridge import FPGABridge, FPGAAlgorithm
+        from hashaxe.fpga.bridge import FPGAAlgorithm, FPGABridge
+
         bridge = FPGABridge(simulation=True)
         info = bridge.info()
         assert len(info["supported_algorithms"]) == len(FPGAAlgorithm)
 
     def test_implementation_status(self):
         from hashaxe.fpga.bridge import FPGABridge
+
         bridge = FPGABridge(simulation=True)
         info = bridge.info()
         assert info["implementation_status"] == "PRODUCTION"
@@ -203,19 +220,22 @@ class TestBackwardCompatibility:
 
     def test_bridge_simulation_mode(self):
         from hashaxe.fpga.bridge import FPGABridge
+
         bridge = FPGABridge(simulation=True)
         assert bridge.is_available
         assert bridge.device is not None
 
     def test_load_bitstream(self):
-        from hashaxe.fpga.bridge import FPGABridge, FPGAAlgorithm
+        from hashaxe.fpga.bridge import FPGAAlgorithm, FPGABridge
+
         bridge = FPGABridge(simulation=True)
         assert bridge.load_bitstream(FPGAAlgorithm.MD5)
         assert bridge.device.loaded_algorithm == FPGAAlgorithm.MD5
         assert bridge.device.hash_rate > 0
 
     def test_dispatch_simulation(self):
-        from hashaxe.fpga.bridge import FPGABridge, FPGAAlgorithm, FPGAWorkUnit
+        from hashaxe.fpga.bridge import FPGAAlgorithm, FPGABridge, FPGAWorkUnit
+
         bridge = FPGABridge(simulation=True)
         bridge.load_bitstream(FPGAAlgorithm.SHA256)
         work = FPGAWorkUnit(
@@ -227,7 +247,8 @@ class TestBackwardCompatibility:
         assert result.candidates_checked == 3
 
     def test_benchmark(self):
-        from hashaxe.fpga.bridge import FPGABridge, FPGAAlgorithm
+        from hashaxe.fpga.bridge import FPGAAlgorithm, FPGABridge
+
         bridge = FPGABridge(simulation=True)
         result = bridge.benchmark(FPGAAlgorithm.BCRYPT)
         assert result["algorithm"] == "bcrypt"
@@ -236,6 +257,7 @@ class TestBackwardCompatibility:
 
     def test_info(self):
         from hashaxe.fpga.bridge import FPGABridge
+
         bridge = FPGABridge(simulation=True)
         info = bridge.info()
         assert info["available"] is True
@@ -245,6 +267,7 @@ class TestBackwardCompatibility:
 
     def test_no_hardware_mode(self):
         from hashaxe.fpga.bridge import FPGABridge
+
         bridge = FPGABridge(simulation=False)
         info = bridge.info()
         assert "available" in info
@@ -254,7 +277,8 @@ class TestSimulationWarnings:
     """Test that simulation warnings are ALWAYS present when not using real hardware."""
 
     def test_dispatch_has_warning(self):
-        from hashaxe.fpga.bridge import FPGABridge, FPGAAlgorithm, FPGAWorkUnit
+        from hashaxe.fpga.bridge import FPGAAlgorithm, FPGABridge, FPGAWorkUnit
+
         bridge = FPGABridge(simulation=True)
         bridge.load_bitstream(FPGAAlgorithm.MD5)
         work = FPGAWorkUnit(algorithm=FPGAAlgorithm.MD5, target_hash=b"x", candidates=[b"a"])
@@ -263,7 +287,8 @@ class TestSimulationWarnings:
         assert "SIMULATION" in result.simulation_warning
 
     def test_benchmark_has_warning(self):
-        from hashaxe.fpga.bridge import FPGABridge, FPGAAlgorithm
+        from hashaxe.fpga.bridge import FPGAAlgorithm, FPGABridge
+
         bridge = FPGABridge(simulation=True)
         result = bridge.benchmark(FPGAAlgorithm.SHA256)
         assert result["simulation_warning"] != ""
@@ -271,6 +296,7 @@ class TestSimulationWarnings:
 
     def test_info_has_warning(self):
         from hashaxe.fpga.bridge import FPGABridge
+
         bridge = FPGABridge(simulation=True)
         info = bridge.info()
         assert "simulation_warning" in info
@@ -280,6 +306,7 @@ class TestSimulationWarnings:
     def test_real_hardware_no_warning(self):
         """If real hardware were present, simulation_warning would be empty."""
         from hashaxe.fpga.bridge import FPGABridge
+
         # We can't test with real hardware, but verify the field exists
         bridge = FPGABridge(simulation=True)
         info = bridge.info()
@@ -289,7 +316,9 @@ class TestSimulationWarnings:
     def test_python_warns_emitted(self):
         """Verify that Python warnings.warn is fired on init in simulation mode."""
         import warnings
+
         from hashaxe.fpga.bridge import FPGABridge
+
         with warnings.catch_warnings(record=True) as w:
             warnings.simplefilter("always")
             bridge = FPGABridge(simulation=True)

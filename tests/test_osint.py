@@ -39,16 +39,17 @@ from pathlib import Path
 
 import pytest
 
-
 # ═══════════════════════════════════════════════════════════════════════════════
 # NLP Engine Tests
 # ═══════════════════════════════════════════════════════════════════════════════
+
 
 class TestNLPEngine:
     """Test suite for hashaxe.osint.nlp_engine.NLPEngine."""
 
     def test_extract_emails(self):
         from hashaxe.osint.nlp_engine import NLPEngine
+
         engine = NLPEngine(use_spacy=False)
         profile = engine.extract("Contact me at john.smith@example.com or admin@corp.io")
         assert "john.smith@example.com" in profile.emails
@@ -56,6 +57,7 @@ class TestNLPEngine:
 
     def test_extract_usernames(self):
         from hashaxe.osint.nlp_engine import NLPEngine
+
         engine = NLPEngine(use_spacy=False)
         profile = engine.extract("Follow @darknight and @cyber_op on Twitter")
         assert "darknight" in profile.usernames
@@ -63,6 +65,7 @@ class TestNLPEngine:
 
     def test_extract_hashtags(self):
         from hashaxe.osint.nlp_engine import NLPEngine
+
         engine = NLPEngine(use_spacy=False)
         profile = engine.extract("#hacking #cybersecurity #infosec")
         assert "hacking" in profile.hashtags
@@ -71,6 +74,7 @@ class TestNLPEngine:
 
     def test_extract_years(self):
         from hashaxe.osint.nlp_engine import NLPEngine
+
         engine = NLPEngine(use_spacy=False)
         profile = engine.extract("Born in 1990, graduated 2012, started work 2024")
         assert "1990" in profile.years
@@ -79,18 +83,21 @@ class TestNLPEngine:
 
     def test_extract_dates(self):
         from hashaxe.osint.nlp_engine import NLPEngine
+
         engine = NLPEngine(use_spacy=False)
         profile = engine.extract("Birthday: 15/03/1990 Anniversary: 22-06-2015")
         assert any("1503" in d or "0315" in d for d in profile.dates)
 
     def test_extract_phones(self):
         from hashaxe.osint.nlp_engine import NLPEngine
+
         engine = NLPEngine(use_spacy=False)
         profile = engine.extract("Call me at 555-123-4567 or 9876543210")
         assert len(profile.phones) >= 1
 
     def test_extract_keywords_frequency(self):
         from hashaxe.osint.nlp_engine import NLPEngine
+
         engine = NLPEngine(use_spacy=False)
         text = "python python python security hack hack code code code"
         profile = engine.extract(text)
@@ -100,6 +107,7 @@ class TestNLPEngine:
 
     def test_stopwords_filtered(self):
         from hashaxe.osint.nlp_engine import NLPEngine
+
         engine = NLPEngine(use_spacy=False)
         profile = engine.extract("the and for are but not you all can")
         # Stopwords should not appear in keywords
@@ -108,6 +116,7 @@ class TestNLPEngine:
 
     def test_email_local_part_extraction(self):
         from hashaxe.osint.nlp_engine import NLPEngine
+
         engine = NLPEngine(use_spacy=False)
         profile = engine.extract("email: john.smith@gmail.com")
         # Should extract "John" and/or "Smith" from email local part
@@ -116,12 +125,14 @@ class TestNLPEngine:
 
     def test_empty_text(self):
         from hashaxe.osint.nlp_engine import NLPEngine
+
         engine = NLPEngine(use_spacy=False)
         profile = engine.extract("")
         assert profile.all_tokens == []
 
     def test_unicode_text(self):
         from hashaxe.osint.nlp_engine import NLPEngine
+
         engine = NLPEngine(use_spacy=False)
         profile = engine.extract("Ünïcödé tëst 日本語 contact@test.com 2024")
         assert "contact@test.com" in profile.emails
@@ -129,6 +140,7 @@ class TestNLPEngine:
 
     def test_all_tokens_deduplicated(self):
         from hashaxe.osint.nlp_engine import NLPEngine
+
         engine = NLPEngine(use_spacy=False)
         profile = engine.extract("test test test python python @testuser")
         tokens = profile.all_tokens
@@ -136,6 +148,7 @@ class TestNLPEngine:
 
     def test_summary_dict(self):
         from hashaxe.osint.nlp_engine import NLPEngine
+
         engine = NLPEngine(use_spacy=False)
         profile = engine.extract("john@test.com loves @cybersec in 2024")
         summary = profile.summary()
@@ -148,15 +161,18 @@ class TestNLPEngine:
 # Keyword Mutator Tests
 # ═══════════════════════════════════════════════════════════════════════════════
 
+
 class TestKeywordMutator:
     """Test suite for hashaxe.osint.keyword_mutator.KeywordMutator."""
 
     def _make_profile(self, **kwargs):
         from hashaxe.osint.nlp_engine import ExtractedProfile
+
         return ExtractedProfile(**kwargs)
 
     def test_case_variant_mutations(self):
         from hashaxe.osint.keyword_mutator import KeywordMutator
+
         mutator = KeywordMutator(min_length=1)
         profile = self._make_profile(keywords=["dragon"])
         candidates = list(mutator.mutate_profile(profile))
@@ -166,6 +182,7 @@ class TestKeywordMutator:
 
     def test_year_suffix_mutations(self):
         from hashaxe.osint.keyword_mutator import KeywordMutator
+
         mutator = KeywordMutator(min_length=1)
         profile = self._make_profile(keywords=["admin"], years=["1990"])
         candidates = list(mutator.mutate_profile(profile))
@@ -174,6 +191,7 @@ class TestKeywordMutator:
 
     def test_digit_suffix_mutations(self):
         from hashaxe.osint.keyword_mutator import KeywordMutator
+
         mutator = KeywordMutator(min_length=1)
         profile = self._make_profile(keywords=["pass"])
         candidates = list(mutator.mutate_profile(profile))
@@ -182,6 +200,7 @@ class TestKeywordMutator:
 
     def test_symbol_suffix_mutations(self):
         from hashaxe.osint.keyword_mutator import KeywordMutator
+
         mutator = KeywordMutator(min_length=1)
         profile = self._make_profile(keywords=["test"])
         candidates = list(mutator.mutate_profile(profile))
@@ -190,6 +209,7 @@ class TestKeywordMutator:
 
     def test_leet_speak_mutations(self):
         from hashaxe.osint.keyword_mutator import KeywordMutator
+
         mutator = KeywordMutator(min_length=1)
         profile = self._make_profile(keywords=["password"])
         candidates = list(mutator.mutate_profile(profile))
@@ -197,6 +217,7 @@ class TestKeywordMutator:
 
     def test_name_combination_mutations(self):
         from hashaxe.osint.keyword_mutator import KeywordMutator
+
         mutator = KeywordMutator(min_length=1)
         profile = self._make_profile(names=["John", "Smith"])
         candidates = list(mutator.mutate_profile(profile))
@@ -204,6 +225,7 @@ class TestKeywordMutator:
 
     def test_deduplication(self):
         from hashaxe.osint.keyword_mutator import KeywordMutator
+
         mutator = KeywordMutator(min_length=1)
         profile = self._make_profile(keywords=["test"])
         candidates = list(mutator.mutate_profile(profile))
@@ -211,6 +233,7 @@ class TestKeywordMutator:
 
     def test_min_length_filter(self):
         from hashaxe.osint.keyword_mutator import KeywordMutator
+
         mutator = KeywordMutator(min_length=6)
         profile = self._make_profile(keywords=["ab", "longword"])
         candidates = list(mutator.mutate_profile(profile))
@@ -219,6 +242,7 @@ class TestKeywordMutator:
 
     def test_max_length_filter(self):
         from hashaxe.osint.keyword_mutator import KeywordMutator
+
         mutator = KeywordMutator(max_length=10)
         profile = self._make_profile(keywords=["short"])
         candidates = list(mutator.mutate_profile(profile))
@@ -227,6 +251,7 @@ class TestKeywordMutator:
 
     def test_email_based_mutations(self):
         from hashaxe.osint.keyword_mutator import KeywordMutator
+
         mutator = KeywordMutator(min_length=1)
         profile = self._make_profile(emails=["john.doe@gmail.com"])
         candidates = list(mutator.mutate_profile(profile))
@@ -235,6 +260,7 @@ class TestKeywordMutator:
 
     def test_estimate_candidates(self):
         from hashaxe.osint.keyword_mutator import KeywordMutator
+
         mutator = KeywordMutator()
         profile = self._make_profile(keywords=["test", "admin"], names=["John"])
         est = mutator.estimate_candidates(profile)
@@ -242,6 +268,7 @@ class TestKeywordMutator:
 
     def test_empty_profile(self):
         from hashaxe.osint.keyword_mutator import KeywordMutator
+
         mutator = KeywordMutator()
         profile = self._make_profile()
         candidates = list(mutator.mutate_profile(profile))
@@ -252,11 +279,13 @@ class TestKeywordMutator:
 # OSINT Profiler Tests
 # ═══════════════════════════════════════════════════════════════════════════════
 
+
 class TestOsintProfiler:
     """Test suite for hashaxe.osint.profiler.OsintProfiler."""
 
     def test_load_text_and_generate(self):
         from hashaxe.osint import OsintProfiler
+
         profiler = OsintProfiler(min_length=1, use_spacy=False)
         profiler.load_text("John Smith born 1990 loves python and guitars admin@corp.com")
         candidates = list(profiler.generate())
@@ -265,6 +294,7 @@ class TestOsintProfiler:
 
     def test_load_file(self):
         from hashaxe.osint import OsintProfiler
+
         with tempfile.NamedTemporaryFile(mode="w", suffix=".txt", delete=False) as f:
             f.write("Target intel: Alice Johnson works at TechCorp since 2020 alice.j@techcorp.com")
             f.flush()
@@ -281,12 +311,14 @@ class TestOsintProfiler:
 
     def test_load_file_not_found(self):
         from hashaxe.osint import OsintProfiler
+
         profiler = OsintProfiler(use_spacy=False)
         with pytest.raises(FileNotFoundError):
             profiler.load_file("/nonexistent/path/fake.txt")
 
     def test_export_wordlist(self):
         from hashaxe.osint import OsintProfiler
+
         profiler = OsintProfiler(min_length=1, use_spacy=False)
         profiler.load_text("admin dragon monkey shadow 2024")
 
@@ -304,6 +336,7 @@ class TestOsintProfiler:
 
     def test_export_max_candidates(self):
         from hashaxe.osint import OsintProfiler
+
         profiler = OsintProfiler(min_length=1, use_spacy=False)
         profiler.load_text("admin dragon monkey shadow password 2024 2025 security")
 
@@ -318,6 +351,7 @@ class TestOsintProfiler:
 
     def test_estimate_candidates(self):
         from hashaxe.osint import OsintProfiler
+
         profiler = OsintProfiler(use_spacy=False)
         profiler.load_text("test admin password")
         est = profiler.estimate_candidates()
@@ -325,6 +359,7 @@ class TestOsintProfiler:
 
     def test_info_dict(self):
         from hashaxe.osint import OsintProfiler
+
         profiler = OsintProfiler(use_spacy=False)
         profiler.load_text("test data")
         info = profiler.info()
@@ -333,6 +368,7 @@ class TestOsintProfiler:
 
     def test_empty_input(self):
         from hashaxe.osint import OsintProfiler
+
         profiler = OsintProfiler(use_spacy=False)
         profiler.load_text("")
         candidates = list(profiler.generate())
@@ -340,6 +376,7 @@ class TestOsintProfiler:
 
     def test_multiple_sources(self):
         from hashaxe.osint import OsintProfiler
+
         profiler = OsintProfiler(min_length=1, use_spacy=False)
         profiler.load_text("Source 1: john@example.com born 1985")
         profiler.load_text("Source 2: works at CyberCorp loves hacking")
@@ -352,17 +389,20 @@ class TestOsintProfiler:
 # OSINT Attack Plugin Tests
 # ═══════════════════════════════════════════════════════════════════════════════
 
+
 class TestOsintAttackPlugin:
     """Test that the OSINT attack plugin integrates with AttackRegistry."""
 
     def test_plugin_registered(self):
         from hashaxe.attacks import AttackRegistry
+
         registry = AttackRegistry()
         registry.discover()
         assert "osint" in registry
 
     def test_plugin_metadata(self):
         from hashaxe.attacks import AttackRegistry
+
         registry = AttackRegistry()
         registry.discover()
         plugin = registry.get("osint")
@@ -373,6 +413,7 @@ class TestOsintAttackPlugin:
 
     def test_plugin_validate_no_wordlist(self):
         from hashaxe.attacks import AttackConfig, AttackRegistry
+
         registry = AttackRegistry()
         registry.discover()
         plugin = registry.get("osint")
@@ -383,6 +424,7 @@ class TestOsintAttackPlugin:
 
     def test_plugin_generate_with_file(self):
         from hashaxe.attacks import AttackConfig, AttackRegistry
+
         registry = AttackRegistry()
         registry.discover()
         plugin = registry.get("osint")
@@ -401,6 +443,7 @@ class TestOsintAttackPlugin:
 
     def test_plugin_estimate_keyspace(self):
         from hashaxe.attacks import AttackConfig, AttackRegistry
+
         registry = AttackRegistry()
         registry.discover()
         plugin = registry.get("osint")
@@ -420,6 +463,7 @@ class TestOsintAttackPlugin:
 # ═══════════════════════════════════════════════════════════════════════════════
 # Integration / Edge Case Tests
 # ═══════════════════════════════════════════════════════════════════════════════
+
 
 class TestOsintIntegration:
     """End-to-end integration tests for the OSINT pipeline."""

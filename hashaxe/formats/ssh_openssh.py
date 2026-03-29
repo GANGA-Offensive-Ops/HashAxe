@@ -54,10 +54,10 @@ from hashaxe.parser import (
 logger = logging.getLogger(__name__)
 
 # ── Magic bytes for identification ────────────────────────────────────────────
-_OPENSSH_NEW_MAGIC  = b"-----BEGIN OPENSSH PRIVATE KEY-----"
-_LEGACY_RSA_MAGIC   = b"-----BEGIN RSA PRIVATE KEY-----"
-_LEGACY_EC_MAGIC    = b"-----BEGIN EC PRIVATE KEY-----"
-_LEGACY_DSA_MAGIC   = b"-----BEGIN DSA PRIVATE KEY-----"
+_OPENSSH_NEW_MAGIC = b"-----BEGIN OPENSSH PRIVATE KEY-----"
+_LEGACY_RSA_MAGIC = b"-----BEGIN RSA PRIVATE KEY-----"
+_LEGACY_EC_MAGIC = b"-----BEGIN EC PRIVATE KEY-----"
+_LEGACY_DSA_MAGIC = b"-----BEGIN DSA PRIVATE KEY-----"
 
 _ALL_OPENSSH_MARKERS = (
     _OPENSSH_NEW_MAGIC,
@@ -68,7 +68,7 @@ _ALL_OPENSSH_MARKERS = (
 
 _MARKER_TO_HINT: dict[bytes, str] = {
     _LEGACY_RSA_MAGIC: "ssh-rsa",
-    _LEGACY_EC_MAGIC:  "ecdsa",
+    _LEGACY_EC_MAGIC: "ecdsa",
     _LEGACY_DSA_MAGIC: "ssh-dss",
 }
 
@@ -83,7 +83,7 @@ class OpenSSHFormat(BaseFormat):
                      and ``try_passphrase_full()``.
     """
 
-    format_id   = "ssh.openssh"
+    format_id = "ssh.openssh"
     format_name = "OpenSSH Private Key"
 
     # ── Identification ────────────────────────────────────────────────────
@@ -171,11 +171,11 @@ class OpenSSHFormat(BaseFormat):
             is_encrypted=pk.is_encrypted,
             difficulty=difficulty,
             format_data={
-                "key_type":  pk.key_type,
-                "cipher":    cipher,
-                "kdf":       pk.kdf,
-                "rounds":    pk.rounds,
-                "fmt":       pk.fmt.name,
+                "key_type": pk.key_type,
+                "cipher": cipher,
+                "kdf": pk.kdf,
+                "rounds": pk.rounds,
+                "fmt": pk.fmt.name,
             },
             _legacy_pk=pk,
         )
@@ -212,9 +212,9 @@ class OpenSSHFormat(BaseFormat):
     def display_info(self, target: FormatTarget) -> dict[str, str]:
         data = target.format_data
         result: dict[str, str] = {
-            "Type":   data.get("key_type", "unknown"),
+            "Type": data.get("key_type", "unknown"),
             "Cipher": data.get("cipher", "none"),
-            "KDF":    data.get("kdf", "none"),
+            "KDF": data.get("kdf", "none"),
         }
         rounds = data.get("rounds", 0)
         if rounds:

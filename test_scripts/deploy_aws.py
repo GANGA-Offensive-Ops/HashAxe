@@ -106,27 +106,28 @@ echo "Worker started — PID: $!"
 
 # ── Deployment manager ────────────────────────────────────────────────────────
 
+
 class AWSDeployer:
 
     def __init__(
         self,
-        key_path:       str,
-        wordlist:       str,
-        n_workers:      int   = 4,
-        instance_type:  str   = "g5.xlarge",
-        spot_price:     float = 2.0,
-        region:         str   = "us-east-1",
-        master_ip:      str | None = None,
-        dry_run:        bool  = False,
+        key_path: str,
+        wordlist: str,
+        n_workers: int = 4,
+        instance_type: str = "g5.xlarge",
+        spot_price: float = 2.0,
+        region: str = "us-east-1",
+        master_ip: str | None = None,
+        dry_run: bool = False,
     ):
-        self.key_path      = key_path
-        self.wordlist      = wordlist
-        self.n_workers     = n_workers
+        self.key_path = key_path
+        self.wordlist = wordlist
+        self.n_workers = n_workers
         self.instance_type = instance_type
-        self.spot_price    = spot_price
-        self.region        = region
-        self.master_ip     = master_ip
-        self.dry_run       = dry_run
+        self.spot_price = spot_price
+        self.region = region
+        self.master_ip = master_ip
+        self.dry_run = dry_run
         self._instances: list[str] = []
 
     def deploy(self) -> str | None:
@@ -144,7 +145,7 @@ class AWSDeployer:
 
         # Read and encode the key file
         key_bytes = Path(self.key_path).read_bytes()
-        key_b64   = base64.b64encode(key_bytes).decode()
+        key_b64 = base64.b64encode(key_bytes).decode()
 
         # Determine master IP (assume we're running on master)
         master_ip = self.master_ip or self._get_public_ip()
@@ -160,33 +161,34 @@ class AWSDeployer:
 
         # Build user data
         user_data = _USER_DATA_TEMPLATE.format(
-            wordlist   = self.wordlist,
-            key_b64    = key_b64,
-            master_ip  = master_ip,
+            wordlist=self.wordlist,
+            key_b64=key_b64,
+            master_ip=master_ip,
         )
         user_data_b64 = base64.b64encode(user_data.encode()).decode()
 
         # Launch spot instances
         resp = ec2.request_spot_instances(
-            InstanceCount = self.n_workers,
-            SpotPrice     = str(self.spot_price),
-            LaunchSpecification = {
-                "ImageId":      self._get_ami(ec2),
+            InstanceCount=self.n_workers,
+            SpotPrice=str(self.spot_price),
+            LaunchSpecification={
+                "ImageId": self._get_ami(ec2),
                 "InstanceType": self.instance_type,
-                "UserData":     user_data_b64,
-                "Monitoring":   {"Enabled": False},
-                "TagSpecifications": [{
-                    "ResourceType": "spot-instances-request",
-                    "Tags": [
-                        {"Key": "Name",    "Value": "hashaxe-worker"},
-                        {"Key": "Project", "Value": "hashaxe"},
-                    ],
-                }],
+                "UserData": user_data_b64,
+                "Monitoring": {"Enabled": False},
+                "TagSpecifications": [
+                    {
+                        "ResourceType": "spot-instances-request",
+                        "Tags": [
+                            {"Key": "Name", "Value": "hashaxe-worker"},
+                            {"Key": "Project", "Value": "hashaxe"},
+                        ],
+                    }
+                ],
             },
         )
 
-        request_ids = [r["SpotInstanceRequestId"]
-                       for r in resp["SpotInstanceRequests"]]
+        request_ids = [r["SpotInstanceRequestId"] for r in resp["SpotInstanceRequests"]]
         print(f"[+] {len(request_ids)} spot requests submitted: {request_ids}")
 
         # Wait for fulfilment
@@ -207,6 +209,7 @@ class AWSDeployer:
             return
         try:
             import boto3
+
             ec2 = boto3.client("ec2", region_name=self.region)
             ec2.terminate_instances(InstanceIds=self._instances)
             print(f"[+] Terminated: {self._instances}")
@@ -216,12 +219,15 @@ class AWSDeployer:
     def _get_ami(self, ec2) -> str:
         """Get the latest Ubuntu 22.04 AMI for the current region."""
         resp = ec2.describe_images(
-            Owners  = ["099720109477"],  # Canonical
-            Filters = [
-                {"Name": "name",              "Values": ["ubuntu/images/hvm-ssd/ubuntu-jammy-22.04-amd64-server-*"]},
-                {"Name": "state",             "Values": ["available"]},
-                {"Name": "architecture",      "Values": ["x86_64"]},
-                {"Name": "virtualization-type","Values": ["hvm"]},
+            Owners=["099720109477"],  # Canonical
+            Filters=[
+                {
+                    "Name": "name",
+                    "Values": ["ubuntu/images/hvm-ssd/ubuntu-jammy-22.04-amd64-server-*"],
+                },
+                {"Name": "state", "Values": ["available"]},
+                {"Name": "architecture", "Values": ["x86_64"]},
+                {"Name": "virtualization-type", "Values": ["hvm"]},
             ],
         )
         images = sorted(resp["Images"], key=lambda x: x["CreationDate"], reverse=True)
@@ -232,13 +238,14 @@ class AWSDeployer:
     def _wait_for_instances(self, ec2, request_ids: list[str]) -> list[str]:
         """Wait up to 3 minutes for spot requests to be fulfilled."""
         instance_ids = []
-        deadline     = time.time() + 180
+        deadline = time.time() + 180
         while time.time() < deadline:
             resp = ec2.describe_spot_instance_requests(
                 SpotInstanceRequestIds=request_ids,
             )
             fulfilled = [
-                r["InstanceId"] for r in resp["SpotInstanceRequests"]
+                r["InstanceId"]
+                for r in resp["SpotInstanceRequests"]
                 if r["State"] == "active" and r.get("InstanceId")
             ]
             if len(fulfilled) == len(request_ids):
@@ -250,6 +257,7 @@ class AWSDeployer:
         """Get this machine's public IP address."""
         try:
             import urllib.request
+
             with urllib.request.urlopen("https://api.ipify.org", timeout=5) as r:
                 return r.read().decode().strip()
         except Exception:
@@ -260,11 +268,11 @@ class AWSDeployer:
         # This is a best-effort helper — may fail if SG is already configured
         try:
             ec2.authorize_security_group_ingress(
-                GroupId    = "default",
-                IpProtocol = "tcp",
-                FromPort   = 5555,
-                ToPort     = 5557,
-                CidrIp     = "0.0.0.0/0",
+                GroupId="default",
+                IpProtocol="tcp",
+                FromPort=5555,
+                ToPort=5557,
+                CidrIp="0.0.0.0/0",
             )
         except Exception:
             pass  # Already open or no permission — user handles manually
@@ -272,31 +280,30 @@ class AWSDeployer:
 
 # ── CLI ───────────────────────────────────────────────────────────────────────
 
+
 def main():
-    p = argparse.ArgumentParser(
-        description="Deploy hashaxe workers on AWS G5 spot instances"
-    )
-    p.add_argument("--key",          required=True, help="SSH key to hashaxe")
-    p.add_argument("--wordlist",     required=True, help="Wordlist path (local or s3://)")
-    p.add_argument("--workers",      type=int, default=4, help="Number of GPU workers")
-    p.add_argument("--instance",     default="g5.xlarge", help="EC2 instance type")
-    p.add_argument("--spot-price",   type=float, default=2.0, help="Max spot price $/hr")
-    p.add_argument("--region",       default="us-east-1", help="AWS region")
-    p.add_argument("--master-ip",    default=None, help="Override master IP")
-    p.add_argument("--terminate",    action="store_true", help="Terminate all workers")
-    p.add_argument("--dry-run",      action="store_true", help="Print plan without deploying")
+    p = argparse.ArgumentParser(description="Deploy hashaxe workers on AWS G5 spot instances")
+    p.add_argument("--key", required=True, help="SSH key to hashaxe")
+    p.add_argument("--wordlist", required=True, help="Wordlist path (local or s3://)")
+    p.add_argument("--workers", type=int, default=4, help="Number of GPU workers")
+    p.add_argument("--instance", default="g5.xlarge", help="EC2 instance type")
+    p.add_argument("--spot-price", type=float, default=2.0, help="Max spot price $/hr")
+    p.add_argument("--region", default="us-east-1", help="AWS region")
+    p.add_argument("--master-ip", default=None, help="Override master IP")
+    p.add_argument("--terminate", action="store_true", help="Terminate all workers")
+    p.add_argument("--dry-run", action="store_true", help="Print plan without deploying")
 
     args = p.parse_args()
 
     deployer = AWSDeployer(
-        key_path      = args.key,
-        wordlist      = args.wordlist,
-        n_workers     = args.workers,
-        instance_type = args.instance,
-        spot_price    = args.spot_price,
-        region        = args.region,
-        master_ip     = args.master_ip,
-        dry_run       = args.dry_run,
+        key_path=args.key,
+        wordlist=args.wordlist,
+        n_workers=args.workers,
+        instance_type=args.instance,
+        spot_price=args.spot_price,
+        region=args.region,
+        master_ip=args.master_ip,
+        dry_run=args.dry_run,
     )
 
     if args.terminate:
@@ -306,7 +313,9 @@ def main():
         if master_ip:
             print(f"\n[+] Workers deployed. Start master:")
             print(f"    hashaxe -k {args.key} -w {args.wordlist} --distributed-master")
-            print(f"\n[!] When done: python3 scripts/deploy_aws.py --terminate --key {args.key} --wordlist x")
+            print(
+                f"\n[!] When done: python3 scripts/deploy_aws.py --terminate --key {args.key} --wordlist x"
+            )
 
 
 if __name__ == "__main__":

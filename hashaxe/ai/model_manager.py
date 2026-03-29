@@ -77,6 +77,7 @@ class ModelManager:
         """Check if PyTorch is available."""
         try:
             import torch  # type: ignore
+
             return True
         except ImportError:
             return False
@@ -86,6 +87,7 @@ class ModelManager:
         """Check if HuggingFace transformers is available."""
         try:
             import transformers  # type: ignore
+
             return True
         except ImportError:
             return False
@@ -101,18 +103,20 @@ class ModelManager:
         """
         try:
             import torch  # type: ignore
+
             if not torch.cuda.is_available():
                 return False
             # Check if GPU has enough free VRAM (need ~1GB headroom minimum)
             total_vram = torch.cuda.get_device_properties(0).total_memory
             free_vram = total_vram - torch.cuda.memory_reserved(0)
-            vram_gb = total_vram / (1024 ** 3)
-            free_gb = free_vram / (1024 ** 3)
+            vram_gb = total_vram / (1024**3)
+            free_gb = free_vram / (1024**3)
             if vram_gb < 6.0:
                 logger.info(
                     "GPU has %.1fGB VRAM (%.1fGB free) — below 6GB threshold, "
                     "forcing CPU inference to prevent CUDA OOM",
-                    vram_gb, free_gb,
+                    vram_gb,
+                    free_gb,
                 )
                 return False
             return True
@@ -149,8 +153,11 @@ class ModelManager:
             tokenizer.save_pretrained(str(self.model_path))
             model.save_pretrained(str(self.model_path))
 
-            logger.info("Model '%s' downloaded successfully (%s)",
-                       self.model_name, self._format_size(self.model_path))
+            logger.info(
+                "Model '%s' downloaded successfully (%s)",
+                self.model_name,
+                self._format_size(self.model_path),
+            )
             return True
         except Exception as e:
             logger.error("Failed to download model '%s': %s", self.model_name, e)
@@ -237,17 +244,44 @@ class ModelManager:
 
             candidates = set()
             import re
-            
+
             # 🧨 HIGHLY STRICT PENTESTER WHITELIST 🧨
-            # Only allow pure alphanumeric and traditional password symbols. 
-            # This instantly destroys garbage like HTML tags, JSON dumps, Python code, 
+            # Only allow pure alphanumeric and traditional password symbols.
+            # This instantly destroys garbage like HTML tags, JSON dumps, Python code,
             # file routes (C:\), brackets (), quotes "", commas, etc.
             valid_pass_regex = re.compile(r"^[A-Za-z0-9!@#$%^&*_+\-=]+$")
-            
+
             # Expanded stop words to prevent the AI from generating common linking verbs/nouns
-            stop_words = {"the", "and", "is", "in", "it", "of", "to", "for", "on", "with", 
-                          "as", "at", "by", "are", "has", "be", "this", "that", "from", 
-                          "will", "can", "but", "not", "what", "all", "were", "when", "how"}
+            stop_words = {
+                "the",
+                "and",
+                "is",
+                "in",
+                "it",
+                "of",
+                "to",
+                "for",
+                "on",
+                "with",
+                "as",
+                "at",
+                "by",
+                "are",
+                "has",
+                "be",
+                "this",
+                "that",
+                "from",
+                "will",
+                "can",
+                "but",
+                "not",
+                "what",
+                "all",
+                "were",
+                "when",
+                "how",
+            }
 
             def clean_token(t: str) -> str:
                 return t.strip()
@@ -262,7 +296,7 @@ class ModelManager:
                 # Strategy 1: The full contiguous block (spaces removed)
                 compressed = "".join(text.split())
                 tokens_to_test.append(compressed)
-                
+
                 # Strategy 2: Extract just the *first* word from the AI's sentence
                 words = text.strip().split()
                 if words:
@@ -270,31 +304,31 @@ class ModelManager:
 
                 # Strategy 3: Isolate the purely newly generated suffix
                 if text.startswith(prompt):
-                    suffix = text[len(prompt):].strip()
+                    suffix = text[len(prompt) :].strip()
                     if suffix:
                         suffix_words = suffix.split()
                         if suffix_words:
-                            tokens_to_test.append(suffix_words[0]) # First contextual word
-                        tokens_to_test.append("".join(suffix_words)) # Compressed suffix
+                            tokens_to_test.append(suffix_words[0])  # First contextual word
+                        tokens_to_test.append("".join(suffix_words))  # Compressed suffix
 
                 # Filter and normalize the tokens
                 for t in tokens_to_test:
                     cleaned = clean_token(t)
-                    # Reject if it's too short (unless it's the exact prompt), 
+                    # Reject if it's too short (unless it's the exact prompt),
                     # completely numeric, or a generic English stopword.
                     # Skip overly simple tokens if they are short (and not our prompt)
                     if len(cleaned) < 3 and cleaned != prompt:
                         continue
                     if cleaned.lower() in stop_words:
                         continue
-                        
+
                     # 🧨 STRICT FILTER: Only allow completely valid password combinations
                     if not valid_pass_regex.match(cleaned):
                         continue
-                    
+
                     if cleaned and len(cleaned) <= max_length:
                         candidates.add(cleaned)
-                        
+
                         # Pentester bonus: Also yield capitalized / lowercase variations
                         # automatically, as the AI might generate lowercased names.
                         if cleaned.islower():

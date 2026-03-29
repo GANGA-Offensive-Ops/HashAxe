@@ -61,7 +61,7 @@ _SCRYPT_HASHCAT_RE = re.compile(
 class ScryptFormat(BaseFormat):
     """Handler for standalone scrypt password hashes."""
 
-    format_id   = "hash.scrypt"
+    format_id = "hash.scrypt"
     format_name = "scrypt"
 
     def can_handle(self, data: bytes, path: Path | None = None) -> FormatMatch | None:
@@ -97,13 +97,13 @@ class ScryptFormat(BaseFormat):
             p = int(m.group(3))
             salt = base64.b64decode(m.group(4))
             target_hash = base64.b64decode(m.group(5))
-            n = 2 ** ln  # scrypt N parameter from log2
+            n = 2**ln  # scrypt N parameter from log2
         else:
             # Try SCRYPT:N:r:p:salt:hash (hashcat) format
             m = _SCRYPT_HASHCAT_RE.match(text)
             if not m:
                 raise ValueError(f"Invalid scrypt hash format: {text[:50]}")
-            n = int(m.group(1))   # N is literal, not log2
+            n = int(m.group(1))  # N is literal, not log2
             r = int(m.group(2))
             p = int(m.group(3))
             salt = base64.b64decode(m.group(4))
@@ -136,9 +136,7 @@ class ScryptFormat(BaseFormat):
             expected = target.format_data["target_hash_bytes"]
             dklen = target.format_data.get("dklen", 32)
 
-            derived = hashlib.scrypt(
-                password, salt=salt, n=n, r=r, p=p, dklen=dklen
-            )
+            derived = hashlib.scrypt(password, salt=salt, n=n, r=r, p=p, dklen=dklen)
             return derived == expected
         except (ValueError, Exception):
             return False

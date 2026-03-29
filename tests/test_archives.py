@@ -48,11 +48,13 @@ FIXTURES = Path(__file__).resolve().parent / "fixtures"
 # ZIP Format Handler Tests
 # ══════════════════════════════════════════════════════════════════════════════
 
+
 class TestZipDetection(unittest.TestCase):
     """Test ZIP format detection and identification."""
 
     def _handler(self):
         from hashaxe.formats.archive_zip import ZipFormat
+
         return ZipFormat()
 
     def test_detects_zip_magic(self):
@@ -90,7 +92,7 @@ class TestZipDetection(unittest.TestCase):
         h = self._handler()
         # Create an unencrypted ZIP in memory
         buf = BytesIO()
-        with zipfile.ZipFile(buf, 'w') as zf:
+        with zipfile.ZipFile(buf, "w") as zf:
             zf.writestr("test.txt", "hello world")
         data = buf.getvalue()
         target = h.parse(data)
@@ -110,6 +112,7 @@ class TestZipEncryption(unittest.TestCase):
 
     def test_detect_zip_encryption_unencrypted(self):
         from hashaxe.formats.archive_zip import _detect_zip_encryption
+
         data = (FIXTURES / "test_unencrypted.zip").read_bytes()
         meta = _detect_zip_encryption(data)
         self.assertFalse(meta["encrypted"])
@@ -117,16 +120,19 @@ class TestZipEncryption(unittest.TestCase):
 
     def test_detect_zip_encryption_corrupt(self):
         from hashaxe.formats.archive_zip import _detect_zip_encryption
+
         meta = _detect_zip_encryption(b"not a zip at all")
         self.assertFalse(meta["encrypted"])
 
     def test_parse_extra_fields_empty(self):
         from hashaxe.formats.archive_zip import _parse_extra_fields
+
         result = _parse_extra_fields(b"")
         self.assertEqual(result, [])
 
     def test_parse_extra_fields_valid(self):
         from hashaxe.formats.archive_zip import _parse_extra_fields
+
         # Construct a simple extra field: ID=0x0001, size=4, data=\x00\x00\x00\x00
         extra = struct.pack("<HH", 0x0001, 4) + b"\x00\x00\x00\x00"
         result = _parse_extra_fields(extra)
@@ -139,8 +145,10 @@ class TestZipDifficulty(unittest.TestCase):
 
     def test_difficulty_default(self):
         from hashaxe.formats.archive_zip import ZipFormat
+
         h = ZipFormat()
         from hashaxe.formats.base import FormatDifficulty
+
         self.assertEqual(h.difficulty(), FormatDifficulty.FAST)
 
 
@@ -148,11 +156,13 @@ class TestZipDifficulty(unittest.TestCase):
 # PDF Format Handler Tests
 # ══════════════════════════════════════════════════════════════════════════════
 
+
 class TestPDFDetection(unittest.TestCase):
     """Test PDF format detection."""
 
     def _handler(self):
         from hashaxe.formats.document_pdf import PDFFormat
+
         return PDFFormat()
 
     def test_detects_pdf_magic(self):
@@ -200,12 +210,14 @@ class TestPDFEncryptionDetection(unittest.TestCase):
 
     def test_detect_no_encrypt(self):
         from hashaxe.formats.document_pdf import _detect_pdf_encryption
+
         data = (FIXTURES / "test_unencrypted.pdf").read_bytes()
         meta = _detect_pdf_encryption(data)
         self.assertFalse(meta["encrypted"])
 
     def test_detect_encrypt_rev4(self):
         from hashaxe.formats.document_pdf import _detect_pdf_encryption
+
         data = (FIXTURES / "test_encrypted.pdf").read_bytes()
         meta = _detect_pdf_encryption(data)
         self.assertTrue(meta["encrypted"])
@@ -214,12 +226,14 @@ class TestPDFEncryptionDetection(unittest.TestCase):
 
     def test_detect_version(self):
         from hashaxe.formats.document_pdf import _detect_pdf_encryption
+
         data = b"%PDF-2.0\nsome content"
         meta = _detect_pdf_encryption(data)
         self.assertEqual(meta["version"], "2.0")
 
     def test_detect_revision_rc4_40(self):
         from hashaxe.formats.document_pdf import _detect_pdf_encryption
+
         data = b"%PDF-1.2\n/Encrypt\n/R 2\n"
         meta = _detect_pdf_encryption(data)
         self.assertTrue(meta["encrypted"])
@@ -227,6 +241,7 @@ class TestPDFEncryptionDetection(unittest.TestCase):
 
     def test_detect_revision_aes256(self):
         from hashaxe.formats.document_pdf import _detect_pdf_encryption
+
         data = b"%PDF-1.7\n/Encrypt\n/R 6\n"
         meta = _detect_pdf_encryption(data)
         self.assertTrue(meta["encrypted"])
@@ -234,6 +249,7 @@ class TestPDFEncryptionDetection(unittest.TestCase):
 
     def test_detect_revision_rc4_128(self):
         from hashaxe.formats.document_pdf import _detect_pdf_encryption
+
         data = b"%PDF-1.4\n/Encrypt\n/R 3\n"
         meta = _detect_pdf_encryption(data)
         self.assertTrue(meta["encrypted"])
@@ -246,11 +262,13 @@ class TestPDFDifficulty(unittest.TestCase):
     def test_difficulty_default(self):
         from hashaxe.formats.base import FormatDifficulty
         from hashaxe.formats.document_pdf import PDFFormat
+
         h = PDFFormat()
         self.assertEqual(h.difficulty(), FormatDifficulty.MEDIUM)
 
     def test_display_info(self):
         from hashaxe.formats.document_pdf import PDFFormat
+
         h = PDFFormat()
         data = (FIXTURES / "test_encrypted.pdf").read_bytes()
         target = h.parse(data)
@@ -263,11 +281,13 @@ class TestPDFDifficulty(unittest.TestCase):
 # 7-Zip Format Handler Tests
 # ══════════════════════════════════════════════════════════════════════════════
 
+
 class TestSevenZipDetection(unittest.TestCase):
     """Test 7z format detection."""
 
     def _handler(self):
         from hashaxe.formats.archive_7z import SevenZipFormat
+
         return SevenZipFormat()
 
     def test_detects_7z_magic(self):
@@ -296,6 +316,7 @@ class TestSevenZipDetection(unittest.TestCase):
     def test_difficulty(self):
         from hashaxe.formats.archive_7z import SevenZipFormat
         from hashaxe.formats.base import FormatDifficulty
+
         h = SevenZipFormat()
         self.assertEqual(h.difficulty(), FormatDifficulty.SLOW)
 
@@ -312,29 +333,34 @@ class TestSevenZipDetection(unittest.TestCase):
 # Registry Integration Tests
 # ══════════════════════════════════════════════════════════════════════════════
 
+
 class TestRegistryIntegration(unittest.TestCase):
     """Test that new handlers are auto-registered in FormatRegistry."""
 
     def test_zip_in_registry(self):
         from hashaxe.formats._registry import FormatRegistry
+
         reg = FormatRegistry()
         reg.discover()
         self.assertIn("archive.zip", reg)
 
     def test_pdf_in_registry(self):
         from hashaxe.formats._registry import FormatRegistry
+
         reg = FormatRegistry()
         reg.discover()
         self.assertIn("document.pdf", reg)
 
     def test_7z_in_registry(self):
         from hashaxe.formats._registry import FormatRegistry
+
         reg = FormatRegistry()
         reg.discover()
         self.assertIn("archive.7z", reg)
 
     def test_registry_identifies_zip(self):
         from hashaxe.formats._registry import FormatRegistry
+
         reg = FormatRegistry()
         data = (FIXTURES / "test_unencrypted.zip").read_bytes()
         match = reg.identify(data)
@@ -344,6 +370,7 @@ class TestRegistryIntegration(unittest.TestCase):
 
     def test_registry_identifies_pdf(self):
         from hashaxe.formats._registry import FormatRegistry
+
         reg = FormatRegistry()
         data = (FIXTURES / "test_encrypted.pdf").read_bytes()
         match = reg.identify(data)
@@ -352,6 +379,7 @@ class TestRegistryIntegration(unittest.TestCase):
 
     def test_registry_identifies_7z(self):
         from hashaxe.formats._registry import FormatRegistry
+
         reg = FormatRegistry()
         data = (FIXTURES / "test_header.7z").read_bytes()
         match = reg.identify(data)
@@ -363,21 +391,25 @@ class TestRegistryIntegration(unittest.TestCase):
 # Magic Byte Detection Tests
 # ══════════════════════════════════════════════════════════════════════════════
 
+
 class TestMagicDetection(unittest.TestCase):
     """Test magic.py correctly detects ZIP/PDF/7z bytes."""
 
     def test_zip_magic(self):
         from hashaxe.identify.magic import identify_magic
+
         results = identify_magic(b"PK\x03\x04" + b"\x00" * 100)
         self.assertTrue(any(m.format_id == "archive.zip" for m in results))
 
     def test_pdf_magic(self):
         from hashaxe.identify.magic import identify_magic
+
         results = identify_magic(b"%PDF-1.7\nsome content")
         self.assertTrue(any(m.format_id == "document.pdf" for m in results))
 
     def test_7z_magic(self):
         from hashaxe.identify.magic import identify_magic
+
         results = identify_magic(b"7z\xbc\xaf\x27\x1c" + b"\x00" * 100)
         self.assertTrue(any(m.format_id == "archive.7z" for m in results))
 

@@ -43,11 +43,12 @@ from hashaxe.identify.magic import MagicMatch, identify_best_magic, identify_mag
 
 class IdentifyResult(NamedTuple):
     """Unified identification result."""
-    format_id: str          # Best-guess format ID (e.g. "hash.md5", "ssh.openssh")
-    algorithm: str          # Human-readable name
-    confidence: float       # 0.0–1.0
-    source: str             # "magic" | "pattern" | "entropy"
-    details: dict           # Format-specific metadata
+
+    format_id: str  # Best-guess format ID (e.g. "hash.md5", "ssh.openssh")
+    algorithm: str  # Human-readable name
+    confidence: float  # 0.0–1.0
+    source: str  # "magic" | "pattern" | "entropy"
+    details: dict  # Format-specific metadata
 
 
 class MagicIdentifier:
@@ -164,13 +165,15 @@ class MagicIdentifier:
         # Magic
         if raw_bytes:
             for m in identify_magic(raw_bytes):
-                results.append(IdentifyResult(
-                    format_id=m.format_id,
-                    algorithm=m.description,
-                    confidence=m.confidence,
-                    source="magic",
-                    details={},
-                ))
+                results.append(
+                    IdentifyResult(
+                        format_id=m.format_id,
+                        algorithm=m.description,
+                        confidence=m.confidence,
+                        source="magic",
+                        details={},
+                    )
+                )
             try:
                 text = raw_bytes.decode("utf-8", errors="strict").strip()
             except UnicodeDecodeError:
@@ -179,13 +182,15 @@ class MagicIdentifier:
         # Patterns
         if text:
             for h in identify_hash(text):
-                results.append(IdentifyResult(
-                    format_id=h.format_id,
-                    algorithm=h.algorithm,
-                    confidence=h.confidence,
-                    source="pattern",
-                    details=h.details,
-                ))
+                results.append(
+                    IdentifyResult(
+                        format_id=h.format_id,
+                        algorithm=h.algorithm,
+                        confidence=h.confidence,
+                        source="pattern",
+                        details=h.details,
+                    )
+                )
 
         # Sort by confidence
         results.sort(key=lambda r: r.confidence, reverse=True)
@@ -194,7 +199,7 @@ class MagicIdentifier:
 
 # Convenience singleton
 _identifier = MagicIdentifier()
-auto_identify    = _identifier.identify
+auto_identify = _identifier.identify
 auto_identify_all = _identifier.identify_all
 
 __all__ = [

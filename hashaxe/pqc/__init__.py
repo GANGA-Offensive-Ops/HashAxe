@@ -27,4 +27,4 @@ Modules:
 """
 from __future__ import annotations
 
-__all__ = ["PQCScanner", "HNDLAnalyzer"]
+__all__ = ["HNDLAnalyzer", "PQCScanner"]

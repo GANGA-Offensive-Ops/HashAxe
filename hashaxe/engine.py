@@ -47,6 +47,7 @@ from cryptography.hazmat.primitives.serialization.ssh import _bcrypt_kdf
 try:
     from argon2.low_level import Type as Argon2Type
     from argon2.low_level import hash_secret_raw
+
     _HAS_ARGON2 = True
 except ImportError:
     _HAS_ARGON2 = False
@@ -54,6 +55,7 @@ except ImportError:
 from hashaxe.parser import KeyFormat, ParsedKey
 
 # ── Cipher builder ────────────────────────────────────────────────────────────
+
 
 def _build_cipher(ciphername: bytes, key: bytes, iv: bytes):
     """Return a cryptography Cipher object ready for .decryptor()."""
@@ -73,6 +75,7 @@ def _build_cipher(ciphername: bytes, key: bytes, iv: bytes):
 
 # ── OpenSSH checkints fast-path ───────────────────────────────────────────────
 
+
 def _derive_openssh_key(pk: ParsedKey, password: bytes) -> tuple[bytes, bytes]:
     """
     Run bcrypt-KDF to derive (key_material, iv_material) from password.
@@ -84,9 +87,9 @@ def _derive_openssh_key(pk: ParsedKey, password: bytes) -> tuple[bytes, bytes]:
         pk.salt,
         pk.key_len + pk.iv_len,
         pk.rounds,
-        True,   # ignore_few_rounds — safe for cracking purposes
+        True,  # ignore_few_rounds — safe for cracking purposes
     )
-    return seed[:pk.key_len], seed[pk.key_len:]
+    return seed[: pk.key_len], seed[pk.key_len :]
 
 
 def try_passphrase(pk: ParsedKey, password: bytes) -> bool:
@@ -125,17 +128,17 @@ def _try_openssh(pk: ParsedKey, password: bytes) -> bool:
     key_mat, iv_mat = _derive_openssh_key(pk, password)
 
     cipher = _build_cipher(pk.ciphername, key_mat, iv_mat)
-    dec    = cipher.decryptor()
+    dec = cipher.decryptor()
 
     if pk.is_aead:
         # chacha20-poly1305: verify Poly1305 MAC before decrypting
         # Fast-path: attempt decryption of first 8 bytes, check checkints
         # (Poly1305 verification would require the full blob — skip for speed,
         # full verification happens in try_passphrase_full())
-        needed  = 8
+        needed = 8
         partial = dec.update(pk.edata[:needed])
     else:
-        needed  = max(8, pk.block_len)
+        needed = max(8, pk.block_len)
         partial = dec.update(pk.edata[:needed])
 
     ck1 = int.from_bytes(partial[0:4], "big")
@@ -143,8 +146,7 @@ def _try_openssh(pk: ParsedKey, password: bytes) -> bool:
     return ck1 == ck2
 
 
-def _try_openssh_legacy(pk: ParsedKey, password: bytes,
-                         key_mat: bytes, iv_mat: bytes) -> bool:
+def _try_openssh_legacy(pk: ParsedKey, password: bytes, key_mat: bytes, iv_mat: bytes) -> bool:
     """
     Legacy PEM keys use MD5-based key derivation (OpenSSL EVP_BytesToKey).
     Derive AES key from password + IV-salt (MD5), decrypt full edata,
@@ -153,14 +155,14 @@ def _try_openssh_legacy(pk: ParsedKey, password: bytes,
     # EVP_BytesToKey with MD5, 1 iteration
     salt = pk.legacy_iv[:8]  # first 8 bytes of IV used as salt
     derived = b""
-    prev    = b""
+    prev = b""
     while len(derived) < pk.key_len:
-        prev = hashlib.new('md5', prev + password + salt, usedforsecurity=False).digest()
+        prev = hashlib.new("md5", prev + password + salt, usedforsecurity=False).digest()
         derived += prev
-    key = derived[:pk.key_len]
+    key = derived[: pk.key_len]
 
     cipher = Cipher(algorithms.AES(key), modes.CBC(pk.legacy_iv))
-    dec    = cipher.decryptor()
+    dec = cipher.decryptor()
 
     try:
         # Must decrypt all edata so finalize() can check full CBC padding.
@@ -194,22 +196,24 @@ def _try_ppk(pk: ParsedKey, password: bytes) -> bool:
 def _ppk_v2_derive_key(password: bytes) -> bytes:
     """PPK v2 key derivation: two sequential MD5 hashes with sequence numbers."""
     # 32-byte key from two MD5 rounds
-    seq0 = hashlib.new('md5', b"\x00\x00\x00\x00" + password, usedforsecurity=False).digest()
-    seq1 = hashlib.new('md5', b"\x00\x00\x00\x01" + password, usedforsecurity=False).digest()
+    seq0 = hashlib.new("md5", b"\x00\x00\x00\x00" + password, usedforsecurity=False).digest()
+    seq1 = hashlib.new("md5", b"\x00\x00\x00\x01" + password, usedforsecurity=False).digest()
     return (seq0 + seq1)[:32]
 
 
 def _try_ppk_v2(pk: ParsedKey, password: bytes) -> bool:
     """PPK v2: derive AES-256-CBC key via MD5, decrypt, verify HMAC-SHA1."""
     key = _ppk_v2_derive_key(password)
-    iv  = b"\x00" * 16  # PPK v2 uses zero IV
+    iv = b"\x00" * 16  # PPK v2 uses zero IV
 
-    cipher    = Cipher(algorithms.AES(key), modes.CBC(iv))
-    dec       = cipher.decryptor()
+    cipher = Cipher(algorithms.AES(key), modes.CBC(iv))
+    dec = cipher.decryptor()
     plaintext = dec.update(pk.ppk_private_blob) + dec.finalize()
 
     # Build MAC key: HMAC-SHA1("putty-private-key-file-mac-key" + password)
-    mac_key = hashlib.sha1(b"putty-private-key-file-mac-key" + password, usedforsecurity=False).digest()
+    mac_key = hashlib.sha1(
+        b"putty-private-key-file-mac-key" + password, usedforsecurity=False
+    ).digest()
 
     # MAC covers: algorithm len+data, encryption len+data, comment len+data,
     #             public blob len+data, plaintext private len+data
@@ -240,20 +244,20 @@ def _try_ppk_v3(pk: ParsedKey, password: bytes) -> bool:
 
     # Derive 80 bytes: 32 key + 16 IV + 32 MAC key
     derived = hash_secret_raw(
-        secret      = password,
-        salt        = pk.ppk_argon2_salt,
-        time_cost   = pk.ppk_argon2_ops,
-        memory_cost = pk.ppk_argon2_mem,
-        parallelism = pk.ppk_argon2_par,
-        hash_len    = 80,
-        type        = Argon2Type.ID,
+        secret=password,
+        salt=pk.ppk_argon2_salt,
+        time_cost=pk.ppk_argon2_ops,
+        memory_cost=pk.ppk_argon2_mem,
+        parallelism=pk.ppk_argon2_par,
+        hash_len=80,
+        type=Argon2Type.ID,
     )
-    key      = derived[:32]
-    iv       = derived[32:48]
-    mac_key  = derived[48:80]
+    key = derived[:32]
+    iv = derived[32:48]
+    mac_key = derived[48:80]
 
-    cipher    = Cipher(algorithms.AES(key), modes.CBC(iv))
-    dec       = cipher.decryptor()
+    cipher = Cipher(algorithms.AES(key), modes.CBC(iv))
+    dec = cipher.decryptor()
     plaintext = dec.update(pk.ppk_private_blob) + dec.finalize()
 
     # HMAC-SHA256 over structured data (same fields as PPK v2, different hash)
@@ -274,6 +278,7 @@ def _try_ppk_v3(pk: ParsedKey, password: bytes) -> bool:
 
 
 # ── Full confirmation via official parser ─────────────────────────────────────
+
 
 def try_passphrase_full(pk: ParsedKey, password: bytes) -> bool:
     """

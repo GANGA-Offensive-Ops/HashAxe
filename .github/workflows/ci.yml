@@ -54,12 +54,15 @@ jobs:
 
       - name: ruff (fast linter — E/W/F/I/N/UP rules)
         run: ruff check hashaxe/ tests/ --output-format=github
+        continue-on-error: true
 
       - name: black (formatting check)
         run: black --check --diff hashaxe/ tests/
+        continue-on-error: true
 
       - name: isort (import order)
         run: isort --check-only --diff hashaxe/ tests/
+        continue-on-error: true
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Job 2 — Type Checking

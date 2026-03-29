@@ -38,7 +38,7 @@ log = logging.getLogger(__name__)
 class CombinatorAttack(BaseAttack):
     """Combine every word from wordlist A with every word from wordlist B."""
 
-    attack_id   = "combinator"
+    attack_id = "combinator"
     attack_name = "Combinator Attack"
     description = "Cartesian product: word_A + word_B from two wordlists."
 
@@ -47,11 +47,11 @@ class CombinatorAttack(BaseAttack):
             return
 
         import os
-        
-        # CPU-Mem Protection (Fallback): 
+
+        # CPU-Mem Protection (Fallback):
         # Only cache wordlist2 into RAM if it is less than 500MB.
         # Otherwise, stream it dynamically to prevent Out-Of-Memory host crashes.
-        cache_limit = 500 *  1024 * 1024  # 500 MB
+        cache_limit = 500 * 1024 * 1024  # 500 MB
         use_cache = False
         words_b = []
         try:
@@ -60,7 +60,9 @@ class CombinatorAttack(BaseAttack):
                 with open(config.wordlist2, encoding="utf-8", errors="replace") as f:
                     words_b = [line.rstrip("\n\r") for line in f if line.strip()]
             else:
-                log.warning("[CPU-MEMORY PROTECT] Wordlist 2 exceeds 500MB! Streaming from disk natively to prevent Python OOM crashes.")
+                log.warning(
+                    "[CPU-MEMORY PROTECT] Wordlist 2 exceeds 500MB! Streaming from disk natively to prevent Python OOM crashes."
+                )
         except OSError as e:
             log.error("Cannot query wordlist2: %s", e)
             return
@@ -71,7 +73,7 @@ class CombinatorAttack(BaseAttack):
                     word_a = line_a.rstrip("\n\r")
                     if not word_a:
                         continue
-                        
+
                     if use_cache:
                         # High-speed list iteration
                         for word_b in words_b:
@@ -83,11 +85,12 @@ class CombinatorAttack(BaseAttack):
                         with open(config.wordlist2, encoding="utf-8", errors="replace") as f_b:
                             for line_b in f_b:
                                 word_b = line_b.rstrip("\n\r")
-                                if not word_b: continue
+                                if not word_b:
+                                    continue
                                 candidate = word_a + word_b
                                 if config.min_length <= len(candidate) <= config.max_length:
                                     yield candidate
-                                    
+
         except OSError as e:
             log.error("Cannot read wordlist: %s", e)
 

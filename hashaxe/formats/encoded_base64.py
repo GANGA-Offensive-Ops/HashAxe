@@ -154,9 +154,9 @@ def _extract_potential_password(text: str) -> str | None:
         # "The answer is "password""
         r'(?:answer|password|pass|key|flag|secret)\s+(?:is|:)[\s]*["\']([^"\']+)["\']',
         # flag{...}
-        r'flag\{([^}]+)\}',
+        r"flag\{([^}]+)\}",
         # password: value (without quotes)
-        r'password[:\s]+(\S+)',
+        r"password[:\s]+(\S+)",
     ]
 
     for pattern in patterns:

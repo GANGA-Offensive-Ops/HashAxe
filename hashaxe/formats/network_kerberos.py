@@ -58,30 +58,27 @@ log = logging.getLogger(__name__)
 # $krb5tgs$23$*user$REALM$spn*$<checksum_hex>$<edata2_hex>
 # Note: checksum can be 16-64 hex chars depending on tool output;
 #       username may contain '@'; SPN may contain '/' and '.'
-_KRB5TGS_23_RE = re.compile(
-    r'^\$krb5tgs\$23\$\*([^*]+)\*\$([a-fA-F0-9]+)\$?([a-fA-F0-9]*)$'
-)
+_KRB5TGS_23_RE = re.compile(r"^\$krb5tgs\$23\$\*([^*]+)\*\$([a-fA-F0-9]+)\$?([a-fA-F0-9]*)$")
 
 # AS-REP Roast etype 23 (hashcat -m 18200)
 # $krb5asrep$23$user@DOMAIN:<hex_data>
 # Note: after the colon there may be checksum$edata2 or just one hex run
-_KRB5ASREP_23_RE = re.compile(
-    r'^\$krb5asrep\$23\$([^:]+):([a-fA-F0-9]+)\$?([a-fA-F0-9]*)$'
-)
+_KRB5ASREP_23_RE = re.compile(r"^\$krb5asrep\$23\$([^:]+):([a-fA-F0-9]+)\$?([a-fA-F0-9]*)$")
 
 # Kerberos TGS AES128 etype 17 (hashcat -m 19600)
 # Flexible: SPN part may or may not be wrapped in *...*
 _KRB5TGS_17_RE = re.compile(
-    r'^\$krb5tgs\$17\$([^$]+)\$([^$]+)\$([^$]*)\$([a-fA-F0-9]+)\$?([a-fA-F0-9]*)$'
+    r"^\$krb5tgs\$17\$([^$]+)\$([^$]+)\$([^$]*)\$([a-fA-F0-9]+)\$?([a-fA-F0-9]*)$"
 )
 
 # Kerberos TGS AES256 etype 18 (hashcat -m 19700)
 _KRB5TGS_18_RE = re.compile(
-    r'^\$krb5tgs\$18\$([^$]+)\$([^$]+)\$([^$]*)\$([a-fA-F0-9]+)\$?([a-fA-F0-9]*)$'
+    r"^\$krb5tgs\$18\$([^$]+)\$([^$]+)\$([^$]*)\$([a-fA-F0-9]+)\$?([a-fA-F0-9]*)$"
 )
 
 
 # ── Kerberoast TGS-REP RC4 Handler ───────────────────────────────────────────
+
 
 class Kerberos5TGS_RC4Format(BaseFormat):
     """Kerberoast TGS-REP RC4 etype 23 (hashcat -m 13100).
@@ -124,7 +121,7 @@ class Kerberos5TGS_RC4Format(BaseFormat):
 
         hex_str1 = m.group(2)
         hex_str2 = m.group(3) or ""
-        
+
         if hex_str1 and not hex_str2 and len(hex_str1) > 32:
             checksum_hex = hex_str1[:32]
             edata2_hex = hex_str1[32:]
@@ -156,7 +153,11 @@ class Kerberos5TGS_RC4Format(BaseFormat):
         """
         try:
             checksum = bytes.fromhex(target.format_data["checksum_hex"])
-            edata2 = bytes.fromhex(target.format_data["edata2_hex"]) if target.format_data["edata2_hex"] else b""
+            edata2 = (
+                bytes.fromhex(target.format_data["edata2_hex"])
+                if target.format_data["edata2_hex"]
+                else b""
+            )
 
             pw_utf16 = password.decode("utf-8", "replace").encode("utf-16-le")
             ntlm_hash = hashlib.new("md4", pw_utf16, usedforsecurity=False).digest()
@@ -188,6 +189,7 @@ class Kerberos5TGS_RC4Format(BaseFormat):
 
 
 # ── AS-REP Roast Handler ─────────────────────────────────────────────────────
+
 
 class Kerberos5ASREP_RC4Format(BaseFormat):
     """AS-REP Roast etype 23 (hashcat -m 18200).
@@ -229,7 +231,7 @@ class Kerberos5ASREP_RC4Format(BaseFormat):
 
         hex_str1 = m.group(2)
         hex_str2 = m.group(3) or ""
-        
+
         if hex_str1 and not hex_str2 and len(hex_str1) > 32:
             checksum_hex = hex_str1[:32]
             edata2_hex = hex_str1[32:]
@@ -255,7 +257,11 @@ class Kerberos5ASREP_RC4Format(BaseFormat):
         """Same as Kerberoast RC4 but with key usage 8 for AS-REP."""
         try:
             checksum = bytes.fromhex(target.format_data["checksum_hex"])
-            edata2 = bytes.fromhex(target.format_data["edata2_hex"]) if target.format_data["edata2_hex"] else b""
+            edata2 = (
+                bytes.fromhex(target.format_data["edata2_hex"])
+                if target.format_data["edata2_hex"]
+                else b""
+            )
 
             pw_utf16 = password.decode("utf-8", "replace").encode("utf-16-le")
             ntlm_hash = hashlib.new("md4", pw_utf16, usedforsecurity=False).digest()
@@ -285,6 +291,7 @@ class Kerberos5ASREP_RC4Format(BaseFormat):
 
 
 # ── Kerberos AES128 TGS Handler ──────────────────────────────────────────────
+
 
 class Kerberos5TGS_AES128Format(BaseFormat):
     """Kerberos TGS AES128 etype 17 (hashcat -m 19600).
@@ -359,7 +366,11 @@ class Kerberos5TGS_AES128Format(BaseFormat):
         """
         try:
             checksum = bytes.fromhex(target.format_data["checksum_hex"])
-            edata2 = bytes.fromhex(target.format_data["edata2_hex"]) if target.format_data["edata2_hex"] else b""
+            edata2 = (
+                bytes.fromhex(target.format_data["edata2_hex"])
+                if target.format_data["edata2_hex"]
+                else b""
+            )
             realm = target.format_data["realm"]
             username = target.format_data["username"]
 
@@ -392,6 +403,7 @@ class Kerberos5TGS_AES128Format(BaseFormat):
 
 
 # ── Kerberos AES256 TGS Handler ──────────────────────────────────────────────
+
 
 class Kerberos5TGS_AES256Format(BaseFormat):
     """Kerberos TGS AES256 etype 18 (hashcat -m 19700).
@@ -459,7 +471,11 @@ class Kerberos5TGS_AES256Format(BaseFormat):
         """AES256 Kerberos verification. Same flow as AES128 but 32-byte key."""
         try:
             checksum = bytes.fromhex(target.format_data["checksum_hex"])
-            edata2 = bytes.fromhex(target.format_data["edata2_hex"]) if target.format_data["edata2_hex"] else b""
+            edata2 = (
+                bytes.fromhex(target.format_data["edata2_hex"])
+                if target.format_data["edata2_hex"]
+                else b""
+            )
             realm = target.format_data["realm"]
             username = target.format_data["username"]
 

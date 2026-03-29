@@ -76,7 +76,7 @@ class WPAFormat(BaseFormat):
     Then PTK derivation → MIC comparison.
     """
 
-    format_id   = "network.wpa"
+    format_id = "network.wpa"
     format_name = "WPA/WPA2 Handshake"
 
     def can_handle(self, data: bytes, path: Path | None = None) -> FormatMatch | None:
@@ -119,13 +119,15 @@ class WPAFormat(BaseFormat):
                 display_name="WPA (Invalid)",
                 source_path=str(path) if path else "inline",
                 is_encrypted=False,
-                format_data={"error": f"hccapx file too short (expected >= 144 bytes, got {len(data)})"},
+                format_data={
+                    "error": f"hccapx file too short (expected >= 144 bytes, got {len(data)})"
+                },
             )
 
         # Parse hccapx structure (simplified)
         offset = 10
         # Signature version (4 bytes), message_pair (1 byte)
-        _sig_ver = struct.unpack("<I", data[offset:offset + 4])[0]
+        _sig_ver = struct.unpack("<I", data[offset : offset + 4])[0]
         offset += 4
         _msg_pair = data[offset]
         offset += 1
@@ -133,7 +135,7 @@ class WPAFormat(BaseFormat):
         # ESSID length + ESSID
         essid_len = data[offset]
         offset += 1
-        essid = data[offset:offset + essid_len].decode("utf-8", "replace")
+        essid = data[offset : offset + essid_len].decode("utf-8", "replace")
         offset += 32  # ESSID field is always 32 bytes overall
 
         # Key version (1 byte)
@@ -141,25 +143,25 @@ class WPAFormat(BaseFormat):
         offset += 1
 
         # KeyMIC (16 bytes)
-        keymic = data[offset:offset + 16]
+        keymic = data[offset : offset + 16]
         offset += 16
 
         # AP MAC (6), STA MAC (6)
-        ap_mac = data[offset:offset + 6]
+        ap_mac = data[offset : offset + 6]
         offset += 6
-        sta_mac = data[offset:offset + 6]
+        sta_mac = data[offset : offset + 6]
         offset += 6
 
         # AP nonce (32), STA nonce (32)
-        anonce = data[offset:offset + 32]
+        anonce = data[offset : offset + 32]
         offset += 32
-        snonce = data[offset:offset + 32]
+        snonce = data[offset : offset + 32]
         offset += 32
 
         # EAPOL length + data
-        eapol_len = struct.unpack("<H", data[offset:offset + 2])[0]
+        eapol_len = struct.unpack("<H", data[offset : offset + 2])[0]
         offset += 2
-        eapol = data[offset:offset + eapol_len]
+        eapol = data[offset : offset + eapol_len]
 
         return FormatTarget(
             format_id=self.format_id,

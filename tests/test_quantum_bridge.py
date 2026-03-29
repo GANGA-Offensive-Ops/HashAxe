@@ -32,6 +32,7 @@ class TestGroverMath:
 
     def test_sqrt_speedup(self):
         from hashaxe.quantum.qiskit_bridge import QiskitBridge
+
         bridge = QiskitBridge(prefer_gpu=False)
         result = bridge.estimate_grover_speedup(keyspace=256)
         assert result["classical_ops"] == 256
@@ -40,6 +41,7 @@ class TestGroverMath:
 
     def test_grover_iterations(self):
         from hashaxe.quantum.qiskit_bridge import QiskitBridge
+
         bridge = QiskitBridge(prefer_gpu=False)
         result = bridge.estimate_grover_speedup(keyspace=256)
         # Optimal: π/4 × √256 = π/4 × 16 ≈ 12.57 → ceil = 13
@@ -48,6 +50,7 @@ class TestGroverMath:
 
     def test_qubit_count(self):
         from hashaxe.quantum.qiskit_bridge import QiskitBridge
+
         bridge = QiskitBridge(prefer_gpu=False)
         result = bridge.estimate_grover_speedup(keyspace=256)
         # ceil(log2(256)) + 1 = 8 + 1 = 9
@@ -55,6 +58,7 @@ class TestGroverMath:
 
     def test_large_keyspace(self):
         from hashaxe.quantum.qiskit_bridge import QiskitBridge
+
         bridge = QiskitBridge(prefer_gpu=False)
         result = bridge.estimate_grover_speedup(keyspace=2**40)
         assert result["speedup_factor"] > 1_000_000
@@ -62,6 +66,7 @@ class TestGroverMath:
 
     def test_power_of_two(self):
         from hashaxe.quantum.qiskit_bridge import QiskitBridge
+
         bridge = QiskitBridge(prefer_gpu=False)
         for n in [4, 8, 16, 64, 1024]:
             result = bridge.estimate_grover_speedup(keyspace=n)
@@ -70,18 +75,21 @@ class TestGroverMath:
 
     def test_zero_keyspace(self):
         from hashaxe.quantum.qiskit_bridge import QiskitBridge
+
         bridge = QiskitBridge(prefer_gpu=False)
         result = bridge.estimate_grover_speedup(keyspace=0)
         assert "error" in result
 
     def test_negative_keyspace(self):
         from hashaxe.quantum.qiskit_bridge import QiskitBridge
+
         bridge = QiskitBridge(prefer_gpu=False)
         result = bridge.estimate_grover_speedup(keyspace=-1)
         assert "error" in result
 
     def test_keyspace_one(self):
         from hashaxe.quantum.qiskit_bridge import QiskitBridge
+
         bridge = QiskitBridge(prefer_gpu=False)
         result = bridge.estimate_grover_speedup(keyspace=1)
         assert result["classical_ops"] == 1
@@ -94,6 +102,7 @@ class TestFeasibility:
 
     def test_toy_simulatable(self):
         from hashaxe.quantum.qiskit_bridge import QiskitBridge
+
         bridge = QiskitBridge(prefer_gpu=False)
         # keyspace=16 → 5 qubits → should be TOY_SIMULATABLE
         result = bridge.estimate_grover_speedup(keyspace=16)
@@ -101,6 +110,7 @@ class TestFeasibility:
 
     def test_large_keyspace_not_toy(self):
         from hashaxe.quantum.qiskit_bridge import QiskitBridge
+
         bridge = QiskitBridge(prefer_gpu=False)
         # 2^128 → 129 qubits → NOT toy simulatable
         result = bridge.estimate_grover_speedup(keyspace=2**128)
@@ -108,6 +118,7 @@ class TestFeasibility:
 
     def test_sha256_near_term_hardware(self):
         from hashaxe.quantum.qiskit_bridge import QiskitBridge
+
         bridge = QiskitBridge(prefer_gpu=False)
         # SHA-256 pre-image → 2^256 keyspace → 257 INDEX qubits
         # 257 logical qubits falls in NEAR_TERM_HARDWARE range (≤1000)
@@ -119,6 +130,7 @@ class TestFeasibility:
 
     def test_feasibility_rationale_populated(self):
         from hashaxe.quantum.qiskit_bridge import QiskitBridge
+
         bridge = QiskitBridge(prefer_gpu=False)
         result = bridge.estimate_grover_speedup(keyspace=2**40)
         assert len(result["feasibility_rationale"]) > 0
@@ -129,36 +141,42 @@ class TestProvenance:
 
     def test_estimator_mode(self):
         from hashaxe.quantum.qiskit_bridge import QiskitBridge
+
         bridge = QiskitBridge(prefer_gpu=False)
         result = bridge.estimate_grover_speedup(keyspace=1024)
         assert result["mode"] == "ESTIMATOR"
 
     def test_measured_false_for_estimation(self):
         from hashaxe.quantum.qiskit_bridge import QiskitBridge
+
         bridge = QiskitBridge(prefer_gpu=False)
         result = bridge.estimate_grover_speedup(keyspace=1024)
         assert result["measured"] is False
 
     def test_simulation_false_for_estimation(self):
         from hashaxe.quantum.qiskit_bridge import QiskitBridge
+
         bridge = QiskitBridge(prefer_gpu=False)
         result = bridge.estimate_grover_speedup(keyspace=1024)
         assert result["simulation"] is False
 
     def test_implementation_status(self):
         from hashaxe.quantum.qiskit_bridge import QiskitBridge
+
         bridge = QiskitBridge(prefer_gpu=False)
         result = bridge.estimate_grover_speedup(keyspace=1024)
         assert result["implementation_status"] == "PRODUCTION"
 
     def test_result_origin(self):
         from hashaxe.quantum.qiskit_bridge import QiskitBridge
+
         bridge = QiskitBridge(prefer_gpu=False)
         result = bridge.estimate_grover_speedup(keyspace=1024)
         assert result["result_origin"] == "mathematical_computation"
 
     def test_confidence_high(self):
         from hashaxe.quantum.qiskit_bridge import QiskitBridge
+
         bridge = QiskitBridge(prefer_gpu=False)
         result = bridge.estimate_grover_speedup(keyspace=1024)
         assert result["confidence"] == "HIGH"
@@ -169,6 +187,7 @@ class TestBackendDetection:
 
     def test_info_structure(self):
         from hashaxe.quantum.qiskit_bridge import QiskitBridge
+
         bridge = QiskitBridge(prefer_gpu=False)
         info = bridge.info()
         assert "qiskit_available" in info
@@ -181,6 +200,7 @@ class TestBackendDetection:
 
     def test_operating_mode(self):
         from hashaxe.quantum.qiskit_bridge import QiskitBridge
+
         bridge = QiskitBridge(prefer_gpu=False)
         info = bridge.info()
         if bridge.is_available:
@@ -191,6 +211,7 @@ class TestBackendDetection:
     def test_estimation_works_without_qiskit(self):
         """Estimation should work regardless of Qiskit availability."""
         from hashaxe.quantum.qiskit_bridge import QiskitBridge
+
         bridge = QiskitBridge(prefer_gpu=False)
         result = bridge.estimate_grover_speedup(keyspace=2**20)
         assert "error" not in result
@@ -202,6 +223,7 @@ class TestBackendInfoDataclass:
 
     def test_defaults(self):
         from hashaxe.quantum.qiskit_bridge import QuantumBackendInfo
+
         info = QuantumBackendInfo()
         assert info.name == "none"
         assert info.max_qubits == 0
@@ -209,6 +231,7 @@ class TestBackendInfoDataclass:
 
     def test_custom_values(self):
         from hashaxe.quantum.qiskit_bridge import QuantumBackendInfo
+
         info = QuantumBackendInfo(name="test_backend", max_qubits=20, gpu_available=True)
         assert info.name == "test_backend"
         assert info.max_qubits == 20
@@ -220,6 +243,7 @@ class TestGroverEstimateDataclass:
 
     def test_detailed_estimate(self):
         from hashaxe.quantum.qiskit_bridge import QiskitBridge
+
         bridge = QiskitBridge(prefer_gpu=False)
         est = bridge.estimate_grover_speedup_detailed(keyspace=256)
         assert est.keyspace == 256
@@ -229,6 +253,7 @@ class TestGroverEstimateDataclass:
 
     def test_backward_compat_required_qubits(self):
         from hashaxe.quantum.qiskit_bridge import QiskitBridge
+
         bridge = QiskitBridge(prefer_gpu=False)
         est = bridge.estimate_grover_speedup_detailed(keyspace=256)
         assert est.required_qubits == est.required_index_qubits
@@ -239,15 +264,20 @@ class TestOracleCost:
 
     def test_toy_oracle(self):
         from hashaxe.quantum.qiskit_bridge import QiskitBridge
+
         bridge = QiskitBridge(prefer_gpu=False)
         result = bridge.estimate_grover_speedup(keyspace=16)
         assert "toy" in result["estimated_oracle_cost"].lower()
 
     def test_hash_oracle(self):
         from hashaxe.quantum.qiskit_bridge import QiskitBridge
+
         bridge = QiskitBridge(prefer_gpu=False)
         result = bridge.estimate_grover_speedup(keyspace=2**128)
-        assert "hash" in result["estimated_oracle_cost"].lower() or "crypto" in result["estimated_oracle_cost"].lower()
+        assert (
+            "hash" in result["estimated_oracle_cost"].lower()
+            or "crypto" in result["estimated_oracle_cost"].lower()
+        )
 
 
 class TestBackwardCompatibility:
@@ -255,6 +285,7 @@ class TestBackwardCompatibility:
 
     def test_dict_return_format(self):
         from hashaxe.quantum.qiskit_bridge import QiskitBridge
+
         bridge = QiskitBridge(prefer_gpu=False)
         result = bridge.estimate_grover_speedup(keyspace=256)
         # Must return dict for existing callers
@@ -268,6 +299,7 @@ class TestBackwardCompatibility:
     def test_existing_test_compat_speedup_small(self):
         """Exact replicate of test_v4_advanced.py::TestQiskitBridge::test_grover_speedup_small."""
         from hashaxe.quantum.qiskit_bridge import QiskitBridge
+
         bridge = QiskitBridge()
         result = bridge.estimate_grover_speedup(keyspace=256)
         assert result["classical_ops"] == 256

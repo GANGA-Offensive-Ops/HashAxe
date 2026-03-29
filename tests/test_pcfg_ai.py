@@ -37,23 +37,25 @@ import tempfile
 
 import pytest
 
-
 # ═══════════════════════════════════════════════════════════════════════════════
 # PCFG Tokenizer Tests
 # ═══════════════════════════════════════════════════════════════════════════════
+
 
 class TestPCFGTokenizer:
     """Test the PCFG tokenization and structure extraction."""
 
     def test_simple_word(self):
-        from hashaxe.attacks.pcfg import _tokenize, _structure_key
+        from hashaxe.attacks.pcfg import _structure_key, _tokenize
+
         tokens = _tokenize("password")
         assert len(tokens) > 0
         key = _structure_key(tokens)
         assert key == "L8"  # 8 lowercase letters
 
     def test_mixed_case_digits(self):
-        from hashaxe.attacks.pcfg import _tokenize, _structure_key
+        from hashaxe.attacks.pcfg import _structure_key, _tokenize
+
         tokens = _tokenize("Admin123")
         key = _structure_key(tokens)
         assert "U" in key  # Has uppercase
@@ -61,19 +63,22 @@ class TestPCFGTokenizer:
         assert "D" in key  # Has digits
 
     def test_with_symbols(self):
-        from hashaxe.attacks.pcfg import _tokenize, _structure_key
+        from hashaxe.attacks.pcfg import _structure_key, _tokenize
+
         tokens = _tokenize("pass!@#")
         key = _structure_key(tokens)
         assert "S" in key  # Has symbols
 
     def test_digits_only(self):
-        from hashaxe.attacks.pcfg import _tokenize, _structure_key
+        from hashaxe.attacks.pcfg import _structure_key, _tokenize
+
         tokens = _tokenize("123456")
         key = _structure_key(tokens)
         assert key == "D6"
 
     def test_complex_password(self):
-        from hashaxe.attacks.pcfg import _tokenize, _structure_key
+        from hashaxe.attacks.pcfg import _structure_key, _tokenize
+
         tokens = _tokenize("Password123!")
         key = _structure_key(tokens)
         # P=U1, assword=L7, 123=D3, !=S1
@@ -81,6 +86,7 @@ class TestPCFGTokenizer:
 
     def test_empty_string(self):
         from hashaxe.attacks.pcfg import _tokenize
+
         tokens = _tokenize("")
         assert tokens == []
 
@@ -89,13 +95,12 @@ class TestPCFGTokenizer:
 # PCFG Model Tests
 # ═══════════════════════════════════════════════════════════════════════════════
 
+
 class TestPCFGModel:
     """Test PCFG model training and generation."""
 
     def _make_wordlist(self, words: list[str]) -> str:
-        f = tempfile.NamedTemporaryFile(
-            mode="w", suffix=".txt", delete=False
-        )
+        f = tempfile.NamedTemporaryFile(mode="w", suffix=".txt", delete=False)
         for w in words:
             f.write(w + "\n")
         f.close()
@@ -103,9 +108,16 @@ class TestPCFGModel:
 
     def test_train_basic(self):
         from hashaxe.attacks.pcfg import PCFGModel
-        path = self._make_wordlist([
-            "password", "password1", "admin123", "letmein", "dragon",
-        ])
+
+        path = self._make_wordlist(
+            [
+                "password",
+                "password1",
+                "admin123",
+                "letmein",
+                "dragon",
+            ]
+        )
         try:
             model = PCFGModel()
             count = model.train(path)
@@ -116,6 +128,7 @@ class TestPCFGModel:
 
     def test_train_empty_wordlist(self):
         from hashaxe.attacks.pcfg import PCFGModel
+
         path = self._make_wordlist([])
         try:
             model = PCFGModel()
@@ -126,10 +139,21 @@ class TestPCFGModel:
 
     def test_generate_produces_candidates(self):
         from hashaxe.attacks.pcfg import PCFGModel
-        path = self._make_wordlist([
-            "password", "admin", "letmein", "dragon", "monkey",
-            "shadow", "master", "qwerty", "welcome", "hello",
-        ])
+
+        path = self._make_wordlist(
+            [
+                "password",
+                "admin",
+                "letmein",
+                "dragon",
+                "monkey",
+                "shadow",
+                "master",
+                "qwerty",
+                "welcome",
+                "hello",
+            ]
+        )
         try:
             model = PCFGModel()
             model.train(path)
@@ -140,9 +164,16 @@ class TestPCFGModel:
 
     def test_generate_respects_length_bounds(self):
         from hashaxe.attacks.pcfg import PCFGModel
-        path = self._make_wordlist([
-            "ab", "abc", "abcdef", "abcdefghij", "pass123",
-        ])
+
+        path = self._make_wordlist(
+            [
+                "ab",
+                "abc",
+                "abcdef",
+                "abcdefghij",
+                "pass123",
+            ]
+        )
         try:
             model = PCFGModel()
             model.train(path)
@@ -154,6 +185,7 @@ class TestPCFGModel:
 
     def test_stats(self):
         from hashaxe.attacks.pcfg import PCFGModel
+
         path = self._make_wordlist(["password1", "admin123", "test!"])
         try:
             model = PCFGModel()
@@ -167,6 +199,7 @@ class TestPCFGModel:
 
     def test_structure_frequency_ordering(self):
         from hashaxe.attacks.pcfg import PCFGModel
+
         # Create wordlist where L8 structure appears most
         words = ["password", "baseball", "football", "superman", "batman12"]
         path = self._make_wordlist(words)
@@ -183,17 +216,20 @@ class TestPCFGModel:
 # PCFG Attack Plugin Tests
 # ═══════════════════════════════════════════════════════════════════════════════
 
+
 class TestPCFGAttackPlugin:
     """Test PCFG attack plugin registration and integration."""
 
     def test_plugin_registered(self):
         from hashaxe.attacks import AttackRegistry
+
         registry = AttackRegistry()
         registry.discover()
         assert "pcfg" in registry
 
     def test_plugin_metadata(self):
         from hashaxe.attacks import AttackRegistry
+
         registry = AttackRegistry()
         registry.discover()
         plugin = registry.get("pcfg")
@@ -202,6 +238,7 @@ class TestPCFGAttackPlugin:
 
     def test_plugin_validate_no_wordlist(self):
         from hashaxe.attacks import AttackConfig, AttackRegistry
+
         registry = AttackRegistry()
         registry.discover()
         plugin = registry.get("pcfg")
@@ -209,8 +246,10 @@ class TestPCFGAttackPlugin:
         assert err is not None
 
     def test_plugin_generate(self):
+        import os
+        import tempfile
+
         from hashaxe.attacks import AttackConfig, AttackRegistry
-        import tempfile, os
 
         with tempfile.NamedTemporaryFile(mode="w", suffix=".txt", delete=False) as f:
             for w in ["password", "password1", "admin123", "letmein!", "dragon99"]:
@@ -230,8 +269,10 @@ class TestPCFGAttackPlugin:
             os.unlink(path)
 
     def test_plugin_estimate_keyspace(self):
+        import os
+        import tempfile
+
         from hashaxe.attacks import AttackConfig, AttackRegistry
-        import tempfile, os
 
         with tempfile.NamedTemporaryFile(mode="w", suffix=".txt", delete=False) as f:
             f.write("test\n" * 100)
@@ -251,11 +292,13 @@ class TestPCFGAttackPlugin:
 # Adaptive AI Controller Tests
 # ═══════════════════════════════════════════════════════════════════════════════
 
+
 class TestAdaptiveAI:
     """Test the Adaptive AI temperature/sampling controller."""
 
     def test_initial_state(self):
         from hashaxe.ai.adaptive import AdaptiveConfig
+
         config = AdaptiveConfig()
         assert config.temperature == 1.2
         assert config.top_k == 50
@@ -263,12 +306,14 @@ class TestAdaptiveAI:
 
     def test_record_generated(self):
         from hashaxe.ai.adaptive import AdaptiveConfig
+
         config = AdaptiveConfig()
         config.record_generated(100)
         assert config.candidates_generated == 100
 
     def test_record_match(self):
         from hashaxe.ai.adaptive import AdaptiveConfig
+
         config = AdaptiveConfig()
         config.record_generated(100)
         config.record_match(5)
@@ -277,6 +322,7 @@ class TestAdaptiveAI:
 
     def test_should_adjust_interval(self):
         from hashaxe.ai.adaptive import AdaptiveConfig
+
         config = AdaptiveConfig(adjustment_interval=100)
         config.record_generated(50)
         assert not config.should_adjust()
@@ -285,6 +331,7 @@ class TestAdaptiveAI:
 
     def test_adjust_exploit_on_high_hit_rate(self):
         from hashaxe.ai.adaptive import AdaptiveConfig
+
         config = AdaptiveConfig(adjustment_interval=10)
         config.record_generated(100)
         config.record_match(5)  # 5% hit rate > 1%
@@ -295,6 +342,7 @@ class TestAdaptiveAI:
 
     def test_adjust_explore_on_low_hit_rate(self):
         from hashaxe.ai.adaptive import AdaptiveConfig
+
         config = AdaptiveConfig(adjustment_interval=10)
         config.record_generated(2000)
         config.record_match(0)  # 0% hit rate
@@ -305,6 +353,7 @@ class TestAdaptiveAI:
 
     def test_adjust_hold_on_moderate_rate(self):
         from hashaxe.ai.adaptive import AdaptiveConfig
+
         config = AdaptiveConfig(adjustment_interval=10)
         config.record_generated(1000)
         config.record_match(5)  # 0.5% = between 0.1% and 1%
@@ -313,6 +362,7 @@ class TestAdaptiveAI:
 
     def test_temperature_clamped_min(self):
         from hashaxe.ai.adaptive import AdaptiveConfig
+
         config = AdaptiveConfig(temperature=0.61, temp_min=0.6, adjustment_interval=1)
         config.record_generated(100)
         config.record_match(50)  # 50% hit rate → exploit
@@ -322,6 +372,7 @@ class TestAdaptiveAI:
 
     def test_temperature_clamped_max(self):
         from hashaxe.ai.adaptive import AdaptiveConfig
+
         config = AdaptiveConfig(temperature=1.95, temp_max=2.0, adjustment_interval=1)
         config.record_generated(5000)
         config.record_match(0)  # 0% → explore
@@ -332,6 +383,7 @@ class TestAdaptiveAI:
 
     def test_snapshot(self):
         from hashaxe.ai.adaptive import AdaptiveConfig
+
         config = AdaptiveConfig()
         config.record_generated(100)
         config.record_match(3)
@@ -346,21 +398,34 @@ class TestAdaptiveAI:
 # Attack Registry Integration
 # ═══════════════════════════════════════════════════════════════════════════════
 
+
 class TestAllAttacksRegistered:
     """Verify all V1 attack modes are discoverable."""
 
     def test_all_v4_attacks_present(self):
         from hashaxe.attacks import AttackRegistry
+
         registry = AttackRegistry()
         registry.discover()
         ids = registry.list_ids()
-        expected = ["wordlist", "mask", "combinator", "prince",
-                    "markov", "hybrid", "policy", "ai", "osint", "pcfg"]
+        expected = [
+            "wordlist",
+            "mask",
+            "combinator",
+            "prince",
+            "markov",
+            "hybrid",
+            "policy",
+            "ai",
+            "osint",
+            "pcfg",
+        ]
         for eid in expected:
             assert eid in ids, f"Attack '{eid}' not registered"
 
     def test_total_attack_count(self):
         from hashaxe.attacks import AttackRegistry
+
         registry = AttackRegistry()
         registry.discover()
         assert len(registry) >= 10

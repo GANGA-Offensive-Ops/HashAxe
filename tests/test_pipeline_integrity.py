@@ -43,6 +43,7 @@ class TestRegistryIntegrity(unittest.TestCase):
 
     def test_registry_loads(self):
         from hashaxe.core.hash_registry import HASH_REGISTRY, registry_stats
+
         stats = registry_stats()
         self.assertGreaterEqual(stats["total_formats"], 42)
         self.assertGreaterEqual(stats["gpu_supported"], 40)
@@ -50,21 +51,23 @@ class TestRegistryIntegrity(unittest.TestCase):
 
     def test_every_entry_has_format_id(self):
         from hashaxe.core.hash_registry import HASH_REGISTRY
+
         for fmt_id, ht in HASH_REGISTRY.items():
             self.assertEqual(fmt_id, ht.format_id, f"Key/value mismatch: {fmt_id}")
             self.assertTrue(ht.format_id, "Empty format_id found")
 
     def test_every_gpu_entry_has_hashcat_mode(self):
         from hashaxe.core.hash_registry import HASH_REGISTRY
+
         for fmt_id, ht in HASH_REGISTRY.items():
             if ht.gpu_supported:
                 self.assertIsNotNone(
-                    ht.hashcat_mode,
-                    f"{fmt_id} is gpu_supported but has no hashcat_mode"
+                    ht.hashcat_mode, f"{fmt_id} is gpu_supported but has no hashcat_mode"
                 )
 
     def test_get_hashcat_mode(self):
         from hashaxe.core.hash_registry import get_hashcat_mode
+
         self.assertEqual(get_hashcat_mode("hash.md5"), 0)
         self.assertEqual(get_hashcat_mode("hash.sha256"), 1400)
         self.assertEqual(get_hashcat_mode("hash.bcrypt"), 3200)
@@ -74,6 +77,7 @@ class TestRegistryIntegrity(unittest.TestCase):
 
     def test_get_difficulty(self):
         from hashaxe.core.hash_registry import get_difficulty
+
         self.assertEqual(get_difficulty("hash.md5"), "TRIVIAL")
         self.assertEqual(get_difficulty("hash.bcrypt"), "SLOW")
         self.assertEqual(get_difficulty("hash.argon2"), "EXTREME")
@@ -81,18 +85,35 @@ class TestRegistryIntegrity(unittest.TestCase):
 
     def test_get_all_hashcat_modes_complete(self):
         from hashaxe.core.hash_registry import get_all_hashcat_modes
+
         modes = get_all_hashcat_modes()
         # Must include all formats from the old hardcoded dict
         required = [
-            "hash.md5", "hash.sha1", "hash.sha256", "hash.sha512",
-            "hash.ntlm", "hash.lm", "network.ntlmv1", "network.ntlmv2",
-            "network.cisco_type5", "network.cisco_type8", "network.cisco_type9",
-            "archive.7z", "archive.rar", "archive.zip",
+            "hash.md5",
+            "hash.sha1",
+            "hash.sha256",
+            "hash.sha512",
+            "hash.ntlm",
+            "hash.lm",
+            "network.ntlmv1",
+            "network.ntlmv2",
+            "network.cisco_type5",
+            "network.cisco_type8",
+            "network.cisco_type9",
+            "archive.7z",
+            "archive.rar",
+            "archive.zip",
             # NEW formats that were previously missing:
-            "hash.bcrypt", "hash.mysql", "hash.jwt",
-            "network.dcc1", "network.dcc2",
-            "network.krb5tgs_rc4", "network.krb5asrep_rc4",
-            "disk.dpapi", "token.ansible_vault", "pwm.keepass",
+            "hash.bcrypt",
+            "hash.mysql",
+            "hash.jwt",
+            "network.dcc1",
+            "network.dcc2",
+            "network.krb5tgs_rc4",
+            "network.krb5asrep_rc4",
+            "disk.dpapi",
+            "token.ansible_vault",
+            "pwm.keepass",
         ]
         for fmt_id in required:
             self.assertIn(fmt_id, modes, f"{fmt_id} missing from hashcat modes")
@@ -110,23 +131,26 @@ class TestGPURoutingSync(unittest.TestCase):
         for fmt_id, mode in registry_modes.items():
             self.assertIn(fmt_id, HASHCAT_MODES, f"{fmt_id} not in HASHCAT_MODES")
             self.assertEqual(
-                HASHCAT_MODES[fmt_id], mode,
-                f"{fmt_id}: GPU mode {HASHCAT_MODES[fmt_id]} != registry {mode}"
+                HASHCAT_MODES[fmt_id],
+                mode,
+                f"{fmt_id}: GPU mode {HASHCAT_MODES[fmt_id]} != registry {mode}",
             )
 
     def test_gpu_mode_count(self):
         from hashaxe.gpu.fast_hash_hashaxeer import HASHCAT_MODES
+
         # Should have 42+ entries (41 from registry + hash.raw fallback)
         self.assertGreaterEqual(len(HASHCAT_MODES), 42)
 
     def test_is_fast_hash_consistent(self):
         from hashaxe.core.hash_registry import HASH_REGISTRY
         from hashaxe.gpu.fast_hash_hashaxeer import is_fast_hash
+
         for fmt_id, ht in HASH_REGISTRY.items():
             if ht.gpu_supported and ht.hashcat_mode is not None:
                 self.assertTrue(
                     is_fast_hash(fmt_id),
-                    f"{fmt_id} should be fast_hash but is_fast_hash() returns False"
+                    f"{fmt_id} should be fast_hash but is_fast_hash() returns False",
                 )
 
 
@@ -136,38 +160,32 @@ class TestNamingConsistency(unittest.TestCase):
     def test_no_hash_netntlm_in_patterns(self):
         """Verify old naming hash.netntlmv* is gone from hash_patterns."""
         from hashaxe.identify.hash_patterns import _PATTERNS
+
         for pattern_tuple in _PATTERNS:
             fmt_id = pattern_tuple[1]
             self.assertNotIn(
-                "hash.netntlm",
-                fmt_id,
-                f"Found old naming '{fmt_id}' in hash_patterns.py"
+                "hash.netntlm", fmt_id, f"Found old naming '{fmt_id}' in hash_patterns.py"
             )
 
     def test_no_hash_netntlm_in_classifier(self):
         """Verify old naming is gone from classifier dicts."""
-        from hashaxe.identify.classifier import _HASHCAT_MODES, _DIFFICULTY_MAP
+        from hashaxe.identify.classifier import _DIFFICULTY_MAP, _HASHCAT_MODES
+
         for d in [_HASHCAT_MODES, _DIFFICULTY_MAP]:
             for key in d:
-                self.assertNotIn(
-                    "hash.netntlm",
-                    key,
-                    f"Found old naming '{key}' in classifier.py"
-                )
+                self.assertNotIn("hash.netntlm", key, f"Found old naming '{key}' in classifier.py")
 
     def test_no_hash_netntlm_in_estimator(self):
         """Verify old naming is gone from estimator benchmarks."""
         from hashaxe.identify.estimator import _BENCHMARKS
+
         for key in _BENCHMARKS:
-            self.assertNotIn(
-                "hash.netntlm",
-                key,
-                f"Found old naming '{key}' in estimator.py"
-            )
+            self.assertNotIn("hash.netntlm", key, f"Found old naming '{key}' in estimator.py")
 
     def test_canonical_ntlm_names_in_patterns(self):
         """Verify canonical naming network.ntlmv1/v2 is used."""
         from hashaxe.identify.hash_patterns import _PATTERNS
+
         ntlm_ids = [t[1] for t in _PATTERNS if "ntlm" in t[1].lower()]
         self.assertIn("network.ntlmv1", ntlm_ids)
         self.assertIn("network.ntlmv2", ntlm_ids)
@@ -178,6 +196,7 @@ class TestNTLMLMDetection(unittest.TestCase):
 
     def test_ntlm_can_handle_returns_low_confidence(self):
         from hashaxe.formats.hash_raw import NTLMFormat
+
         handler = NTLMFormat()
         # NTLM of "password"
         md5_hash = hashlib.md5(b"password").hexdigest()
@@ -188,6 +207,7 @@ class TestNTLMLMDetection(unittest.TestCase):
 
     def test_lm_can_handle_returns_low_confidence(self):
         from hashaxe.formats.hash_raw import LMFormat
+
         handler = LMFormat()
         fake_lm = "a" * 32
         match = handler.can_handle(fake_lm.encode())
@@ -197,7 +217,8 @@ class TestNTLMLMDetection(unittest.TestCase):
 
     def test_md5_still_wins_over_ntlm(self):
         """MD5 (0.7) should beat NTLM (0.3) in priority."""
-        from hashaxe.formats.hash_raw import RawHashFormat, NTLMFormat
+        from hashaxe.formats.hash_raw import NTLMFormat, RawHashFormat
+
         md5_handler = RawHashFormat()
         ntlm_handler = NTLMFormat()
         test_hash = hashlib.md5(b"test").hexdigest()
@@ -209,11 +230,13 @@ class TestNTLMLMDetection(unittest.TestCase):
 
     def test_ntlm_rejects_non_hex(self):
         from hashaxe.formats.hash_raw import NTLMFormat
+
         handler = NTLMFormat()
         self.assertIsNone(handler.can_handle(b"not a hex string at all"))
 
     def test_ntlm_rejects_wrong_length(self):
         from hashaxe.formats.hash_raw import NTLMFormat
+
         handler = NTLMFormat()
         self.assertIsNone(handler.can_handle(b"abcdef0123456789"))  # 16 chars, not 32
 
@@ -282,7 +305,9 @@ class TestE2EPipelineIntegrity(unittest.TestCase):
         from hashaxe.gpu.fast_hash_hashaxeer import HASHCAT_MODES
         from hashaxe.identify.hash_patterns import identify_best
 
-        ntlm_hash = "user::DOMAIN:1122334455667788:aabbccddaabbccddaabbccddaabbccdd:1122334455667788aabb"
+        ntlm_hash = (
+            "user::DOMAIN:1122334455667788:aabbccddaabbccddaabbccddaabbccdd:1122334455667788aabb"
+        )
         result = identify_best(ntlm_hash)
         self.assertIsNotNone(result)
         self.assertEqual(result.format_id, "network.ntlmv2")
@@ -293,18 +318,23 @@ class TestE2EPipelineIntegrity(unittest.TestCase):
     def test_new_gpu_formats_routable(self):
         """Verify all 13 previously-missing formats are now GPU-routable."""
         from hashaxe.gpu.fast_hash_hashaxeer import is_fast_hash
+
         new_formats = [
-            "hash.bcrypt", "hash.mysql", "hash.jwt",
-            "network.dcc1", "network.dcc2",
-            "network.krb5tgs_rc4", "network.krb5asrep_rc4",
-            "disk.dpapi", "token.ansible_vault", "pwm.keepass",
-            "hash.scrypt", "hash.argon2",
+            "hash.bcrypt",
+            "hash.mysql",
+            "hash.jwt",
+            "network.dcc1",
+            "network.dcc2",
+            "network.krb5tgs_rc4",
+            "network.krb5asrep_rc4",
+            "disk.dpapi",
+            "token.ansible_vault",
+            "pwm.keepass",
+            "hash.scrypt",
+            "hash.argon2",
         ]
         for fmt_id in new_formats:
-            self.assertTrue(
-                is_fast_hash(fmt_id),
-                f"{fmt_id} should be GPU-routable after refactor"
-            )
+            self.assertTrue(is_fast_hash(fmt_id), f"{fmt_id} should be GPU-routable after refactor")
 
 
 if __name__ == "__main__":

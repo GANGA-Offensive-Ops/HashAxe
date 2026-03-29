@@ -61,6 +61,7 @@ def _make_wordlist(words: list[str]) -> str:
 # Registry Tests
 # ══════════════════════════════════════════════════════════════════════════════
 
+
 class TestAttackRegistry(unittest.TestCase):
     def test_all_attacks_registered(self):
         reg = AttackRegistry()
@@ -85,6 +86,7 @@ class TestAttackRegistry(unittest.TestCase):
 # Wordlist Attack Tests
 # ══════════════════════════════════════════════════════════════════════════════
 
+
 class TestWordlistAttack(unittest.TestCase):
     def setUp(self):
         self._wl = _make_wordlist(["password", "test123", "admin", "root", ""])
@@ -94,6 +96,7 @@ class TestWordlistAttack(unittest.TestCase):
 
     def test_generate_all(self):
         from hashaxe.attacks.wordlist import WordlistAttack
+
         atk = WordlistAttack()
         config = AttackConfig(wordlist=self._wl)
         results = list(atk.generate(config))
@@ -102,6 +105,7 @@ class TestWordlistAttack(unittest.TestCase):
 
     def test_length_filter(self):
         from hashaxe.attacks.wordlist import WordlistAttack
+
         atk = WordlistAttack()
         config = AttackConfig(wordlist=self._wl, min_length=5)
         results = list(atk.generate(config))
@@ -110,12 +114,14 @@ class TestWordlistAttack(unittest.TestCase):
 
     def test_estimate_keyspace(self):
         from hashaxe.attacks.wordlist import WordlistAttack
+
         atk = WordlistAttack()
         config = AttackConfig(wordlist=self._wl)
         self.assertEqual(atk.estimate_keyspace(config), 4)
 
     def test_validate_no_wordlist(self):
         from hashaxe.attacks.wordlist import WordlistAttack
+
         atk = WordlistAttack()
         config = AttackConfig()
         self.assertIsNotNone(atk.validate_config(config))
@@ -125,9 +131,11 @@ class TestWordlistAttack(unittest.TestCase):
 # Mask Attack Tests
 # ══════════════════════════════════════════════════════════════════════════════
 
+
 class TestMaskAttack(unittest.TestCase):
     def test_generate_digits(self):
         from hashaxe.attacks.mask import MaskAttack
+
         atk = MaskAttack()
         config = AttackConfig(mask="?d?d")
         results = list(atk.generate(config))
@@ -137,12 +145,14 @@ class TestMaskAttack(unittest.TestCase):
 
     def test_estimate_keyspace(self):
         from hashaxe.attacks.mask import MaskAttack
+
         atk = MaskAttack()
         config = AttackConfig(mask="?l?d?d")
         self.assertEqual(atk.estimate_keyspace(config), 26 * 10 * 10)
 
     def test_custom_charset(self):
         from hashaxe.attacks.mask import MaskAttack
+
         atk = MaskAttack()
         config = AttackConfig(mask="?1?1", custom_charsets={"?1": "ab"})
         results = list(atk.generate(config))
@@ -152,6 +162,7 @@ class TestMaskAttack(unittest.TestCase):
 
     def test_validate_no_mask(self):
         from hashaxe.attacks.mask import MaskAttack
+
         atk = MaskAttack()
         self.assertIsNotNone(atk.validate_config(AttackConfig()))
 
@@ -159,6 +170,7 @@ class TestMaskAttack(unittest.TestCase):
 # ══════════════════════════════════════════════════════════════════════════════
 # Combinator Attack Tests
 # ══════════════════════════════════════════════════════════════════════════════
+
 
 class TestCombinatorAttack(unittest.TestCase):
     def setUp(self):
@@ -171,6 +183,7 @@ class TestCombinatorAttack(unittest.TestCase):
 
     def test_generate_cartesian(self):
         from hashaxe.attacks.combinator import CombinatorAttack
+
         atk = CombinatorAttack()
         config = AttackConfig(wordlist=self._wl1, wordlist2=self._wl2)
         results = list(atk.generate(config))
@@ -180,12 +193,14 @@ class TestCombinatorAttack(unittest.TestCase):
 
     def test_estimate_keyspace(self):
         from hashaxe.attacks.combinator import CombinatorAttack
+
         atk = CombinatorAttack()
         config = AttackConfig(wordlist=self._wl1, wordlist2=self._wl2)
         self.assertEqual(atk.estimate_keyspace(config), 4)
 
     def test_validate_missing_wordlist2(self):
         from hashaxe.attacks.combinator import CombinatorAttack
+
         atk = CombinatorAttack()
         config = AttackConfig(wordlist=self._wl1)
         self.assertIsNotNone(atk.validate_config(config))
@@ -194,6 +209,7 @@ class TestCombinatorAttack(unittest.TestCase):
 # ══════════════════════════════════════════════════════════════════════════════
 # PRINCE Attack Tests
 # ══════════════════════════════════════════════════════════════════════════════
+
 
 class TestPrinceAttack(unittest.TestCase):
     def setUp(self):
@@ -204,6 +220,7 @@ class TestPrinceAttack(unittest.TestCase):
 
     def test_single_element(self):
         from hashaxe.attacks.prince import PrinceAttack
+
         atk = PrinceAttack()
         config = AttackConfig(wordlist=self._wl, prince_min_elems=1, prince_max_elems=1)
         results = list(atk.generate(config))
@@ -212,6 +229,7 @@ class TestPrinceAttack(unittest.TestCase):
 
     def test_two_elements(self):
         from hashaxe.attacks.prince import PrinceAttack
+
         atk = PrinceAttack()
         config = AttackConfig(wordlist=self._wl, prince_min_elems=2, prince_max_elems=2)
         results = list(atk.generate(config))
@@ -221,6 +239,7 @@ class TestPrinceAttack(unittest.TestCase):
 
     def test_estimate_keyspace(self):
         from hashaxe.attacks.prince import PrinceAttack
+
         atk = PrinceAttack()
         config = AttackConfig(wordlist=self._wl, prince_min_elems=1, prince_max_elems=2)
         # 2^1 + 2^2 = 6
@@ -231,6 +250,7 @@ class TestPrinceAttack(unittest.TestCase):
 # Markov Attack Tests
 # ══════════════════════════════════════════════════════════════════════════════
 
+
 class TestMarkovAttack(unittest.TestCase):
     def setUp(self):
         self._wl = _make_wordlist(["abc", "abd", "xyz"])
@@ -240,6 +260,7 @@ class TestMarkovAttack(unittest.TestCase):
 
     def test_generates_candidates(self):
         from hashaxe.attacks.markov import MarkovAttack
+
         atk = MarkovAttack()
         config = AttackConfig(wordlist=self._wl, markov_order=2, max_length=5)
         results = list(atk.generate(config))
@@ -247,6 +268,7 @@ class TestMarkovAttack(unittest.TestCase):
 
     def test_contains_training_words(self):
         from hashaxe.attacks.markov import MarkovAttack
+
         atk = MarkovAttack()
         config = AttackConfig(wordlist=self._wl, markov_order=2, max_length=5)
         results = list(atk.generate(config))
@@ -258,6 +280,7 @@ class TestMarkovAttack(unittest.TestCase):
 # Hybrid Attack Tests
 # ══════════════════════════════════════════════════════════════════════════════
 
+
 class TestHybridAttack(unittest.TestCase):
     def setUp(self):
         self._wl = _make_wordlist(["pass", "admin"])
@@ -267,6 +290,7 @@ class TestHybridAttack(unittest.TestCase):
 
     def test_generate_hybrid(self):
         from hashaxe.attacks.hybrid import HybridAttack
+
         atk = HybridAttack()
         config = AttackConfig(wordlist=self._wl, mask="?d?d")
         results = list(atk.generate(config))
@@ -276,12 +300,14 @@ class TestHybridAttack(unittest.TestCase):
 
     def test_estimate_keyspace(self):
         from hashaxe.attacks.hybrid import HybridAttack
+
         atk = HybridAttack()
         config = AttackConfig(wordlist=self._wl, mask="?d?d")
         self.assertEqual(atk.estimate_keyspace(config), 200)
 
     def test_validate_missing_mask(self):
         from hashaxe.attacks.hybrid import HybridAttack
+
         atk = HybridAttack()
         config = AttackConfig(wordlist=self._wl)
         self.assertIsNotNone(atk.validate_config(config))
@@ -291,25 +317,26 @@ class TestHybridAttack(unittest.TestCase):
 # Policy Attack Tests
 # ══════════════════════════════════════════════════════════════════════════════
 
+
 class TestPolicyAttack(unittest.TestCase):
     def setUp(self):
-        self._wl = _make_wordlist([
-            "Password1!",  # passes: len>=8, upper, digit, symbol
-            "short",       # fails: too short, no upper/digit/symbol
-            "nodigits!A",  # fails: no digit
-            "Admin2024#",  # passes
-        ])
+        self._wl = _make_wordlist(
+            [
+                "Password1!",  # passes: len>=8, upper, digit, symbol
+                "short",  # fails: too short, no upper/digit/symbol
+                "nodigits!A",  # fails: no digit
+                "Admin2024#",  # passes
+            ]
+        )
 
     def tearDown(self):
         os.unlink(self._wl)
 
     def test_filter_wordlist(self):
         from hashaxe.attacks.policy import PolicyAttack
+
         atk = PolicyAttack()
-        config = AttackConfig(
-            wordlist=self._wl,
-            policy="len>=8,upper,digit,symbol"
-        )
+        config = AttackConfig(wordlist=self._wl, policy="len>=8,upper,digit,symbol")
         results = list(atk.generate(config))
         self.assertIn("Password1!", results)
         self.assertIn("Admin2024#", results)
@@ -317,6 +344,7 @@ class TestPolicyAttack(unittest.TestCase):
 
     def test_parse_policy(self):
         from hashaxe.attacks.policy import _parse_policy
+
         constraints = _parse_policy("len>=8,upper,digit,symbol,len<=16")
         self.assertEqual(constraints["min_length"], 8)
         self.assertEqual(constraints["max_length"], 16)
@@ -326,10 +354,14 @@ class TestPolicyAttack(unittest.TestCase):
 
     def test_check_policy(self):
         from hashaxe.attacks.policy import _check_policy
+
         constraints = {
-            "min_length": 8, "max_length": 16,
-            "require_upper": True, "require_lower": True,
-            "require_digit": True, "require_symbol": True,
+            "min_length": 8,
+            "max_length": 16,
+            "require_upper": True,
+            "require_lower": True,
+            "require_digit": True,
+            "require_symbol": True,
             "no_repeat": False,
         }
         self.assertTrue(_check_policy("Password1!", constraints))
@@ -338,6 +370,7 @@ class TestPolicyAttack(unittest.TestCase):
 
     def test_validate_no_policy(self):
         from hashaxe.attacks.policy import PolicyAttack
+
         atk = PolicyAttack()
         self.assertIsNotNone(atk.validate_config(AttackConfig()))
 

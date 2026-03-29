@@ -64,29 +64,27 @@ log = logging.getLogger(__name__)
 # $DPAPImk$<version>*<context>*<SID>*<cipher_algo>*<hmac_algo>*<rounds>*
 # <iv_hex>*<key_len>*<ciphertext_hex>
 _DPAPIMK_RE = re.compile(
-    r'^\$DPAPImk\$(\d)\*(\d)\*'                   # version, context
-    r'(S-1-[0-9\-]+)\*'                            # SID
-    r'(\w+)\*(\w+)\*'                               # cipher_algo, hmac_algo
-    r'(\d+)\*'                                      # rounds
-    r'([a-fA-F0-9]+)\*'                             # iv or salt hex
-    r'(\d+)\*'                                      # key/output length
-    r'([a-fA-F0-9]+)$'                              # ciphertext/hmac hex
+    r"^\$DPAPImk\$(\d)\*(\d)\*"  # version, context
+    r"(S-1-[0-9\-]+)\*"  # SID
+    r"(\w+)\*(\w+)\*"  # cipher_algo, hmac_algo
+    r"(\d+)\*"  # rounds
+    r"([a-fA-F0-9]+)\*"  # iv or salt hex
+    r"(\d+)\*"  # key/output length
+    r"([a-fA-F0-9]+)$"  # ciphertext/hmac hex
 )
 
 # Mid-format: $DPAPImk$ver*ctx*SID*cipher_hex*rounds*salt_hex*hmac_hex
 _DPAPIMK_MID_RE = re.compile(
-    r'^\$DPAPImk\$(\d)\*(\d)\*'                   # version, context
-    r'(S-1-[0-9\-]+)\*'                            # SID
-    r'([a-fA-F0-9]+)\*'                             # cipher/key hex
-    r'(\d+)\*'                                      # rounds
-    r'([a-fA-F0-9]+)\*'                             # salt hex
-    r'([a-fA-F0-9]+)$'                              # hmac hex
+    r"^\$DPAPImk\$(\d)\*(\d)\*"  # version, context
+    r"(S-1-[0-9\-]+)\*"  # SID
+    r"([a-fA-F0-9]+)\*"  # cipher/key hex
+    r"(\d+)\*"  # rounds
+    r"([a-fA-F0-9]+)\*"  # salt hex
+    r"([a-fA-F0-9]+)$"  # hmac hex
 )
 
 # Simplified format used by some tools
-_DPAPIMK_SIMPLE_RE = re.compile(
-    r'^\$DPAPImk\$(\d)\*(\d)\*([a-fA-F0-9]+)\*([a-fA-F0-9]+)$'
-)
+_DPAPIMK_SIMPLE_RE = re.compile(r"^\$DPAPImk\$(\d)\*(\d)\*([a-fA-F0-9]+)\*([a-fA-F0-9]+)$")
 
 
 class DPAPIMasterkeyV1Format(BaseFormat):
@@ -239,7 +237,7 @@ class DPAPIMasterkeyV1Format(BaseFormat):
         rounds = target.format_data["rounds"]
 
         try:
-            pw_sha1 = hashlib.sha1(  # noqa: S324
+            pw_sha1 = hashlib.sha1(
                 password.decode("utf-8", "replace").encode("utf-16-le"),
                 usedforsecurity=False,
             ).digest()
@@ -408,9 +406,7 @@ class DPAPIMasterkeyV2Format(BaseFormat):
 
             derived = hashlib.pbkdf2_hmac("sha512", pw_sha512, salt, rounds, dklen=64)
 
-            computed_hmac = hmac.new(
-                derived[:32], ciphertext[:-32], "sha512"
-            ).digest()[:32]
+            computed_hmac = hmac.new(derived[:32], ciphertext[:-32], "sha512").digest()[:32]
 
             return hmac.compare_digest(computed_hmac, ciphertext[-32:])
         except Exception:

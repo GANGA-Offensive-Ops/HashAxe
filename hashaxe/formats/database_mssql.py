@@ -49,7 +49,7 @@ _MSSQL_RE = re.compile(r"^0x0200[0-9A-Fa-f]{136}$", re.IGNORECASE)
 class MSSQLFormat(BaseFormat):
     """Handler for MSSQL 2012+ SHA-512 salted password hashes."""
 
-    format_id   = "database.mssql"
+    format_id = "database.mssql"
     format_name = "MSSQL 2012+ (SHA-512)"
 
     def can_handle(self, data: bytes, path: Path | None = None) -> FormatMatch | None:

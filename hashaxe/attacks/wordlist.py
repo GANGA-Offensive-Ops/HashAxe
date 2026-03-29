@@ -37,7 +37,7 @@ log = logging.getLogger(__name__)
 class WordlistAttack(BaseAttack):
     """Standard dictionary attack — stream passwords from a wordlist file."""
 
-    attack_id   = "wordlist"
+    attack_id = "wordlist"
     attack_name = "Wordlist Attack"
     description = "Stream candidates from a wordlist file, optionally applying rule mutations."
 

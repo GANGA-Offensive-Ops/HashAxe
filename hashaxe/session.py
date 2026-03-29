@@ -59,32 +59,31 @@ from typing import Optional
 
 # ── Session data ──────────────────────────────────────────────────────────────
 
+
 @dataclass
 class Session:
     """All state needed to pause and resume a cracking session."""
 
-    version:      int   = 2
-    session_id:   str   = field(default_factory=lambda: uuid.uuid4().hex[:12])
-    key_path:     str   = ""
-    key_hash:     str   = ""       # sha256 of key bytes — detect stale sessions
-    wordlist:     str   = ""
-    mode:         str   = "wordlist"  # wordlist | mask | hybrid
-    use_rules:    bool  = False
-    rule_file:    str | None = None
-    mask:         str | None = None
-    bytes_done:   int   = 0        # byte offset reached in wordlist
-    words_tried:  int   = 0        # total candidates tested
-    start_time:   float = field(default_factory=time.time)
-    elapsed:      float = 0.0      # cumulative seconds (survives restarts)
+    version: int = 2
+    session_id: str = field(default_factory=lambda: uuid.uuid4().hex[:12])
+    key_path: str = ""
+    key_hash: str = ""  # sha256 of key bytes — detect stale sessions
+    wordlist: str = ""
+    mode: str = "wordlist"  # wordlist | mask | hybrid
+    use_rules: bool = False
+    rule_file: str | None = None
+    mask: str | None = None
+    bytes_done: int = 0  # byte offset reached in wordlist
+    words_tried: int = 0  # total candidates tested
+    start_time: float = field(default_factory=time.time)
+    elapsed: float = 0.0  # cumulative seconds (survives restarts)
     last_updated: float = field(default_factory=time.time)
 
     # ── Persistence path ──────────────────────────────────────────────────────
 
     @staticmethod
     def _session_dir() -> Path:
-        config = Path(
-            os.environ.get("XDG_CONFIG_HOME", Path.home() / ".config")
-        )
+        config = Path(os.environ.get("XDG_CONFIG_HOME", Path.home() / ".config"))
         d = config / "hashaxe" / "sessions"
         d.mkdir(parents=True, exist_ok=True)
         return d
@@ -97,8 +96,8 @@ class Session:
     def save(self, name: str) -> Path:
         """Persist session to disk in an atomic manner.  Returns path written."""
         self.last_updated = time.time()
-        self.elapsed     += time.time() - self.start_time
-        self.start_time   = time.time()
+        self.elapsed += time.time() - self.start_time
+        self.start_time = time.time()
 
         path = self._path_for(name)
         temp_path = path.with_suffix(".tmp")
@@ -114,7 +113,7 @@ class Session:
     @classmethod
     def load(cls, name: str) -> Session:
         """Load a session from disk.  Raises FileNotFoundError if not found."""
-        d    = cls._session_dir()
+        d = cls._session_dir()
         path = d / f"{name}.session"
         if not path.exists():
             raise FileNotFoundError(
@@ -142,14 +141,16 @@ class Session:
         for f in sorted(d.glob("*.session")):
             try:
                 data = json.loads(f.read_text())
-                sessions.append({
-                    "name":        f.stem,
-                    "key_path":    data.get("key_path", "?"),
-                    "words_tried": data.get("words_tried", 0),
-                    "elapsed":     data.get("elapsed", 0),
-                    "mode":        data.get("mode", "?"),
-                    "last_updated":data.get("last_updated", 0),
-                })
+                sessions.append(
+                    {
+                        "name": f.stem,
+                        "key_path": data.get("key_path", "?"),
+                        "words_tried": data.get("words_tried", 0),
+                        "elapsed": data.get("elapsed", 0),
+                        "mode": data.get("mode", "?"),
+                        "last_updated": data.get("last_updated", 0),
+                    }
+                )
             except Exception:
                 continue
         return sessions
@@ -179,7 +180,7 @@ class Session:
 
     def update(self, bytes_done: int, words_tried: int) -> None:
         """Update progress counters (call periodically during cracking)."""
-        self.bytes_done  = bytes_done
+        self.bytes_done = bytes_done
         self.words_tried = words_tried
 
     # ── Display ───────────────────────────────────────────────────────────────
@@ -200,6 +201,7 @@ class Session:
 
 
 # ── Session name from key path ────────────────────────────────────────────────
+
 
 def session_name_for(key_path: str | None, wordlist: str) -> str:
     """

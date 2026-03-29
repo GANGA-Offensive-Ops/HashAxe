@@ -35,7 +35,7 @@ Highlights:
 """
 
 __version__ = "1.0.0"
-__author__  = "Bhanu Guragain (@Bh4nu)"
+__author__ = "Bhanu Guragain (@Bh4nu)"
 __license__ = "MIT"
 
 from hashaxe.cracker import hashaxe

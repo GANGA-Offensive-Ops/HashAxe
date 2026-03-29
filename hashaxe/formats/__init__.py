@@ -38,6 +38,8 @@ Developed by Bhanu Guragain · GANGA Offensive Ops
 
 from __future__ import annotations
 
+# Import all format handlers to trigger auto-registration
+from hashaxe.formats import encoded_base64  # noqa: F401
 from hashaxe.formats._registry import FormatRegistry
 from hashaxe.formats.base import (
     BaseFormat,
@@ -45,9 +47,6 @@ from hashaxe.formats.base import (
     FormatMatch,
     FormatTarget,
 )
-
-# Import all format handlers to trigger auto-registration
-from hashaxe.formats import encoded_base64  # noqa: F401
 
 __all__ = [
     "BaseFormat",

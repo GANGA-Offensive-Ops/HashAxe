@@ -59,6 +59,7 @@ QWERTY_ROWS = [
 
 QWERTY_ADJACENCY: dict[str, list[str]] = {}
 
+
 def _build_adjacency(rows: list[list[str]]) -> dict[str, list[str]]:
     """Build adjacency map from keyboard layout."""
     adj: dict[str, list[str]] = defaultdict(list)
@@ -74,6 +75,7 @@ def _build_adjacency(rows: list[list[str]]) -> dict[str, list[str]]:
                         neighbors.append(rows[nr][nc])
             adj[char] = neighbors
     return dict(adj)
+
 
 QWERTY_ADJACENCY = _build_adjacency(QWERTY_ROWS)
 
@@ -94,6 +96,7 @@ FINGER_CLUSTERS = {
 @dataclass
 class KeyboardPattern:
     """A detected keyboard spatial pattern."""
+
     pattern_type: str  # "walk", "cluster", "diagonal", "row"
     keys: str
     score: float = 0.0  # Higher = more likely (0.0-1.0)
@@ -138,9 +141,7 @@ class SpikingEngine:
             if start not in self._adjacency:
                 continue
             # DFS-based walk generation
-            yield from self._walk_dfs(
-                start, [start], min_len, max_len, set()
-            )
+            yield from self._walk_dfs(start, [start], min_len, max_len, set())
 
     def _walk_dfs(
         self,
@@ -165,18 +166,14 @@ class SpikingEngine:
                 path.pop()
                 visited.discard(neighbor)
 
-    def generate_row_patterns(
-        self, min_len: int = 3, max_len: int = 8
-    ) -> Iterator[str]:
+    def generate_row_patterns(self, min_len: int = 3, max_len: int = 8) -> Iterator[str]:
         """Generate sequential row patterns (e.g., "qwert", "asdfg")."""
         for row in self._rows:
             for start in range(len(row)):
                 for end in range(start + min_len, min(start + max_len + 1, len(row) + 1)):
                     yield "".join(row[start:end])
 
-    def generate_diagonal_patterns(
-        self, min_len: int = 3, max_len: int = 6
-    ) -> Iterator[str]:
+    def generate_diagonal_patterns(self, min_len: int = 3, max_len: int = 6) -> Iterator[str]:
         """Generate diagonal keyboard patterns (e.g., "1qaz", "2wsx")."""
         for c in range(len(self._rows[0])):
             diag: list[str] = []
@@ -187,9 +184,7 @@ class SpikingEngine:
                 for end in range(start + min_len, min(start + max_len + 1, len(diag) + 1)):
                     yield "".join(diag[start:end])
 
-    def generate_cluster_passwords(
-        self, cluster_count: int = 2, min_len: int = 4
-    ) -> Iterator[str]:
+    def generate_cluster_passwords(self, cluster_count: int = 2, min_len: int = 4) -> Iterator[str]:
         """Generate passwords from finger cluster combinations.
 
         Humans often type quickly using one hand's fingers, creating
@@ -214,13 +209,15 @@ class SpikingEngine:
             row_str = "".join(row)
             for length in range(3, len(pw) + 1):
                 for start in range(len(row_str) - length + 1):
-                    sub = row_str[start:start + length]
+                    sub = row_str[start : start + length]
                     if sub in pw:
-                        patterns.append(KeyboardPattern(
-                            pattern_type="row",
-                            keys=sub,
-                            score=length / len(pw),
-                        ))
+                        patterns.append(
+                            KeyboardPattern(
+                                pattern_type="row",
+                                keys=sub,
+                                score=length / len(pw),
+                            )
+                        )
 
         # Check adjacency walks
         walk_len = 0
@@ -229,11 +226,13 @@ class SpikingEngine:
                 walk_len += 1
             else:
                 if walk_len >= 2:
-                    patterns.append(KeyboardPattern(
-                        pattern_type="walk",
-                        keys=pw[i - walk_len:i + 1],
-                        score=walk_len / len(pw),
-                    ))
+                    patterns.append(
+                        KeyboardPattern(
+                            pattern_type="walk",
+                            keys=pw[i - walk_len : i + 1],
+                            score=walk_len / len(pw),
+                        )
+                    )
                 walk_len = 0
 
         return patterns

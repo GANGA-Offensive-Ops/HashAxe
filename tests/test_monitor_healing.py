@@ -29,17 +29,19 @@ Tests:
 from __future__ import annotations
 
 import time
-import pytest
 
+import pytest
 
 # ═══════════════════════════════════════════════════════════════════════════════
 # Performance Monitor Tests
 # ═══════════════════════════════════════════════════════════════════════════════
 
+
 class TestPerformanceMonitor:
 
     def test_start_stop(self):
         from hashaxe.monitor import PerformanceMonitor
+
         mon = PerformanceMonitor(total_keyspace=1000)
         mon.start()
         assert mon.is_running
@@ -48,6 +50,7 @@ class TestPerformanceMonitor:
 
     def test_record_and_snapshot(self):
         from hashaxe.monitor import PerformanceMonitor
+
         mon = PerformanceMonitor(total_keyspace=1000, hash_type="md5")
         mon.start()
         mon.record(tried=100)
@@ -59,6 +62,7 @@ class TestPerformanceMonitor:
 
     def test_multiple_records(self):
         from hashaxe.monitor import PerformanceMonitor
+
         mon = PerformanceMonitor(total_keyspace=1000)
         mon.start()
         mon.record(tried=100)
@@ -69,6 +73,7 @@ class TestPerformanceMonitor:
 
     def test_progress_percentage(self):
         from hashaxe.monitor import PerformanceMonitor
+
         mon = PerformanceMonitor(total_keyspace=1000)
         mon.start()
         mon.record(tried=500)
@@ -78,6 +83,7 @@ class TestPerformanceMonitor:
 
     def test_multiple_workers(self):
         from hashaxe.monitor import PerformanceMonitor
+
         mon = PerformanceMonitor()
         mon.start()
         mon.record(tried=100, worker_id="w1")
@@ -89,6 +95,7 @@ class TestPerformanceMonitor:
 
     def test_gpu_utilization(self):
         from hashaxe.monitor import PerformanceMonitor
+
         mon = PerformanceMonitor()
         mon.start()
         mon.record(tried=300, on_gpu=True)
@@ -99,6 +106,7 @@ class TestPerformanceMonitor:
 
     def test_record_match(self):
         from hashaxe.monitor import PerformanceMonitor
+
         mon = PerformanceMonitor()
         mon.start()
         mon.record(tried=1000)
@@ -110,6 +118,7 @@ class TestPerformanceMonitor:
 
     def test_format_report(self):
         from hashaxe.monitor import PerformanceMonitor
+
         mon = PerformanceMonitor(total_keyspace=10000, hash_type="sha256")
         mon.start()
         mon.record(tried=5000)
@@ -120,6 +129,7 @@ class TestPerformanceMonitor:
 
     def test_worker_stats(self):
         from hashaxe.monitor import PerformanceMonitor
+
         mon = PerformanceMonitor()
         mon.start()
         mon.record(tried=100, worker_id="worker_a")
@@ -131,6 +141,7 @@ class TestPerformanceMonitor:
 
     def test_export_benchmark(self):
         from hashaxe.monitor import PerformanceMonitor
+
         mon = PerformanceMonitor(hash_type="bcrypt")
         mon.start()
         mon.record(tried=1000)
@@ -142,6 +153,7 @@ class TestPerformanceMonitor:
 
     def test_duration_formatting(self):
         from hashaxe.monitor import PerformanceMonitor
+
         mon = PerformanceMonitor()
         assert mon._format_duration(30) == "30.0s"
         assert mon._format_duration(90) == "1m 30s"
@@ -150,6 +162,7 @@ class TestPerformanceMonitor:
 
     def test_zero_keyspace(self):
         from hashaxe.monitor import PerformanceMonitor
+
         mon = PerformanceMonitor(total_keyspace=0)
         mon.start()
         mon.record(tried=100)
@@ -163,16 +176,19 @@ class TestPerformanceMonitor:
 # Worker Health Tests
 # ═══════════════════════════════════════════════════════════════════════════════
 
+
 class TestWorkerHealth:
 
     def test_initial_health(self):
         from hashaxe.distributed.healing import WorkerHealth
+
         w = WorkerHealth(worker_id="w1")
         assert w.is_alive
         assert w.health_score == 1.0
 
     def test_heartbeat_updates(self):
         from hashaxe.distributed.healing import WorkerHealth
+
         w = WorkerHealth(worker_id="w1")
         old_hb = w.last_heartbeat
         time.sleep(0.01)
@@ -181,6 +197,7 @@ class TestWorkerHealth:
 
     def test_completion_tracking(self):
         from hashaxe.distributed.healing import WorkerHealth
+
         w = WorkerHealth(worker_id="w1")
         w.record_completion(tried=1000, speed=500.0)
         assert w.total_jobs_completed == 1
@@ -189,6 +206,7 @@ class TestWorkerHealth:
 
     def test_failure_tracking(self):
         from hashaxe.distributed.healing import WorkerHealth
+
         w = WorkerHealth(worker_id="w1")
         w.record_completion(tried=1000, speed=500.0)
         w.record_failure()
@@ -198,6 +216,7 @@ class TestWorkerHealth:
 
     def test_health_score_degrades(self):
         from hashaxe.distributed.healing import WorkerHealth
+
         w = WorkerHealth(worker_id="w1")
         w.record_completion(tried=1000, speed=100.0)
         score_after_success = w.health_score
@@ -208,6 +227,7 @@ class TestWorkerHealth:
 
     def test_heartbeat_resets_failures(self):
         from hashaxe.distributed.healing import WorkerHealth
+
         w = WorkerHealth(worker_id="w1")
         w.record_failure()
         w.record_failure()
@@ -220,10 +240,12 @@ class TestWorkerHealth:
 # Worker Health Manager Tests
 # ═══════════════════════════════════════════════════════════════════════════════
 
+
 class TestWorkerHealthManager:
 
     def test_register_worker(self):
         from hashaxe.distributed.healing import WorkerHealthManager
+
         mgr = WorkerHealthManager()
         mgr.register_worker("w1", host="192.168.1.10", gpu="RTX 3050")
         status = mgr.cluster_status()
@@ -232,6 +254,7 @@ class TestWorkerHealthManager:
 
     def test_heartbeat(self):
         from hashaxe.distributed.healing import WorkerHealthManager
+
         mgr = WorkerHealthManager()
         mgr.register_worker("w1")
         mgr.heartbeat("w1")
@@ -240,6 +263,7 @@ class TestWorkerHealthManager:
 
     def test_track_and_complete_job(self):
         from hashaxe.distributed.healing import WorkerHealthManager
+
         mgr = WorkerHealthManager()
         mgr.register_worker("w1")
         mgr.track_job("job_001", "w1", {"data": "test"})
@@ -249,6 +273,7 @@ class TestWorkerHealthManager:
 
     def test_fail_job_returns_data(self):
         from hashaxe.distributed.healing import WorkerHealthManager
+
         mgr = WorkerHealthManager()
         mgr.register_worker("w1")
         mgr.track_job("job_001", "w1", {"chunk": "0-1000"})
@@ -257,6 +282,7 @@ class TestWorkerHealthManager:
 
     def test_dead_worker_detection(self):
         from hashaxe.distributed.healing import WorkerHealthManager
+
         mgr = WorkerHealthManager(heartbeat_timeout=0.05)
         mgr.register_worker("w1")
         mgr.track_job("job_001", "w1", {"chunk": "test"})
@@ -269,6 +295,7 @@ class TestWorkerHealthManager:
 
     def test_best_workers(self):
         from hashaxe.distributed.healing import WorkerHealthManager
+
         mgr = WorkerHealthManager()
         mgr.register_worker("w1")
         mgr.register_worker("w2")
@@ -278,6 +305,7 @@ class TestWorkerHealthManager:
 
     def test_cluster_status_shape(self):
         from hashaxe.distributed.healing import WorkerHealthManager
+
         mgr = WorkerHealthManager()
         mgr.register_worker("w1", host="box1", gpu="RTX")
         status = mgr.cluster_status()
@@ -290,6 +318,7 @@ class TestWorkerHealthManager:
 
     def test_stale_job_requeue(self):
         from hashaxe.distributed.healing import WorkerHealthManager
+
         mgr = WorkerHealthManager(stale_job_timeout=0.05)
         mgr.register_worker("w1")
         mgr.heartbeat("w1")  # keep alive
@@ -300,6 +329,7 @@ class TestWorkerHealthManager:
 
     def test_background_monitor_thread(self):
         from hashaxe.distributed.healing import WorkerHealthManager
+
         mgr = WorkerHealthManager()
         mgr.start()
         assert mgr._running

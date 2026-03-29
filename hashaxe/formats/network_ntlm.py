@@ -45,15 +45,11 @@ log = logging.getLogger(__name__)
 
 # NetNTLMv2: user::domain:challenge:ntproofstr:blob
 # Typically has 6 colon-separated fields
-_NTLMV2_RE = re.compile(
-    r"^[^:]+::[^:]*:[0-9a-fA-F]{16}:[0-9a-fA-F]{32}:[0-9a-fA-F]+$"
-)
+_NTLMV2_RE = re.compile(r"^[^:]+::[^:]*:[0-9a-fA-F]{16}:[0-9a-fA-F]{32}:[0-9a-fA-F]+$")
 
 # NetNTLMv1: user::domain:lm_response:nt_response:challenge
 # LM/NT response can be 16-48+ hex chars depending on tool output
-_NTLMV1_RE = re.compile(
-    r"^[^:]+::[^:]*:[0-9a-fA-F]{16,}:[0-9a-fA-F]{16,}:[0-9a-fA-F]{16}$"
-)
+_NTLMV1_RE = re.compile(r"^[^:]+::[^:]*:[0-9a-fA-F]{16,}:[0-9a-fA-F]{16,}:[0-9a-fA-F]{16}$")
 
 
 class NetNTLMFormat(BaseFormat):
@@ -63,7 +59,7 @@ class NetNTLMFormat(BaseFormat):
     v1: DES-based — faster
     """
 
-    format_id   = "network.netntlm"
+    format_id = "network.netntlm"
     format_name = "NetNTLMv1/v2"
 
     def can_handle(self, data: bytes, path: Path | None = None) -> FormatMatch | None:
@@ -174,6 +170,7 @@ class NetNTLMFormat(BaseFormat):
         6. Compare with stored nt_response (blob field)
         """
         import struct
+
         from Crypto.Cipher import DES
 
         server_challenge = target.format_data["server_challenge"]
@@ -189,7 +186,7 @@ class NetNTLMFormat(BaseFormat):
             ntlm_hash = hashlib.new("md4", pw_utf16, usedforsecurity=False).digest()
 
             # Step 2: Pad to 21 bytes
-            padded = ntlm_hash + b'\x00' * (21 - len(ntlm_hash))
+            padded = ntlm_hash + b"\x00" * (21 - len(ntlm_hash))
 
             # Step 3-4: 3 DES keys from 21 bytes, encrypt challenge
             def des_key_from_7(raw7: bytes) -> bytes:
@@ -208,9 +205,9 @@ class NetNTLMFormat(BaseFormat):
                     key[i] = (key[i] << 1) & 0xFE
                 return bytes(key)
 
-            response = b''
+            response = b""
             for i in range(3):
-                des_key = des_key_from_7(padded[i*7:(i+1)*7])
+                des_key = des_key_from_7(padded[i * 7 : (i + 1) * 7])
                 cipher = DES.new(des_key, DES.MODE_ECB)
                 response += cipher.encrypt(server_challenge)
 

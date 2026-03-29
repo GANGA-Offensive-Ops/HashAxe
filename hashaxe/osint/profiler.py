@@ -73,7 +73,8 @@ class OsintProfiler:
     ):
         self._nlp_engine = NLPEngine(use_spacy=use_spacy)
         self._mutator = KeywordMutator(
-            max_length=max_length, min_length=min_length,
+            max_length=max_length,
+            min_length=min_length,
         )
         self._raw_texts: list[str] = []
         self._profile: ExtractedProfile | None = None
@@ -178,7 +179,8 @@ class OsintProfiler:
 
         logger.info(
             "OSINT wordlist exported: %d candidates → %s",
-            count, output_path,
+            count,
+            output_path,
         )
         return count
 
@@ -191,8 +193,5 @@ class OsintProfiler:
             "total_chars": sum(len(t) for t in self._raw_texts),
             "extracted": self._extracted,
             "tokens": profile.summary() if profile else {},
-            "estimated_candidates": (
-                self._mutator.estimate_candidates(profile)
-                if profile else 0
-            ),
+            "estimated_candidates": (self._mutator.estimate_candidates(profile) if profile else 0),
         }

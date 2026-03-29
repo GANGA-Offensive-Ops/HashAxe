@@ -55,6 +55,7 @@ from hashaxe.formats.base import CHUNK_SIZES, FormatDifficulty
 # ── Rust native acceleration (9.7x faster count_lines via mmap+memchr) ────────
 try:
     import hashaxe_wordlist_rs
+
     _HAS_NATIVE = True
 except ImportError:
     _HAS_NATIVE = False
@@ -69,9 +70,9 @@ class WordlistStreamer:
     """
 
     def __init__(self, path: str, encoding: str = "utf-8"):
-        self.path     = path
+        self.path = path
         self.encoding = encoding
-        self._is_stdin     = (path == "-")
+        self._is_stdin = path == "-"
         self._is_compressed = path.endswith((".gz", ".bz2", ".xz"))
 
     @property
@@ -104,7 +105,7 @@ class WordlistStreamer:
                 buf = f.read(1024 * 1024 * 8)  # 8MB chunks
                 if not buf:
                     break
-                count += buf.count(b'\n')
+                count += buf.count(b"\n")
         return count
 
     def file_size(self) -> int:
@@ -113,9 +114,7 @@ class WordlistStreamer:
             return 0
         return os.path.getsize(self.path)
 
-    def lines(self,
-              start_byte: int = 0,
-              end_byte:   int = -1) -> Generator[bytes, None, None]:
+    def lines(self, start_byte: int = 0, end_byte: int = -1) -> Generator[bytes, None, None]:
         """
         Yield raw bytes lines from start_byte to end_byte.
         If end_byte == -1, read to EOF.
@@ -129,7 +128,7 @@ class WordlistStreamer:
         with self._open_raw() as f:
             if start_byte > 0:
                 f.seek(start_byte)
-                f.readline()           # skip partial line at boundary
+                f.readline()  # skip partial line at boundary
 
             pos = f.tell() if hasattr(f, "tell") else 0
             for raw_line in f:
@@ -149,19 +148,21 @@ class WordlistStreamer:
         if self.path.endswith(".xz"):
             return lzma.open(self.path, "rb")
         return open(self.path, "rb")
+
+
 def chunk_wordlist(
-    path:     str,
+    path: str,
     n_chunks: int = 0,
     chunk_size_bytes: int = 0,
     difficulty: FormatDifficulty = FormatDifficulty.MEDIUM,
-    rules: bool = False
+    rules: bool = False,
 ) -> tuple[list[tuple[int, int]], int]:
     streamer = WordlistStreamer(path)
 
     if not streamer.is_seekable:
         return [(0, -1)], 0
 
-    file_size   = streamer.file_size()
+    file_size = streamer.file_size()
     if chunk_size_bytes > 0 and chunk_size_bytes <= 10:
         # EXTREME/SLOW/MEDIUM hash — estimate lines instead of counting
         total_lines = max(1, file_size // 10) if file_size > 0 else 0
@@ -176,7 +177,7 @@ def chunk_wordlist(
         n_chunks = max(1, (file_size // chunk_size) + (1 if file_size % chunk_size > 0 else 0))
     else:
         words_per_chunk = CHUNK_SIZES.get(difficulty, 1000)
-        
+
         # If rules are enabled, each word produces ~470 candidates.
         # We must divide the chunk size to keep the memory footprint constant,
         # otherwise a FAST chunk (5000 words * 470 = 2.3M candidates) kills performance.
@@ -189,7 +190,7 @@ def chunk_wordlist(
 
     for i in range(n_chunks):
         start = i * chunk_size
-        end   = min((i + 1) * chunk_size if i < n_chunks - 1 else file_size, file_size)
+        end = min((i + 1) * chunk_size if i < n_chunks - 1 else file_size, file_size)
         chunks.append((start, end))
 
     return chunks, total_lines

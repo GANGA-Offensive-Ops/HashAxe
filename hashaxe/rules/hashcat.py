@@ -61,6 +61,7 @@ from typing import Optional
 
 # ── Rule line parser ──────────────────────────────────────────────────────────
 
+
 def _parse_rule_line(line: str) -> list[tuple]:
     """
     Parse a single rule line into a list of (opcode, *args) tuples.
@@ -86,19 +87,45 @@ def _parse_rule_line(line: str) -> list[tuple]:
             continue
 
         # Single-char no-arg ops
-        if c == ":":  ops.append(("noop",));     i += 1
-        elif c == "l": ops.append(("lower",));    i += 1
-        elif c == "u": ops.append(("upper",));    i += 1
-        elif c == "c": ops.append(("cap",));      i += 1
-        elif c == "C": ops.append(("uncap",));    i += 1
-        elif c == "r": ops.append(("rev",));      i += 1
-        elif c == "d": ops.append(("dup",));      i += 1
-        elif c == "f": ops.append(("ref",));      i += 1
-        elif c == "[": ops.append(("tl",));       i += 1
-        elif c == "]": ops.append(("tr",));       i += 1
-        elif c == "{": ops.append(("rotl",));     i += 1
-        elif c == "}": ops.append(("rotr",));     i += 1
-        elif c == "q": ops.append(("dupc",));     i += 1
+        if c == ":":
+            ops.append(("noop",))
+            i += 1
+        elif c == "l":
+            ops.append(("lower",))
+            i += 1
+        elif c == "u":
+            ops.append(("upper",))
+            i += 1
+        elif c == "c":
+            ops.append(("cap",))
+            i += 1
+        elif c == "C":
+            ops.append(("uncap",))
+            i += 1
+        elif c == "r":
+            ops.append(("rev",))
+            i += 1
+        elif c == "d":
+            ops.append(("dup",))
+            i += 1
+        elif c == "f":
+            ops.append(("ref",))
+            i += 1
+        elif c == "[":
+            ops.append(("tl",))
+            i += 1
+        elif c == "]":
+            ops.append(("tr",))
+            i += 1
+        elif c == "{":
+            ops.append(("rotl",))
+            i += 1
+        elif c == "}":
+            ops.append(("rotr",))
+            i += 1
+        elif c == "q":
+            ops.append(("dupc",))
+            i += 1
 
         # Two-char ops: T N, D N, z N, Z N, + N, - N
         elif c in "TDzZ+-" and i + 1 < n:
@@ -145,7 +172,7 @@ def _parse_rule_line(line: str) -> list[tuple]:
         # x N M — extract from pos N, length M
         elif c == "x" and i + 2 < n:
             pos = _pos(line[i + 1])
-            ln  = _pos(line[i + 2])
+            ln = _pos(line[i + 2])
             if pos is not None and ln is not None:
                 ops.append(("ext", pos, ln))
             i += 3
@@ -174,30 +201,46 @@ def _pos(c: str) -> int | None:
 
 # ── Rule executor ─────────────────────────────────────────────────────────────
 
+
 def _apply_op(word: str, op: tuple) -> str:
     """Apply a single rule operation to word.  Returns modified string."""
     code = op[0]
 
-    if code == "noop": return word
-    if code == "lower": return word.lower()
-    if code == "upper": return word.upper()
+    if code == "noop":
+        return word
+    if code == "lower":
+        return word.lower()
+    if code == "upper":
+        return word.upper()
     if code == "cap":
         return word[0].upper() + word[1:].lower() if word else word
     if code == "uncap":
         return word[0].lower() + word[1:] if word else word
-    if code == "rev":   return word[::-1]
-    if code == "dup":   return word + word
-    if code == "ref":   return word + word[::-1]
-    if code == "tl":    return word[1:] if word else word
-    if code == "tr":    return word[:-1] if word else word
-    if code == "rotl":  return word[1:] + word[0] if word else word
-    if code == "rotr":  return word[-1] + word[:-1] if word else word
-    if code == "dupc":  return "".join(c + c for c in word)
+    if code == "rev":
+        return word[::-1]
+    if code == "dup":
+        return word + word
+    if code == "ref":
+        return word + word[::-1]
+    if code == "tl":
+        return word[1:] if word else word
+    if code == "tr":
+        return word[:-1] if word else word
+    if code == "rotl":
+        return word[1:] + word[0] if word else word
+    if code == "rotr":
+        return word[-1] + word[:-1] if word else word
+    if code == "dupc":
+        return "".join(c + c for c in word)
 
-    if code == "pre":   return op[1] + word
-    if code == "app":   return word + op[1]
-    if code == "sub":   return word.replace(op[1], op[2])
-    if code == "purge": return word.replace(op[1], "")
+    if code == "pre":
+        return op[1] + word
+    if code == "app":
+        return word + op[1]
+    if code == "sub":
+        return word.replace(op[1], op[2])
+    if code == "purge":
+        return word.replace(op[1], "")
 
     if code == "T":
         pos = op[1]
@@ -210,7 +253,7 @@ def _apply_op(word: str, op: tuple) -> str:
     if code == "D":
         pos = op[1]
         if 0 <= pos < len(word):
-            return word[:pos] + word[pos + 1:]
+            return word[:pos] + word[pos + 1 :]
         return word
 
     if code == "ins":
@@ -220,7 +263,7 @@ def _apply_op(word: str, op: tuple) -> str:
     if code == "ovr":
         pos, ch = op[1], op[2]
         if 0 <= pos < len(word):
-            return word[:pos] + ch + word[pos + 1:]
+            return word[:pos] + ch + word[pos + 1 :]
         return word
 
     if code == "ext":
@@ -267,6 +310,7 @@ def apply_rule_line(word: str, ops: list[tuple]) -> str | None:
 
 # ── Rule file loader ──────────────────────────────────────────────────────────
 
+
 def load_rule_file(path: str) -> list[list[tuple]]:
     """
     Parse a Hashcat .rule file into a list of compiled rule programs.
@@ -283,7 +327,7 @@ def load_rule_file(path: str) -> list[list[tuple]]:
 
 
 def apply_rules_from_file(
-    word:  str,
+    word: str,
     rules: list[list[tuple]],
 ) -> Generator[str, None, None]:
     """Yield one candidate per rule in the loaded rule list."""
@@ -299,33 +343,33 @@ def apply_rules_from_file(
 
 # Best64 — most commonly successful rules
 BEST64_RULES: list[str] = [
-    ":",          # noop
-    "l",          # lowercase
-    "u",          # uppercase
-    "c",          # capitalize
-    "r",          # reverse
-    "d",          # duplicate
-    "$1",         # append 1
-    "$2",         # append 2
-    "$3",         # append 3
-    "$!",         # append !
-    "$@",         # append @
-    "c$1",        # capitalize + append 1
-    "c$2",        # capitalize + append 2
-    "c$!",        # capitalize + append !
+    ":",  # noop
+    "l",  # lowercase
+    "u",  # uppercase
+    "c",  # capitalize
+    "r",  # reverse
+    "d",  # duplicate
+    "$1",  # append 1
+    "$2",  # append 2
+    "$3",  # append 3
+    "$!",  # append !
+    "$@",  # append @
+    "c$1",  # capitalize + append 1
+    "c$2",  # capitalize + append 2
+    "c$!",  # capitalize + append !
     "c$2$0$2$4",  # capitalize + append 2024
     "c$2$0$2$5",  # capitalize + append 2025
-    "$1$2$3",     # append 123
-    "$1$2$3$!",   # append 123!
-    "c$1$2$3",    # cap + 123
-    "ss$",        # s→$
-    "sa@",        # a→@
-    "se3",        # e→3
-    "si1",        # i→1
-    "so0",        # o→0
+    "$1$2$3",  # append 123
+    "$1$2$3$!",  # append 123!
+    "c$1$2$3",  # cap + 123
+    "ss$",  # s→$
+    "sa@",  # a→@
+    "se3",  # e→3
+    "si1",  # i→1
+    "so0",  # o→0
     "l sa@ se3 si1 so0",  # full leet
-    "r c",        # reverse + capitalize
-    "[ c",        # remove first + capitalize
+    "r c",  # reverse + capitalize
+    "[ c",  # remove first + capitalize
 ]
 
 

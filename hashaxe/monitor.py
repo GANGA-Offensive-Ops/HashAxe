@@ -57,6 +57,7 @@ _WINDOW_SIZE = 30  # seconds
 @dataclass
 class WorkerMetrics:
     """Per-worker performance tracking."""
+
     worker_id: str
     host: str = "local"
     total_tried: int = 0
@@ -142,9 +143,7 @@ class PerformanceMonitor:
 
             # Update worker stats
             if worker_id not in self._workers:
-                self._workers[worker_id] = WorkerMetrics(
-                    worker_id=worker_id
-                )
+                self._workers[worker_id] = WorkerMetrics(worker_id=worker_id)
             w = self._workers[worker_id]
             w.total_tried += tried
             w.last_seen = now
@@ -176,25 +175,19 @@ class PerformanceMonitor:
             remaining = self._total_keyspace - self._total_tried
             eta_sec = remaining / speed if speed > 0 and remaining > 0 else 0
             progress = (
-                (self._total_tried / self._total_keyspace * 100)
-                if self._total_keyspace > 0
-                else 0
+                (self._total_tried / self._total_keyspace * 100) if self._total_keyspace > 0 else 0
             )
 
             # GPU utilization ratio
             total_hw = self._gpu_tried + self._cpu_tried
-            gpu_pct = (
-                (self._gpu_tried / total_hw * 100) if total_hw > 0 else 0
-            )
+            gpu_pct = (self._gpu_tried / total_hw * 100) if total_hw > 0 else 0
 
             return {
                 "tried": self._total_tried,
                 "matched": self._total_matched,
                 "keyspace": self._total_keyspace,
                 "speed": round(speed, 1),
-                "speed_avg": round(
-                    self._total_tried / elapsed if elapsed > 0 else 0, 1
-                ),
+                "speed_avg": round(self._total_tried / elapsed if elapsed > 0 else 0, 1),
                 "speed_peak": round(self._peak_speed, 1),
                 "elapsed": round(elapsed, 2),
                 "elapsed_str": self._format_duration(elapsed),
@@ -203,15 +196,10 @@ class PerformanceMonitor:
                 "progress_pct": round(progress, 2),
                 "hash_type": self._hash_type,
                 "workers": len(self._workers),
-                "active_workers": sum(
-                    1 for w in self._workers.values()
-                    if now - w.last_seen < 30
-                ),
+                "active_workers": sum(1 for w in self._workers.values() if now - w.last_seen < 30),
                 "gpu_pct": round(gpu_pct, 1),
                 "hit_rate": round(
-                    self._total_matched / self._total_tried
-                    if self._total_tried > 0
-                    else 0,
+                    self._total_matched / self._total_tried if self._total_tried > 0 else 0,
                     6,
                 ),
             }

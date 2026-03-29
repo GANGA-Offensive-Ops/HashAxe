@@ -45,13 +45,14 @@ log = logging.getLogger(__name__)
 _HAS_BCRYPT = False
 try:
     import bcrypt as _bcrypt_mod
+
     _HAS_BCRYPT = True
 except ImportError:
     pass
 
 # ── Regex ─────────────────────────────────────────────────────────────────────
 
-_BCRYPT_RE = re.compile(r'^\$2([aby])\$(\d{2})\$([./A-Za-z0-9]{53})$')
+_BCRYPT_RE = re.compile(r"^\$2([aby])\$(\d{2})\$([./A-Za-z0-9]{53})$")
 
 
 class BcryptFormat(BaseFormat):
@@ -64,7 +65,7 @@ class BcryptFormat(BaseFormat):
       cost=16: ~19 pw/s    (EXTREME)
     """
 
-    format_id   = "hash.bcrypt"
+    format_id = "hash.bcrypt"
     format_name = "bcrypt"
 
     def can_handle(self, data: bytes, path: Path | None = None) -> FormatMatch | None:
@@ -160,7 +161,9 @@ class BcryptFormat(BaseFormat):
             "Difficulty": self.difficulty().name,
         }
 
+
 # ── Auto-register ────────────────────────────────────────────────────────────
 from hashaxe.formats._registry import FormatRegistry
+
 _registry = FormatRegistry()
 _registry.register(BcryptFormat())

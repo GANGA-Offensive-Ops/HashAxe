@@ -45,8 +45,8 @@ log = logging.getLogger(__name__)
 # ── Supported algorithms ──────────────────────────────────────────────────────
 # Maps format_id → (hashlib_name, hex_digest_length)
 _ALGOS: dict[str, tuple[str, int]] = {
-    "hash.md5":    ("md5",    32),
-    "hash.sha1":   ("sha1",   40),
+    "hash.md5": ("md5", 32),
+    "hash.sha1": ("sha1", 40),
     "hash.sha224": ("sha224", 56),
     "hash.sha256": ("sha256", 64),
     "hash.sha384": ("sha384", 96),
@@ -63,7 +63,7 @@ class RawHashFormat(BaseFormat):
         hashlib.new(algo, candidate).hexdigest() == target_hash
     """
 
-    format_id   = "hash.raw"
+    format_id = "hash.raw"
     format_name = "Raw Hash (MD5/SHA-1/SHA-256/SHA-512)"
 
     # ── Identification ────────────────────────────────────────────────────────
@@ -88,7 +88,9 @@ class RawHashFormat(BaseFormat):
                     format_id=fmt_id,
                     handler=self,
                     confidence=0.7,
-                    metadata={"description": f"{algo_name.upper()} ({expected_len}-char hex digest)"},
+                    metadata={
+                        "description": f"{algo_name.upper()} ({expected_len}-char hex digest)"
+                    },
                 )
         return None
 
@@ -117,7 +119,9 @@ class RawHashFormat(BaseFormat):
             format_data={
                 "algorithm": algo_name,
                 "target_hash": text,
-                "target_hash_bytes": bytes.fromhex(text),  # pre-convert for fast digest() comparison
+                "target_hash_bytes": bytes.fromhex(
+                    text
+                ),  # pre-convert for fast digest() comparison
                 "hex_length": length,
             },
         )
@@ -176,7 +180,7 @@ class NTLMFormat(BaseFormat):
     32-character hex digest, extremely fast to compute.
     """
 
-    format_id   = "hash.ntlm"
+    format_id = "hash.ntlm"
     format_name = "NTLM"
 
     def can_handle(self, data: bytes, path: Path | None = None) -> FormatMatch | None:
@@ -240,13 +244,14 @@ class NTLMFormat(BaseFormat):
             "Difficulty": "TRIVIAL (millions pw/s)",
         }
 
+
 class LMFormat(BaseFormat):
     """Handler for LM hashes.
 
     16-byte hex digest, extremely fast.
     """
 
-    format_id   = "hash.lm"
+    format_id = "hash.lm"
     format_name = "LM"
 
     def can_handle(self, data: bytes, path: Path | None = None) -> FormatMatch | None:
@@ -305,8 +310,10 @@ class LMFormat(BaseFormat):
             "Difficulty": "TRIVIAL (millions pw/s)",
         }
 
+
 # ── Auto-register ────────────────────────────────────────────────────────────
 from hashaxe.formats._registry import FormatRegistry
+
 _registry = FormatRegistry()
 _raw_handler = RawHashFormat()
 _registry.register(_raw_handler)

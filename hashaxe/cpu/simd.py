@@ -65,6 +65,7 @@ import numpy as np
 _libssl: ctypes.CDLL | None = None
 _libcrypto: ctypes.CDLL | None = None
 
+
 def _load_openssl() -> bool:
     """Try to load OpenSSL libcrypto for AES-NI acceleration."""
     global _libcrypto
@@ -74,8 +75,8 @@ def _load_openssl() -> bool:
         "libcrypto.so.3",
         "libcrypto.so.1.1",
         "libcrypto.so",
-        "libcrypto.3.dylib",   # macOS
-        "libcrypto-3-x64.dll", # Windows
+        "libcrypto.3.dylib",  # macOS
+        "libcrypto-3-x64.dll",  # Windows
     ]
     for name in candidates:
         try:
@@ -94,14 +95,20 @@ def _load_openssl() -> bool:
                     fn.restype = ctypes.c_void_p
 
             _libcrypto.EVP_EncryptInit_ex.argtypes = [
-                ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p,
-                ctypes.c_char_p, ctypes.c_char_p,
+                ctypes.c_void_p,
+                ctypes.c_void_p,
+                ctypes.c_void_p,
+                ctypes.c_char_p,
+                ctypes.c_char_p,
             ]
             _libcrypto.EVP_EncryptInit_ex.restype = ctypes.c_int
 
             _libcrypto.EVP_EncryptUpdate.argtypes = [
-                ctypes.c_void_p, ctypes.c_char_p,
-                ctypes.POINTER(ctypes.c_int), ctypes.c_char_p, ctypes.c_int,
+                ctypes.c_void_p,
+                ctypes.c_char_p,
+                ctypes.POINTER(ctypes.c_int),
+                ctypes.c_char_p,
+                ctypes.c_int,
             ]
             _libcrypto.EVP_EncryptUpdate.restype = ctypes.c_int
 
@@ -137,10 +144,10 @@ def _aes_ctr_openssl(key: bytes, iv: bytes, data: bytes) -> bytes:
     ctx = _libcrypto.EVP_CIPHER_CTX_new()
     try:
         _libcrypto.EVP_EncryptInit_ex(ctx, EVP_aes(), None, key, iv)
-        out    = ctypes.create_string_buffer(len(data) + 16)
+        out = ctypes.create_string_buffer(len(data) + 16)
         outlen = ctypes.c_int(0)
         _libcrypto.EVP_EncryptUpdate(ctx, out, ctypes.byref(outlen), data, len(data))
-        return bytes(out[:outlen.value])
+        return bytes(out[: outlen.value])
     finally:
         _libcrypto.EVP_CIPHER_CTX_free(ctx)
 
@@ -148,6 +155,7 @@ def _aes_ctr_openssl(key: bytes, iv: bytes, data: bytes) -> bytes:
 def _aes_ctr_python(key: bytes, iv: bytes, data: bytes) -> bytes:
     """AES-CTR via the cryptography library (pure Python fallback)."""
     from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
+
     c = Cipher(algorithms.AES(key), modes.CTR(iv))
     d = c.decryptor()
     return d.update(data)
@@ -155,12 +163,13 @@ def _aes_ctr_python(key: bytes, iv: bytes, data: bytes) -> bytes:
 
 # ── Batch bcrypt-KDF ──────────────────────────────────────────────────────────
 
+
 def _batch_bcrypt_kdf(
     passwords: list[bytes],
-    salt:      bytes,
-    rounds:    int,
-    key_len:   int,
-    iv_len:    int,
+    salt: bytes,
+    rounds: int,
+    key_len: int,
+    iv_len: int,
 ) -> list[tuple[bytes, bytes] | None]:
     """
     Derive (key, iv) for each password in the batch.
@@ -169,8 +178,9 @@ def _batch_bcrypt_kdf(
     Failed derivations (wrong bcrypt module) return None.
     """
     from cryptography.hazmat.primitives.serialization.ssh import _bcrypt_kdf
+
     results = []
-    need    = key_len + iv_len
+    need = key_len + iv_len
     for pw in passwords:
         try:
             seed = _bcrypt_kdf(pw, salt, need, rounds, True)
@@ -182,11 +192,12 @@ def _batch_bcrypt_kdf(
 
 # ── NumPy SIMD checkints verification ────────────────────────────────────────
 
+
 def _numpy_checkints_batch(
     key_iv_pairs: list[tuple[bytes, bytes] | None],
-    ciphername:   bytes,
-    edata:        bytes,
-    block_len:    int,
+    ciphername: bytes,
+    edata: bytes,
+    block_len: int,
 ) -> np.ndarray:
     """
     Vectorised checkints test across a batch.
@@ -194,7 +205,7 @@ def _numpy_checkints_batch(
     Returns boolean numpy array — True where ck1 == ck2.
     Decrypts only max(8, block_len) bytes per candidate.
     """
-    n    = len(key_iv_pairs)
+    n = len(key_iv_pairs)
     hits = np.zeros(n, dtype=bool)
 
     for i, pair in enumerate(key_iv_pairs):
@@ -202,11 +213,11 @@ def _numpy_checkints_batch(
             continue
         key, iv = pair
         try:
-            needed    = max(8, block_len)
+            needed = max(8, block_len)
             plaintext = _aes_ctr_decrypt_block(key, iv, edata[:needed])
             ck1 = struct.unpack(">I", plaintext[0:4])[0]
             ck2 = struct.unpack(">I", plaintext[4:8])[0]
-            hits[i] = (ck1 == ck2)
+            hits[i] = ck1 == ck2
         except Exception:
             pass
 
@@ -214,6 +225,7 @@ def _numpy_checkints_batch(
 
 
 # ── Pre-filter heuristics ─────────────────────────────────────────────────────
+
 
 def _prefilter(candidates: list[str]) -> np.ndarray:
     """
@@ -225,7 +237,7 @@ def _prefilter(candidates: list[str]) -> np.ndarray:
       • Not pure whitespace
       • Printable ASCII or UTF-8 (no raw binary)
     """
-    n    = len(candidates)
+    n = len(candidates)
     keep = np.ones(n, dtype=bool)
 
     for i, c in enumerate(candidates):
@@ -241,7 +253,8 @@ def _prefilter(candidates: list[str]) -> np.ndarray:
 
 # ── Main entry point ──────────────────────────────────────────────────────────
 
-SIMD_BATCH_SIZE = 64   # candidates per numpy batch call
+SIMD_BATCH_SIZE = 64  # candidates per numpy batch call
+
 
 def simd_batch_hashaxe(
     pk,
@@ -265,7 +278,7 @@ def simd_batch_hashaxe(
     from hashaxe.engine import try_passphrase, try_passphrase_full
 
     # Pre-filter obviously invalid candidates
-    keep     = _prefilter(candidates)
+    keep = _prefilter(candidates)
     filtered = [c for i, c in enumerate(candidates) if keep[i]]
 
     # Probe: bcrypt-KDF batch path only if bcrypt module works AND key uses bcrypt
@@ -273,6 +286,7 @@ def simd_batch_hashaxe(
     if pk.rounds and pk.salt and len(pk.salt) > 0:
         try:
             from cryptography.hazmat.primitives.serialization.ssh import _bcrypt_kdf
+
             _bcrypt_kdf(b"probe", pk.salt, pk.key_len + pk.iv_len, pk.rounds, True)
             _use_bcrypt_batch = True
         except Exception:
@@ -282,17 +296,24 @@ def simd_batch_hashaxe(
         for chunk_start in range(0, len(filtered), SIMD_BATCH_SIZE):
             if found_event.is_set():
                 return None
-            chunk    = filtered[chunk_start : chunk_start + SIMD_BATCH_SIZE]
+            chunk = filtered[chunk_start : chunk_start + SIMD_BATCH_SIZE]
             pw_bytes = [c.encode("utf-8", "replace") for c in chunk]
             key_iv_pairs = _batch_bcrypt_kdf(
-                pw_bytes, pk.salt, pk.rounds, pk.key_len, pk.iv_len,
+                pw_bytes,
+                pk.salt,
+                pk.rounds,
+                pk.key_len,
+                pk.iv_len,
             )
             hits = _numpy_checkints_batch(
-                key_iv_pairs, pk.ciphername, pk.edata, pk.block_len,
+                key_iv_pairs,
+                pk.ciphername,
+                pk.edata,
+                pk.block_len,
             )
             for i in np.where(hits)[0]:
                 candidate = chunk[i]
-                pw        = candidate.encode("utf-8", "replace")
+                pw = candidate.encode("utf-8", "replace")
                 if try_passphrase_full(pk, pw):
                     return candidate
         return None
@@ -311,6 +332,7 @@ def simd_batch_hashaxe(
 
 
 # ── Benchmark ─────────────────────────────────────────────────────────────────
+
 
 def benchmark_simd(pk, n_samples: int = 200) -> float:
     """
@@ -336,6 +358,6 @@ def get_optimal_batch_size(available_ram_gb: float = 1.0) -> int:
     Each bcrypt call needs ~1 KB stack + ~256 bytes output.
     """
     bytes_per_candidate = 1_500
-    available_bytes     = available_ram_gb * 1024 ** 3
-    optimal             = int(available_bytes / bytes_per_candidate / 4)
+    available_bytes = available_ram_gb * 1024**3
+    optimal = int(available_bytes / bytes_per_candidate / 4)
     return max(32, min(optimal, 4096))

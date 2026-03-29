@@ -54,6 +54,7 @@ class TestSchema(unittest.TestCase):
 
     def test_schema_creates_tables(self):
         from hashaxe.db.manager import CrackDB
+
         with tempfile.TemporaryDirectory() as td:
             CrackDB(db_path=Path(td) / "test.db")
             # Should not raise
@@ -64,19 +65,19 @@ class TestSchema(unittest.TestCase):
 
         from hashaxe.db.manager import CrackDB
         from hashaxe.db.schema import DB_VERSION
+
         with tempfile.TemporaryDirectory() as td:
             db_path = Path(td) / "test.db"
             CrackDB(db_path=db_path)
             conn = sqlite3.connect(str(db_path))
             conn.row_factory = sqlite3.Row
-            row = conn.execute(
-                "SELECT value FROM meta WHERE key = 'schema_version'"
-            ).fetchone()
+            row = conn.execute("SELECT value FROM meta WHERE key = 'schema_version'").fetchone()
             conn.close()
             self.assertEqual(row["value"], str(DB_VERSION))
 
     def test_schema_idempotent(self):
         from hashaxe.db.manager import CrackDB
+
         with tempfile.TemporaryDirectory() as td:
             db_path = Path(td) / "test.db"
             # Create twice — should not raise
@@ -90,10 +91,12 @@ class TestLogCrack(unittest.TestCase):
     def _make_db(self):
         self._td = tempfile.mkdtemp()
         from hashaxe.db.manager import CrackDB
+
         return CrackDB(db_path=Path(self._td) / "test.db")
 
     def tearDown(self):
         import shutil
+
         shutil.rmtree(self._td, ignore_errors=True)
 
     def test_log_returns_id(self):
@@ -157,15 +160,45 @@ class TestQuery(unittest.TestCase):
     def _make_db_with_data(self):
         self._td = tempfile.mkdtemp()
         from hashaxe.db.manager import CrackDB
+
         db = CrackDB(db_path=Path(self._td) / "test.db")
-        db.log_hashaxe(format_id="hash.md5", passphrase="pw1", source_path="a.txt", candidates=100, elapsed_sec=0.1, speed_pw_s=1000)
-        db.log_hashaxe(format_id="hash.sha256", passphrase="pw2", source_path="b.txt", candidates=5000, elapsed_sec=2.5, speed_pw_s=2000)
-        db.log_hashaxe(format_id="hash.md5", passphrase="pw3", source_path="a.txt", candidates=200, elapsed_sec=0.2, speed_pw_s=1000)
-        db.log_hashaxe(format_id="hash.bcrypt", passphrase="pw4", source_path="c.txt", candidates=50, elapsed_sec=30.0, speed_pw_s=1.67)
+        db.log_hashaxe(
+            format_id="hash.md5",
+            passphrase="pw1",
+            source_path="a.txt",
+            candidates=100,
+            elapsed_sec=0.1,
+            speed_pw_s=1000,
+        )
+        db.log_hashaxe(
+            format_id="hash.sha256",
+            passphrase="pw2",
+            source_path="b.txt",
+            candidates=5000,
+            elapsed_sec=2.5,
+            speed_pw_s=2000,
+        )
+        db.log_hashaxe(
+            format_id="hash.md5",
+            passphrase="pw3",
+            source_path="a.txt",
+            candidates=200,
+            elapsed_sec=0.2,
+            speed_pw_s=1000,
+        )
+        db.log_hashaxe(
+            format_id="hash.bcrypt",
+            passphrase="pw4",
+            source_path="c.txt",
+            candidates=50,
+            elapsed_sec=30.0,
+            speed_pw_s=1.67,
+        )
         return db
 
     def tearDown(self):
         import shutil
+
         shutil.rmtree(self._td, ignore_errors=True)
 
     def test_query_all(self):
@@ -230,14 +263,26 @@ class TestStats(unittest.TestCase):
     def _make_db_with_data(self):
         self._td = tempfile.mkdtemp()
         from hashaxe.db.manager import CrackDB
+
         db = CrackDB(db_path=Path(self._td) / "test.db")
-        db.log_hashaxe(format_id="hash.md5", passphrase="pw1", candidates=100, elapsed_sec=0.1, speed_pw_s=1000)
-        db.log_hashaxe(format_id="hash.sha256", passphrase="pw2", candidates=5000, elapsed_sec=2.5, speed_pw_s=2000)
-        db.log_hashaxe(format_id="hash.md5", passphrase="pw3", candidates=200, elapsed_sec=0.2, speed_pw_s=1000)
+        db.log_hashaxe(
+            format_id="hash.md5", passphrase="pw1", candidates=100, elapsed_sec=0.1, speed_pw_s=1000
+        )
+        db.log_hashaxe(
+            format_id="hash.sha256",
+            passphrase="pw2",
+            candidates=5000,
+            elapsed_sec=2.5,
+            speed_pw_s=2000,
+        )
+        db.log_hashaxe(
+            format_id="hash.md5", passphrase="pw3", candidates=200, elapsed_sec=0.2, speed_pw_s=1000
+        )
         return db
 
     def tearDown(self):
         import shutil
+
         if self._td:
             shutil.rmtree(self._td, ignore_errors=True)
 
@@ -270,6 +315,7 @@ class TestStats(unittest.TestCase):
 
     def test_stats_empty_db(self):
         from hashaxe.db.manager import CrackDB
+
         with tempfile.TemporaryDirectory() as td:
             db = CrackDB(db_path=Path(td) / "test.db")
             s = db.stats()
@@ -284,6 +330,7 @@ class TestExport(unittest.TestCase):
     def _make_db_with_data(self):
         self._td = tempfile.mkdtemp()
         from hashaxe.db.manager import CrackDB
+
         db = CrackDB(db_path=Path(self._td) / "test.db")
         db.log_hashaxe(format_id="hash.md5", passphrase="pw1", candidates=100)
         db.log_hashaxe(format_id="hash.sha256", passphrase="pw2", candidates=5000)
@@ -291,6 +338,7 @@ class TestExport(unittest.TestCase):
 
     def tearDown(self):
         import shutil
+
         if self._td:
             shutil.rmtree(self._td, ignore_errors=True)
 
@@ -332,6 +380,7 @@ class TestExport(unittest.TestCase):
 
     def test_export_empty_db(self):
         from hashaxe.db.manager import CrackDB
+
         with tempfile.TemporaryDirectory() as td:
             db = CrackDB(db_path=Path(td) / "test.db")
             self.assertEqual(db.export(fmt="json"), "[]")
@@ -344,6 +393,7 @@ class TestDelete(unittest.TestCase):
     def _make_db_with_data(self):
         self._td = tempfile.mkdtemp()
         from hashaxe.db.manager import CrackDB
+
         db = CrackDB(db_path=Path(self._td) / "test.db")
         db.log_hashaxe(format_id="hash.md5", passphrase="pw1")
         db.log_hashaxe(format_id="hash.sha256", passphrase="pw2")
@@ -352,6 +402,7 @@ class TestDelete(unittest.TestCase):
 
     def tearDown(self):
         import shutil
+
         shutil.rmtree(self._td, ignore_errors=True)
 
     def test_delete_by_id(self):
@@ -380,13 +431,27 @@ class TestDisplay(unittest.TestCase):
     def _make_db_with_data(self):
         self._td = tempfile.mkdtemp()
         from hashaxe.db.manager import CrackDB
+
         db = CrackDB(db_path=Path(self._td) / "test.db")
-        db.log_hashaxe(format_id="hash.md5", passphrase="db_test_fixture_4k", candidates=50000, elapsed_sec=0.5, speed_pw_s=100000)
-        db.log_hashaxe(format_id="hash.bcrypt", passphrase="admin", candidates=300, elapsed_sec=120.0, speed_pw_s=2.5)
+        db.log_hashaxe(
+            format_id="hash.md5",
+            passphrase="db_test_fixture_4k",
+            candidates=50000,
+            elapsed_sec=0.5,
+            speed_pw_s=100000,
+        )
+        db.log_hashaxe(
+            format_id="hash.bcrypt",
+            passphrase="admin",
+            candidates=300,
+            elapsed_sec=120.0,
+            speed_pw_s=2.5,
+        )
         return db
 
     def tearDown(self):
         import shutil
+
         if self._td:
             shutil.rmtree(self._td, ignore_errors=True)
 
@@ -399,6 +464,7 @@ class TestDisplay(unittest.TestCase):
 
     def test_format_results_empty(self):
         from hashaxe.db.manager import CrackDB
+
         with tempfile.TemporaryDirectory() as td:
             db = CrackDB(db_path=Path(td) / "test.db")
             table = db.format_results_table()
@@ -412,6 +478,7 @@ class TestDisplay(unittest.TestCase):
 
     def test_format_stats_empty(self):
         from hashaxe.db.manager import CrackDB
+
         with tempfile.TemporaryDirectory() as td:
             db = CrackDB(db_path=Path(td) / "test.db")
             output = db.format_stats()
@@ -423,14 +490,17 @@ class TestExportModule(unittest.TestCase):
 
     def test_export_csv_empty(self):
         from hashaxe.db.export import export_csv
+
         self.assertEqual(export_csv([]), "")
 
     def test_export_json_empty(self):
         from hashaxe.db.export import export_json
+
         self.assertEqual(export_json([]), "[]")
 
     def test_export_csv_with_columns(self):
         from hashaxe.db.export import export_csv
+
         rows = [{"a": 1, "b": 2, "c": 3}]
         result = export_csv(rows, columns=["a", "b"])
         self.assertIn("a,b", result)
@@ -438,6 +508,7 @@ class TestExportModule(unittest.TestCase):
 
     def test_export_json_with_columns(self):
         from hashaxe.db.export import export_json
+
         rows = [{"a": 1, "b": 2, "c": 3}]
         result = export_json(rows, columns=["a", "b"])
         data = json.loads(result)

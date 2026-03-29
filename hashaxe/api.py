@@ -34,7 +34,7 @@ import asyncio
 import logging
 from typing import Any
 
-from fastapi import FastAPI, HTTPException, BackgroundTasks
+from fastapi import BackgroundTasks, FastAPI, HTTPException
 from pydantic import BaseModel
 
 logger = logging.getLogger(__name__)
@@ -42,7 +42,7 @@ logger = logging.getLogger(__name__)
 app = FastAPI(
     title="Hashaxe REST API",
     description="Headless C2 Integration for Autonomous OffSec",
-    version="1.0.0"
+    version="1.0.0",
 )
 
 # Ephemeral in-memory job registry (non-persistent)
@@ -94,11 +94,11 @@ def _background_cracker_task(job_id: str, req: CrackRequest):
             threads=req.threads,
             attack_mode_override=req.attack_mode,
             quiet=True,  # Suppress stdout/TUI for headless operation
-            use_tui=False
+            use_tui=False,
         )
 
         _JOBS[job_id]["progress"] = 100.0
-        
+
         if passphrase is not None:
             _JOBS[job_id]["status"] = "completed"
             _JOBS[job_id]["found"] = True
@@ -118,16 +118,17 @@ def _background_cracker_task(job_id: str, req: CrackRequest):
 def submit_job(req: CrackRequest, background_tasks: BackgroundTasks):
     """Submit a new cracking job."""
     import uuid
+
     job_id = str(uuid.uuid4())
-    
+
     _JOBS[job_id] = {
         "status": "queued",
         "progress": 0.0,
         "hash_rate": 0.0,
         "found": False,
-        "request": req.model_dump()
+        "request": req.model_dump(),
     }
-    
+
     background_tasks.add_task(_background_cracker_task, job_id, req)
     return {"job_id": job_id, "status": "queued"}
 
@@ -145,7 +146,7 @@ def get_job_status(job_id: str):
         progress_percent=job.get("progress", 0.0),
         hash_rate=job.get("hash_rate", 0.0),
         found=job.get("found", False),
-        password=_RESULTS.get(job_id)
+        password=_RESULTS.get(job_id),
     )
 
 

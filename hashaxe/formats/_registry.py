@@ -79,13 +79,14 @@ class FormatRegistry:
         """
         fid = handler.format_id
         if not fid:
-            raise ValueError(
-                f"Handler {handler.__class__.__name__} has empty format_id"
-            )
+            raise ValueError(f"Handler {handler.__class__.__name__} has empty format_id")
         if fid in self._handlers:
-            logger.debug("Replacing handler for '%s': %s -> %s",
-                         fid, self._handlers[fid].__class__.__name__,
-                         handler.__class__.__name__)
+            logger.debug(
+                "Replacing handler for '%s': %s -> %s",
+                fid,
+                self._handlers[fid].__class__.__name__,
+                handler.__class__.__name__,
+            )
         self._handlers[fid] = handler
         logger.debug("Registered format handler: %s (%s)", fid, handler.format_name)
 
@@ -115,7 +116,8 @@ class FormatRegistry:
                 logger.debug("Auto-discovered format module: %s", module_name)
             except Exception:
                 logger.warning(
-                    "Failed to import format module: %s", module_name,
+                    "Failed to import format module: %s",
+                    module_name,
                     exc_info=True,
                 )
 
@@ -162,7 +164,8 @@ class FormatRegistry:
             except Exception:
                 logger.debug(
                     "Handler %s.can_handle() raised an exception",
-                    handler.format_id, exc_info=True,
+                    handler.format_id,
+                    exc_info=True,
                 )
                 continue
 
@@ -197,7 +200,8 @@ class FormatRegistry:
             except Exception:
                 logger.debug(
                     "Handler %s.can_handle() raised an exception",
-                    handler.format_id, exc_info=True,
+                    handler.format_id,
+                    exc_info=True,
                 )
                 continue
 

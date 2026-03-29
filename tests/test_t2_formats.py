@@ -27,25 +27,24 @@ from __future__ import annotations
 
 import pytest
 
-from hashaxe.formats.base import FormatDifficulty
-
 # Direct imports
 from hashaxe.formats.archive_rar import RARFormat
-from hashaxe.formats.pwm_keepass import KeePassFormat, _KDBX_MAGIC_1, _KDBX_MAGIC_2
-from hashaxe.formats.pwm_office import OfficeFormat, _OLE2_MAGIC
+from hashaxe.formats.base import FormatDifficulty
 from hashaxe.formats.document_odf import ODFFormat
-from hashaxe.formats.token_ansible import AnsibleVaultFormat
 from hashaxe.formats.network_cisco_full import (
     CiscoType5Format,
     CiscoType8Format,
     CiscoType9Format,
     decode_type7,
 )
-
+from hashaxe.formats.pwm_keepass import _KDBX_MAGIC_1, _KDBX_MAGIC_2, KeePassFormat
+from hashaxe.formats.pwm_office import _OLE2_MAGIC, OfficeFormat
+from hashaxe.formats.token_ansible import AnsibleVaultFormat
 
 # ══════════════════════════════════════════════════════════════════════════════
 # RAR Archive
 # ══════════════════════════════════════════════════════════════════════════════
+
 
 class TestRARFormat:
     def setup_method(self):
@@ -66,6 +65,7 @@ class TestRARFormat:
 
     def test_can_handle_by_extension(self):
         from pathlib import Path
+
         match = self.handler.can_handle(b"\x00\x00", path=Path("test.rar"))
         assert match is not None
         assert match.confidence == 0.5
@@ -86,6 +86,7 @@ class TestRARFormat:
 # KeePass KDBX
 # ══════════════════════════════════════════════════════════════════════════════
 
+
 class TestKeePassFormat:
     def setup_method(self):
         self.handler = KeePassFormat()
@@ -93,6 +94,7 @@ class TestKeePassFormat:
     def _make_kdbx_header(self, version_major: int = 3) -> bytes:
         """Create a minimal KDBX header with magic bytes."""
         import struct
+
         data = _KDBX_MAGIC_1 + _KDBX_MAGIC_2
         data += struct.pack("<H", 1)  # minor version
         data += struct.pack("<H", version_major)  # major version
@@ -114,6 +116,7 @@ class TestKeePassFormat:
 
     def test_can_handle_by_extension(self):
         from pathlib import Path
+
         match = self.handler.can_handle(b"\x00\x00", path=Path("vault.kdbx"))
         assert match is not None
         assert match.confidence == 0.7
@@ -144,6 +147,7 @@ class TestKeePassFormat:
 # ══════════════════════════════════════════════════════════════════════════════
 # Microsoft Office
 # ══════════════════════════════════════════════════════════════════════════════
+
 
 class TestOfficeFormat:
     def setup_method(self):
@@ -180,6 +184,7 @@ class TestOfficeFormat:
 # OpenDocument Format
 # ══════════════════════════════════════════════════════════════════════════════
 
+
 class TestODFFormat:
     def setup_method(self):
         self.handler = ODFFormat()
@@ -187,8 +192,9 @@ class TestODFFormat:
     def test_can_handle_odf_with_encryption(self):
         import zipfile
         from io import BytesIO
+
         buf = BytesIO()
-        with zipfile.ZipFile(buf, 'w') as zf:
+        with zipfile.ZipFile(buf, "w") as zf:
             zf.writestr("mimetype", "application/vnd.oasis.opendocument.text")
             zf.writestr("content.xml", "test")
             zf.writestr("META-INF/manifest.xml", "manifest:encryption-data")
@@ -208,6 +214,7 @@ class TestODFFormat:
 # ══════════════════════════════════════════════════════════════════════════════
 # Ansible Vault
 # ══════════════════════════════════════════════════════════════════════════════
+
 
 class TestAnsibleVaultFormat:
     SAMPLE = (
@@ -246,6 +253,7 @@ class TestAnsibleVaultFormat:
 # ══════════════════════════════════════════════════════════════════════════════
 # Cisco Types
 # ══════════════════════════════════════════════════════════════════════════════
+
 
 class TestCiscoType5:
     SAMPLE = "$1$pdQG$0WzLBz0Ejp.AFeAylCKmN."
@@ -336,15 +344,18 @@ class TestCiscoType7Decoder:
 # Registry Integration
 # ══════════════════════════════════════════════════════════════════════════════
 
+
 class TestT2RegistryIntegration:
     def test_total_handler_count(self):
         from hashaxe.formats._registry import FormatRegistry
+
         reg = FormatRegistry()
         reg.discover()
         assert len(reg) >= 42
 
     def test_all_t2_discoverable(self):
         from hashaxe.formats._registry import FormatRegistry
+
         reg = FormatRegistry()
         reg.discover()
         t2_ids = [
@@ -365,25 +376,25 @@ class TestT2RegistryIntegration:
 # Hash Pattern Integration
 # ══════════════════════════════════════════════════════════════════════════════
 
+
 class TestT2HashPatterns:
     def test_identify_ansible_vault(self):
         from hashaxe.identify.hash_patterns import identify_best
+
         result = identify_best("$ANSIBLE_VAULT;1.1;AES256")
         assert result is not None
         assert result.format_id == "token.ansible_vault"
 
     def test_identify_cisco_type8(self):
         from hashaxe.identify.hash_patterns import identify_best
-        result = identify_best(
-            "$8$dsYGNam6YVewYQi$hPHElm0gV8SHiTByOHFgS4AJwbSwphEQ/fNOjxCA8nY."
-        )
+
+        result = identify_best("$8$dsYGNam6YVewYQi$hPHElm0gV8SHiTByOHFgS4AJwbSwphEQ/fNOjxCA8nY.")
         assert result is not None
         assert result.format_id == "network.cisco_type8"
 
     def test_identify_cisco_type9(self):
         from hashaxe.identify.hash_patterns import identify_best
-        result = identify_best(
-            "$9$nhEmQVczB7dqsO$X.HsgL6x1il0RxkOSSvyQYwucySCt7qFm4v7pqCxkKM."
-        )
+
+        result = identify_best("$9$nhEmQVczB7dqsO$X.HsgL6x1il0RxkOSSvyQYwucySCt7qFm4v7pqCxkKM.")
         assert result is not None
         assert result.format_id == "network.cisco_type9"

@@ -53,6 +53,7 @@ logger = logging.getLogger(__name__)
 
 class HNDLRisk(Enum):
     """HNDL threat risk level."""
+
     CRITICAL = "CRITICAL"
     HIGH = "HIGH"
     MEDIUM = "MEDIUM"
@@ -63,6 +64,7 @@ class HNDLRisk(Enum):
 @dataclass
 class HNDLAssessment:
     """Result of HNDL risk assessment for a cryptographic asset."""
+
     algorithm: str = ""
     data_shelf_life_years: float = 0
     migration_timeline_years: float = 0
@@ -113,9 +115,7 @@ class HNDLAssessment:
             elif urgency > 1.0:
                 self.risk = HNDLRisk.MEDIUM
                 self.risk_score = 50
-                self.action = (
-                    "MEDIUM: Include PQC migration in 2-year roadmap."
-                )
+                self.action = "MEDIUM: Include PQC migration in 2-year roadmap."
             else:
                 self.risk = HNDLRisk.LOW
                 self.risk_score = 20
@@ -169,7 +169,9 @@ class HNDLAnalyzer:
 
         logger.info(
             "HNDL assessment [%s]: risk=%s score=%d",
-            algorithm, assessment.risk.value, assessment.risk_score,
+            algorithm,
+            assessment.risk.value,
+            assessment.risk_score,
         )
         return assessment
 
@@ -197,14 +199,9 @@ class HNDLAnalyzer:
             "high": len(high),
             "avg_risk_score": (
                 round(sum(a.risk_score for a in assessments) / len(assessments), 1)
-                if assessments else 0
+                if assessments
+                else 0
             ),
-            "immediate_actions": [
-                {"algorithm": a.algorithm, "action": a.action}
-                for a in critical
-            ],
-            "planning_required": [
-                {"algorithm": a.algorithm, "action": a.action}
-                for a in high
-            ],
+            "immediate_actions": [{"algorithm": a.algorithm, "action": a.action} for a in critical],
+            "planning_required": [{"algorithm": a.algorithm, "action": a.action} for a in high],
         }

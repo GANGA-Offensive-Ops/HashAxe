@@ -60,15 +60,16 @@ logger = logging.getLogger(__name__)
 @dataclass
 class SwarmAsset:
     """A distributed asset tracked by the swarm."""
+
     name: str
-    cid: str = ""                    # IPFS Content Identifier
-    magnet_link: str = ""            # BitTorrent magnet link
+    cid: str = ""  # IPFS Content Identifier
+    magnet_link: str = ""  # BitTorrent magnet link
     size_bytes: int = 0
-    file_hash: str = ""              # SHA-256 of file for verification
+    file_hash: str = ""  # SHA-256 of file for verification
     chunks: int = 1
     local_path: str = ""
     is_available: bool = False
-    protocol: str = "none"           # "ipfs", "torrent", "http"
+    protocol: str = "none"  # "ipfs", "torrent", "http"
 
 
 class IPFSNode:
@@ -103,6 +104,7 @@ class IPFSNode:
         """Check if IPFS daemon is running and accessible."""
         try:
             import ipfshttpclient  # type: ignore
+
             self._ipfs = ipfshttpclient.connect(self._api_addr, session=True)
             version = self._ipfs.version()
             self._ipfs_available = True
@@ -188,11 +190,13 @@ class IPFSNode:
         result = []
         for f in self._cache_dir.iterdir():
             if f.is_file():
-                result.append({
-                    "name": f.name,
-                    "size": f.stat().st_size,
-                    "path": str(f),
-                })
+                result.append(
+                    {
+                        "name": f.name,
+                        "size": f.stat().st_size,
+                        "path": str(f),
+                    }
+                )
         return result
 
     def info(self) -> dict:

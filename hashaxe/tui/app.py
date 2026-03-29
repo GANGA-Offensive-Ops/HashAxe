@@ -102,7 +102,7 @@ class Dashboard:
         speed = stats.get("rolling_speed", 0.0)
         checked = stats.get("keyspace_checked", 0)
         total = stats.get("keyspace_total", 0)
-        
+
         # Format speed
         if speed > 1_000_000_000:
             speed_str = f"{speed / 1_000_000_000:.2f} GH/s"
@@ -114,7 +114,7 @@ class Dashboard:
         table = Table.grid(padding=(0, 2))
         table.add_column("Key", style="cyan")
         table.add_column("Value", style="green")
-        
+
         table.add_row("Current Speed:", speed_str)
         table.add_row("Progress:", f"{checked} / {total}" if total else str(checked))
         table.add_row("Elapsed Time:", str(stats.get("elapsed", "0.0s")))
@@ -137,10 +137,7 @@ class Dashboard:
             for node in nodes:
                 status_color = "green" if node["status"] == "active" else "red"
                 table.add_row(
-                    node["id"],
-                    f"[{status_color}]{node['status']}",
-                    node["speed"],
-                    node["temp"]
+                    node["id"], f"[{status_color}]{node['status']}", node["speed"], node["temp"]
                 )
 
         return Panel(table, title="[bold]Distributed Cluster[/bold]", border_style="magenta")
@@ -148,14 +145,14 @@ class Dashboard:
     def _generate_info(self) -> Panel:
         """Hardware info and current candidates."""
         table = Table.grid(padding=(1, 1))
-        
+
         # Real stats from monitor
         stats = self.monitor.snapshot() if hasattr(self.monitor, "snapshot") else {}
         attack = stats.get("attack_mode", "wordlist")
-        
+
         table.add_row(f"[bold cyan]Attack Mode:[/bold cyan] {attack.upper()}")
         table.add_row("[bold cyan]Live Stream:[/bold cyan]")
-        
+
         # If no real live candidates stream exists yet (e.g. from AI/PCFG)
         live_cands = stats.get("live_candidates", [])
         if not live_cands:
@@ -163,7 +160,7 @@ class Dashboard:
         else:
             for cand in live_cands[:5]:
                 table.add_row(f"  {cand}")
-        
+
         return Panel(table, title="[bold]Real-Time Log[/bold]", border_style="yellow")
 
     def _generate_footer(self) -> Panel:
@@ -188,5 +185,5 @@ class Dashboard:
             refresh_per_second=4,
             console=self.console,
             screen=True,
-            get_renderable=lambda: (self._update_layout(), self.layout)[1]
+            get_renderable=lambda: (self._update_layout(), self.layout)[1],
         )

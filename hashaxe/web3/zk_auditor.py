@@ -86,10 +86,11 @@ import logging
 import struct
 import time
 import warnings
+from collections.abc import Callable, Iterator
 from dataclasses import dataclass, field
 from enum import Enum
 from pathlib import Path
-from typing import Any, Callable, Iterator
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
@@ -100,21 +101,71 @@ BIP39_WORD_COUNT = 2048
 
 # Full BIP39 English wordlist (subset for validation when full list unavailable)
 BIP39_SAMPLE_WORDS = {
-    "abandon", "ability", "able", "about", "above", "absent", "absorb",
-    "abstract", "absurd", "abuse", "access", "accident", "account",
-    "accuse", "achieve", "acid", "acoustic", "acquire", "across", "act",
-    "action", "actor", "actual", "adapt", "add", "address", "adjust",
-    "admit", "adult", "advance", "advice", "afraid", "again", "age",
-    "agree", "ahead", "aim", "air", "alarm", "album", "alcohol", "alert",
-    "alien", "all", "allow", "almost", "alone", "alpha", "already",
-    "also", "alter", "always", "amazing", "among", "amount", "amateur",
+    "abandon",
+    "ability",
+    "able",
+    "about",
+    "above",
+    "absent",
+    "absorb",
+    "abstract",
+    "absurd",
+    "abuse",
+    "access",
+    "accident",
+    "account",
+    "accuse",
+    "achieve",
+    "acid",
+    "acoustic",
+    "acquire",
+    "across",
+    "act",
+    "action",
+    "actor",
+    "actual",
+    "adapt",
+    "add",
+    "address",
+    "adjust",
+    "admit",
+    "adult",
+    "advance",
+    "advice",
+    "afraid",
+    "again",
+    "age",
+    "agree",
+    "ahead",
+    "aim",
+    "air",
+    "alarm",
+    "album",
+    "alcohol",
+    "alert",
+    "alien",
+    "all",
+    "allow",
+    "almost",
+    "alone",
+    "alpha",
+    "already",
+    "also",
+    "alter",
+    "always",
+    "amazing",
+    "among",
+    "amount",
+    "amateur",
 }
 
 
 # ── Enums ─────────────────────────────────────────────────────────────────────
 
+
 class WalletType(Enum):
     """Supported cryptocurrency wallet types."""
+
     ETHEREUM_V3 = "ethereum_v3"
     BITCOIN_CORE = "bitcoin_core"
     SOLANA_KEYPAIR = "solana_keypair"
@@ -124,6 +175,7 @@ class WalletType(Enum):
 
 class AuditSeverity(Enum):
     """ZK/Web3 audit finding severity."""
+
     CRITICAL = "CRITICAL"
     HIGH = "HIGH"
     MEDIUM = "MEDIUM"
@@ -133,9 +185,11 @@ class AuditSeverity(Enum):
 
 # ── Output Models ─────────────────────────────────────────────────────────────
 
+
 @dataclass
 class AuditFinding:
     """A single audit finding."""
+
     category: str = ""
     severity: AuditSeverity = AuditSeverity.INFO
     title: str = ""
@@ -146,6 +200,7 @@ class AuditFinding:
 @dataclass
 class WalletAnalysis:
     """Result of analyzing a cryptocurrency wallet file."""
+
     wallet_type: WalletType = WalletType.UNKNOWN
     cipher: str = ""
     kdf: str = ""
@@ -169,16 +224,17 @@ class PasswordTestResult:
     This is a REAL MEASURED result — the password was actually tested
     against the wallet's KDF + MAC verification pipeline.
     """
+
     password: str = ""
     match: bool = False
-    private_key_hex: str = ""   # Decrypted private key (only if match=True)
-    kdf_time_ms: float = 0.0    # Time spent in KDF derivation
+    private_key_hex: str = ""  # Decrypted private key (only if match=True)
+    kdf_time_ms: float = 0.0  # Time spent in KDF derivation
     total_time_ms: float = 0.0
     kdf_used: str = ""
 
     # Provenance
     mode: str = "MEASURED"
-    measured: bool = True       # This IS a real measured verification
+    measured: bool = True  # This IS a real measured verification
     simulation: bool = False
     implementation_status: str = "PRODUCTION"
     result_origin: str = "kdf_password_verification"
@@ -187,6 +243,7 @@ class PasswordTestResult:
 @dataclass
 class MnemonicRecoveryResult:
     """Result of a BIP39 partial mnemonic recovery attempt."""
+
     found: bool = False
     recovered_mnemonic: str = ""
     candidates_checked: int = 0
@@ -196,7 +253,7 @@ class MnemonicRecoveryResult:
 
     # Provenance
     mode: str = "MEASURED"
-    measured: bool = True       # Real search was executed
+    measured: bool = True  # Real search was executed
     simulation: bool = False
     implementation_status: str = "PRODUCTION"
     result_origin: str = "bip39_checksum_search"
@@ -205,6 +262,7 @@ class MnemonicRecoveryResult:
 # ══════════════════════════════════════════════════════════════════════════════
 # EthV3Verifier — REAL Ethereum v3 Keystore Password Verification Engine
 # ══════════════════════════════════════════════════════════════════════════════
+
 
 class EthV3Verifier:
     """Ethereum v3 Keystore password verification engine.
@@ -313,9 +371,7 @@ class EthV3Verifier:
             r = self.kdf_params.get("r", 8)
             p = self.kdf_params.get("p", 1)
             dklen = self.kdf_params.get("dklen", 32)
-            return hashlib.scrypt(
-                pwd_bytes, salt=salt, n=n, r=r, p=p, dklen=dklen
-            )
+            return hashlib.scrypt(pwd_bytes, salt=salt, n=n, r=r, p=p, dklen=dklen)
 
         elif self.kdf == "pbkdf2":
             salt = bytes.fromhex(self.kdf_params.get("salt", ""))
@@ -323,9 +379,7 @@ class EthV3Verifier:
             dklen = self.kdf_params.get("dklen", 32)
             prf = self.kdf_params.get("prf", "hmac-sha256")
             hash_name = "sha256" if "sha256" in prf else "sha512"
-            return hashlib.pbkdf2_hmac(
-                hash_name, pwd_bytes, salt, c, dklen=dklen
-            )
+            return hashlib.pbkdf2_hmac(hash_name, pwd_bytes, salt, c, dklen=dklen)
 
         else:
             raise ValueError(f"Unsupported KDF: {self.kdf}")
@@ -342,6 +396,7 @@ class EthV3Verifier:
 
         try:
             from Crypto.Hash import keccak  # type: ignore
+
             k = keccak.new(digest_bits=256)
             k.update(mac_key + self.ciphertext)
             computed_mac = k.digest()
@@ -349,6 +404,7 @@ class EthV3Verifier:
             # Fallback: try pysha3 or hashlib (Python 3.11+ has sha3)
             try:
                 import sha3  # type: ignore
+
                 k = sha3.keccak_256()
                 k.update(mac_key + self.ciphertext)
                 computed_mac = k.digest()
@@ -394,14 +450,17 @@ class EthV3Verifier:
 
         try:
             from Crypto.Cipher import AES  # type: ignore
-            cipher = AES.new(enc_key, AES.MODE_CTR,
-                             nonce=b"", initial_value=self.iv)
+
+            cipher = AES.new(enc_key, AES.MODE_CTR, nonce=b"", initial_value=self.iv)
             return cipher.decrypt(self.ciphertext)
         except ImportError:
             try:
                 from cryptography.hazmat.primitives.ciphers import (
-                    Cipher, algorithms, modes,
+                    Cipher,
+                    algorithms,
+                    modes,
                 )
+
                 cipher = Cipher(algorithms.AES(enc_key), modes.CTR(self.iv))
                 dec = cipher.decryptor()
                 return dec.update(self.ciphertext) + dec.finalize()
@@ -489,6 +548,7 @@ class EthV3Verifier:
 # BIP39Recoverer — REAL Mnemonic Recovery Engine
 # ══════════════════════════════════════════════════════════════════════════════
 
+
 class BIP39Recoverer:
     """BIP39 partial mnemonic recovery engine.
 
@@ -570,8 +630,8 @@ class BIP39Recoverer:
 
         # Split entropy and checksum
         cs_bits = total_words // 3  # 4 for 12 words, 8 for 24 words
-        entropy_bits = bits[:len(bits) - cs_bits]
-        checksum_bits = bits[len(bits) - cs_bits:]
+        entropy_bits = bits[: len(bits) - cs_bits]
+        checksum_bits = bits[len(bits) - cs_bits :]
 
         # Convert entropy to bytes
         entropy_bytes = int(entropy_bits, 2).to_bytes(len(entropy_bits) // 8, "big")
@@ -633,7 +693,7 @@ class BIP39Recoverer:
                 known_indices.append((i, -1))  # Sentinel: unknown word position to be brute-forced
 
         num_unknown = len(unknown_positions)
-        total_keyspace = BIP39_WORD_COUNT ** num_unknown
+        total_keyspace = BIP39_WORD_COUNT**num_unknown
 
         t_start = time.time()
         checked = 0
@@ -687,6 +747,7 @@ class BIP39Recoverer:
 # ══════════════════════════════════════════════════════════════════════════════
 # ZKAuditor — Main Auditor Class (Backward Compatible)
 # ══════════════════════════════════════════════════════════════════════════════
+
 
 class ZKAuditor:
     """Web3 Security Auditor and Cracking Engine.
@@ -748,12 +809,14 @@ class ZKAuditor:
         p = Path(wallet_path)
         if not p.exists():
             return WalletAnalysis(
-                findings=[AuditFinding(
-                    category="file",
-                    severity=AuditSeverity.INFO,
-                    title="File not found",
-                    description=f"Wallet file not found: {wallet_path}",
-                )],
+                findings=[
+                    AuditFinding(
+                        category="file",
+                        severity=AuditSeverity.INFO,
+                        title="File not found",
+                        description=f"Wallet file not found: {wallet_path}",
+                    )
+                ],
             )
 
         try:
@@ -761,62 +824,71 @@ class ZKAuditor:
             data = json.loads(content)
         except json.JSONDecodeError:
             return WalletAnalysis(
-                findings=[AuditFinding(
-                    category="format",
-                    severity=AuditSeverity.MEDIUM,
-                    title="Invalid format",
-                    description="Wallet file is not valid JSON",
-                )],
+                findings=[
+                    AuditFinding(
+                        category="format",
+                        severity=AuditSeverity.MEDIUM,
+                        title="Invalid format",
+                        description="Wallet file is not valid JSON",
+                    )
+                ],
             )
         except Exception as e:
             return WalletAnalysis(
-                findings=[AuditFinding(
-                    category="file",
-                    severity=AuditSeverity.INFO,
-                    title="Read error",
-                    description=str(e),
-                )],
+                findings=[
+                    AuditFinding(
+                        category="file",
+                        severity=AuditSeverity.INFO,
+                        title="Read error",
+                        description=str(e),
+                    )
+                ],
             )
 
         # Solana ed25519 keypair (id.json: 64-element byte array)
-        if isinstance(data, list) and len(data) == 64 and all(
-            isinstance(b, int) and 0 <= b <= 255 for b in data
+        if (
+            isinstance(data, list)
+            and len(data) == 64
+            and all(isinstance(b, int) and 0 <= b <= 255 for b in data)
         ):
             return self._analyze_solana_keypair(data, str(wallet_path))
 
         return self._analyze_ethereum_v3(data)
 
-    def _analyze_solana_keypair(
-        self, raw_bytes: list[int], source: str
-    ) -> WalletAnalysis:
+    def _analyze_solana_keypair(self, raw_bytes: list[int], source: str) -> WalletAnalysis:
         """Analyze a Solana ed25519 keypair (id.json format)."""
         import base64
+
         findings: list[AuditFinding] = []
 
         pubkey_bytes = bytes(raw_bytes[32:])
         pubkey_b58 = base64.b64encode(pubkey_bytes).decode()
 
-        findings.append(AuditFinding(
-            category="solana",
-            severity=AuditSeverity.CRITICAL,
-            title="Unencrypted Solana keypair",
-            description=(
-                f"Solana id.json stores raw ed25519 keypair without encryption. "
-                f"Public key (base64): {pubkey_b58[:16]}..."
-            ),
-            recommendation=(
-                "Move to hardware wallet (Ledger) or use solana-keygen with "
-                "BIP39 passphrase. Never store id.json on shared machines."
-            ),
-        ))
+        findings.append(
+            AuditFinding(
+                category="solana",
+                severity=AuditSeverity.CRITICAL,
+                title="Unencrypted Solana keypair",
+                description=(
+                    f"Solana id.json stores raw ed25519 keypair without encryption. "
+                    f"Public key (base64): {pubkey_b58[:16]}..."
+                ),
+                recommendation=(
+                    "Move to hardware wallet (Ledger) or use solana-keygen with "
+                    "BIP39 passphrase. Never store id.json on shared machines."
+                ),
+            )
+        )
 
-        findings.append(AuditFinding(
-            category="quantum",
-            severity=AuditSeverity.HIGH,
-            title="Ed25519 vulnerable to quantum (Shor's algorithm)",
-            description="Ed25519 keypair will be breakable by quantum computers",
-            recommendation="Monitor NIST PQC transition; prepare for ML-DSA migration",
-        ))
+        findings.append(
+            AuditFinding(
+                category="quantum",
+                severity=AuditSeverity.HIGH,
+                title="Ed25519 vulnerable to quantum (Shor's algorithm)",
+                description="Ed25519 keypair will be breakable by quantum computers",
+                recommendation="Monitor NIST PQC transition; prepare for ML-DSA migration",
+            )
+        )
 
         return WalletAnalysis(
             wallet_type=WalletType.SOLANA_KEYPAIR,
@@ -847,36 +919,42 @@ class ZKAuditor:
             r = kdf_params.get("r", 0)
             p = kdf_params.get("p", 0)
             if n < 262144:  # 2^18
-                findings.append(AuditFinding(
-                    category="kdf",
-                    severity=AuditSeverity.HIGH,
-                    title="Weak scrypt parameters",
-                    description=f"scrypt N={n} is below recommended minimum (262144)",
-                    recommendation="Use N=262144, r=8, p=1 minimum",
-                ))
+                findings.append(
+                    AuditFinding(
+                        category="kdf",
+                        severity=AuditSeverity.HIGH,
+                        title="Weak scrypt parameters",
+                        description=f"scrypt N={n} is below recommended minimum (262144)",
+                        recommendation="Use N=262144, r=8, p=1 minimum",
+                    )
+                )
             est_time = f"~{n * r * p // 500_000:.0f} hours with GPU cluster"
         elif kdf == "pbkdf2":
             c = kdf_params.get("c", 0)
             if c < 100000:
-                findings.append(AuditFinding(
-                    category="kdf",
-                    severity=AuditSeverity.CRITICAL,
-                    title="Weak PBKDF2 iterations",
-                    description=f"PBKDF2 c={c} is critically low",
-                    recommendation="Use minimum 600,000 iterations (OWASP 2024)",
-                ))
+                findings.append(
+                    AuditFinding(
+                        category="kdf",
+                        severity=AuditSeverity.CRITICAL,
+                        title="Weak PBKDF2 iterations",
+                        description=f"PBKDF2 c={c} is critically low",
+                        recommendation="Use minimum 600,000 iterations (OWASP 2024)",
+                    )
+                )
             est_time = f"~{c // 1_000_000:.1f} hours with GPU cluster"
         else:
             est_time = "unknown"
 
         # Cipher analysis
         if cipher != "aes-128-ctr":
-            findings.append(AuditFinding(
-                category="cipher",
-                severity=AuditSeverity.MEDIUM,
-                title=f"Non-standard cipher: {cipher}",
-                description="Expected aes-128-ctr for Ethereum v3",
-            ))
+            findings.append(
+                AuditFinding(
+                    category="cipher",
+                    severity=AuditSeverity.MEDIUM,
+                    title=f"Non-standard cipher: {cipher}",
+                    description="Expected aes-128-ctr for Ethereum v3",
+                )
+            )
 
         return WalletAnalysis(
             wallet_type=WalletType.ETHEREUM_V3,
@@ -898,40 +976,48 @@ class ZKAuditor:
 
         # Check word count
         if len(words) not in (12, 15, 18, 21, 24):
-            findings.append(AuditFinding(
-                category="mnemonic",
-                severity=AuditSeverity.CRITICAL,
-                title="Invalid mnemonic length",
-                description=f"Got {len(words)} words, expected 12/15/18/21/24",
-            ))
+            findings.append(
+                AuditFinding(
+                    category="mnemonic",
+                    severity=AuditSeverity.CRITICAL,
+                    title="Invalid mnemonic length",
+                    description=f"Got {len(words)} words, expected 12/15/18/21/24",
+                )
+            )
 
         # Check for valid BIP39 words
         invalid = [w for w in words if w not in self._bip39_words]
         if invalid and len(self._bip39_words) > 100:
-            findings.append(AuditFinding(
-                category="mnemonic",
-                severity=AuditSeverity.HIGH,
-                title="Invalid BIP39 words",
-                description=f"Words not in BIP39 list: {', '.join(invalid[:5])}",
-            ))
+            findings.append(
+                AuditFinding(
+                    category="mnemonic",
+                    severity=AuditSeverity.HIGH,
+                    title="Invalid BIP39 words",
+                    description=f"Words not in BIP39 list: {', '.join(invalid[:5])}",
+                )
+            )
 
         # Check for duplicate words
         if len(words) != len(set(words)):
-            findings.append(AuditFinding(
-                category="mnemonic",
-                severity=AuditSeverity.MEDIUM,
-                title="Duplicate words in mnemonic",
-                description="Mnemonic contains repeated words, reducing entropy",
-            ))
+            findings.append(
+                AuditFinding(
+                    category="mnemonic",
+                    severity=AuditSeverity.MEDIUM,
+                    title="Duplicate words in mnemonic",
+                    description="Mnemonic contains repeated words, reducing entropy",
+                )
+            )
 
         # Entropy analysis
         if len(words) == 12:
-            findings.append(AuditFinding(
-                category="entropy",
-                severity=AuditSeverity.INFO,
-                title="12-word mnemonic = 128 bits entropy",
-                description="Consider 24-word (256 bits) for high-value assets",
-            ))
+            findings.append(
+                AuditFinding(
+                    category="entropy",
+                    severity=AuditSeverity.INFO,
+                    title="12-word mnemonic = 128 bits entropy",
+                    description="Consider 24-word (256 bits) for high-value assets",
+                )
+            )
 
         return findings
 
@@ -956,13 +1042,13 @@ class ZKAuditor:
             Dict with keyspace, estimated time, feasibility, and provenance.
         """
         unknown = total_words - known_words
-        raw_keyspace = BIP39_WORD_COUNT ** unknown
+        raw_keyspace = BIP39_WORD_COUNT**unknown
 
         # BIP39 checksum reduces valid candidates
         if checksum_reduction and unknown > 0:
             cs_bits = total_words // 3  # 4 for 12-word, 8 for 24-word
             # Checksum eliminates ~(1 - 1/2^cs_bits) of candidates
-            checksum_factor = 2 ** cs_bits
+            checksum_factor = 2**cs_bits
             adjusted_keyspace = max(1, raw_keyspace // checksum_factor)
         else:
             adjusted_keyspace = raw_keyspace
@@ -971,6 +1057,7 @@ class ZKAuditor:
         # If positions are unknown, multiply by C(total, unknown)
         if not known_positions and unknown > 0:
             from math import comb
+
             positional_factor = comb(total_words, unknown)
             adjusted_keyspace *= positional_factor
         else:

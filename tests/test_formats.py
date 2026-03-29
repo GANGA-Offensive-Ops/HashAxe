@@ -54,6 +54,7 @@ _KEYS_DIR = Path(__file__).parent.parent / "test_files"
 # Test BaseFormat ABC
 # ══════════════════════════════════════════════════════════════════════════════
 
+
 class TestBaseFormatABC(unittest.TestCase):
     """Verify that BaseFormat cannot be instantiated directly."""
 
@@ -108,6 +109,7 @@ class TestBaseFormatABC(unittest.TestCase):
 # Test FormatTarget
 # ══════════════════════════════════════════════════════════════════════════════
 
+
 class TestFormatTarget(unittest.TestCase):
     """FormatTarget must be picklable and copyable (multiprocessing)."""
 
@@ -153,6 +155,7 @@ class TestFormatTarget(unittest.TestCase):
 # ══════════════════════════════════════════════════════════════════════════════
 # Test FormatRegistry
 # ══════════════════════════════════════════════════════════════════════════════
+
 
 class TestFormatRegistry(unittest.TestCase):
     """Test the singleton registry and its operations."""
@@ -240,6 +243,7 @@ class TestFormatRegistry(unittest.TestCase):
 # Test OpenSSH Format Handler
 # ══════════════════════════════════════════════════════════════════════════════
 
+
 class TestOpenSSHFormat(unittest.TestCase):
     """Test identification, parsing, and verification for OpenSSH keys."""
 
@@ -295,7 +299,7 @@ class TestOpenSSHFormat(unittest.TestCase):
 
     @unittest.skipUnless(
         (_KEYS_DIR / "rsa_legacy_puppet.key").exists(),
-        "Test fixture rsa_legacy_puppet.key not found"
+        "Test fixture rsa_legacy_puppet.key not found",
     )
     def test_parse_legacy_rsa_fixture(self):
         """Parse a real legacy RSA key fixture."""
@@ -310,7 +314,7 @@ class TestOpenSSHFormat(unittest.TestCase):
 
     @unittest.skipUnless(
         (_KEYS_DIR / "rsa_legacy_puppet.key").exists(),
-        "Test fixture rsa_legacy_puppet.key not found"
+        "Test fixture rsa_legacy_puppet.key not found",
     )
     def test_verify_correct_password(self):
         """Correct password passes both verify() and verify_full()."""
@@ -323,7 +327,7 @@ class TestOpenSSHFormat(unittest.TestCase):
 
     @unittest.skipUnless(
         (_KEYS_DIR / "rsa_legacy_puppet.key").exists(),
-        "Test fixture rsa_legacy_puppet.key not found"
+        "Test fixture rsa_legacy_puppet.key not found",
     )
     def test_verify_wrong_password(self):
         """Wrong password fails verify()."""
@@ -335,7 +339,7 @@ class TestOpenSSHFormat(unittest.TestCase):
 
     @unittest.skipUnless(
         (_KEYS_DIR / "rsa_legacy_nopass.key").exists(),
-        "Test fixture rsa_legacy_nopass.key not found"
+        "Test fixture rsa_legacy_nopass.key not found",
     )
     def test_unencrypted_key_reports_not_encrypted(self):
         """Unencrypted keys have is_encrypted=False."""
@@ -349,7 +353,12 @@ class TestOpenSSHFormat(unittest.TestCase):
         """display_info() returns expected metadata keys."""
         target = FormatTarget(
             format_id="ssh.openssh",
-            format_data={"key_type": "ssh-rsa", "cipher": "aes256-ctr", "kdf": "bcrypt", "rounds": 16},
+            format_data={
+                "key_type": "ssh-rsa",
+                "cipher": "aes256-ctr",
+                "kdf": "bcrypt",
+                "rounds": 16,
+            },
         )
         info = self.handler.display_info(target)
         self.assertIn("Type", info)
@@ -361,6 +370,7 @@ class TestOpenSSHFormat(unittest.TestCase):
 # ══════════════════════════════════════════════════════════════════════════════
 # Test PPK Format Handler
 # ══════════════════════════════════════════════════════════════════════════════
+
 
 class TestPPKFormat(unittest.TestCase):
     """Test identification, parsing, and verification for PPK keys."""
@@ -433,12 +443,13 @@ class TestPPKFormat(unittest.TestCase):
 # Integration: Registry → Identify → Parse → Verify
 # ══════════════════════════════════════════════════════════════════════════════
 
+
 class TestFormatIntegration(unittest.TestCase):
     """End-to-end tests: raw bytes → identify → parse → verify."""
 
     @unittest.skipUnless(
         (_KEYS_DIR / "rsa_legacy_puppet.key").exists(),
-        "Test fixture rsa_legacy_puppet.key not found"
+        "Test fixture rsa_legacy_puppet.key not found",
     )
     def test_full_flow_rsa_legacy(self):
         """Full pipeline: identify RSA key → parse → verify password."""
@@ -467,7 +478,7 @@ class TestFormatIntegration(unittest.TestCase):
 
     @unittest.skipUnless(
         (_KEYS_DIR / "ecdsa_legacy_abc123.key").exists(),
-        "Test fixture ecdsa_legacy_abc123.key not found"
+        "Test fixture ecdsa_legacy_abc123.key not found",
     )
     def test_full_flow_ecdsa_legacy(self):
         """Full pipeline for ECDSA legacy key."""

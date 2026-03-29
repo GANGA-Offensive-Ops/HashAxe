@@ -34,7 +34,7 @@ from unittest.mock import MagicMock, patch
 import pytest
 from fastapi.testclient import TestClient
 
-from hashaxe.api import app, _JOBS, _RESULTS
+from hashaxe.api import _JOBS, _RESULTS, app
 from hashaxe.auto_pwn import AutoPwnOrchestrator
 from hashaxe.tui.app import Dashboard
 
@@ -45,6 +45,7 @@ client = TestClient(app)
 # Auto-Pwn Orchestrator Tests
 # ═══════════════════════════════════════════════════════════════════════════════
 
+
 class TestAutoPwnOrchestrator:
 
     def test_init_orchestrator(self):
@@ -54,7 +55,9 @@ class TestAutoPwnOrchestrator:
 
     def test_pipeline_fast_wordlist_success(self):
         auto_pwn = AutoPwnOrchestrator("hash.txt", "words.txt")
-        with patch.object(auto_pwn, "_stage_fast_wordlist", return_value="autopwn_fixture_3j") as mock_stage:
+        with patch.object(
+            auto_pwn, "_stage_fast_wordlist", return_value="autopwn_fixture_3j"
+        ) as mock_stage:
             result = auto_pwn.execute_pipeline()
             assert result == "autopwn_fixture_3j"
             mock_stage.assert_called_once()
@@ -83,6 +86,7 @@ class TestAutoPwnOrchestrator:
 # REST API Tests
 # ═══════════════════════════════════════════════════════════════════════════════
 
+
 class TestRESTAPI:
 
     def setup_method(self):
@@ -102,7 +106,7 @@ class TestRESTAPI:
             "target": "5d41402abc4b2a76b9719d911017c592",
             "target_type": "hash",
             "hash_algorithm": "md5",
-            "attack_mode": "auto_pwn"
+            "attack_mode": "auto_pwn",
         }
         response = client.post("/jobs", json=req)
         assert response.status_code == 202
@@ -149,6 +153,7 @@ class TestRESTAPI:
 # TUI Dashboard Tests
 # ═══════════════════════════════════════════════════════════════════════════════
 
+
 class TestTUIDashboard:
 
     def test_dashboard_init(self):
@@ -168,7 +173,7 @@ class TestTUIDashboard:
             "keyspace_total": 10000,
         }
         dash = Dashboard(monitor_mock)
-        
+
         # Test panel generation logic functions without erroring
         header = dash._generate_header()
         progress = dash._generate_progress()

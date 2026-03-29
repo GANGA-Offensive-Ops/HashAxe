@@ -59,6 +59,7 @@ log = logging.getLogger(__name__)
 # ── Optional dependency ───────────────────────────────────────────────────────
 try:
     import pykeepass  # type: ignore
+
     _HAS_PYKEEPASS = True
 except ImportError:
     _HAS_PYKEEPASS = False
@@ -162,6 +163,7 @@ class KeePassFormat(BaseFormat):
 
     def _verify_pykeepass(self, target: FormatTarget, password: bytes) -> bool:
         from io import BytesIO
+
         data = target.format_data.get("raw_data")
         fp = target.format_data.get("file_path")
         try:
@@ -170,6 +172,7 @@ class KeePassFormat(BaseFormat):
             elif data:
                 # pykeepass can read from file path only
                 import tempfile
+
                 with tempfile.NamedTemporaryFile(suffix=".kdbx", delete=True) as tmp:
                     tmp.write(data)
                     tmp.flush()

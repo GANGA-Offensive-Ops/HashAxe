@@ -78,14 +78,17 @@ class AutoPwnOrchestrator:
         self._has_gpu = False
         try:
             from hashaxe.gpu.accelerator import detect_gpu
+
             gpu = detect_gpu()
             if gpu:
                 self._has_gpu = True
                 logger.info(f"[Auto-Pwn] GPU detected: {gpu.name} — enabling GPU stages")
         except Exception:
             pass
-        logger.info(f"[Auto-Pwn] Hardware profile: GPU={'YES' if self._has_gpu else 'NO'}, "
-                    f"Threads={self.threads or 'auto'}")
+        logger.info(
+            f"[Auto-Pwn] Hardware profile: GPU={'YES' if self._has_gpu else 'NO'}, "
+            f"Threads={self.threads or 'auto'}"
+        )
 
         # STAGE 1: Quick Wins (Wordlist + Fast Rules)
         logger.info("[Auto-Pwn] Stage 1: Fast Wordlist Attack")
@@ -128,7 +131,7 @@ class AutoPwnOrchestrator:
             wordlist=self.wordlist_path,
             threads=self.threads,
             attack_mode_override="wordlist",
-            quiet=True
+            quiet=True,
         )
 
     def _stage_osint(self) -> str | None:
@@ -138,7 +141,7 @@ class AutoPwnOrchestrator:
             wordlist=str(self.osint_path),  # Acts as base list
             threads=self.threads,
             attack_mode_override="osint",
-            quiet=True
+            quiet=True,
         )
 
     def _stage_smart_ai(self) -> str | None:
@@ -149,7 +152,7 @@ class AutoPwnOrchestrator:
                 wordlist=self.wordlist_path,
                 threads=self.threads,
                 attack_mode_override="ai",
-                quiet=True
+                quiet=True,
             )
         except SystemExit:
             return None
@@ -162,5 +165,5 @@ class AutoPwnOrchestrator:
             threads=self.threads,
             use_rules=True,
             attack_mode_override="wordlist",
-            quiet=True
+            quiet=True,
         )

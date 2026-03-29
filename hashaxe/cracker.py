@@ -51,31 +51,40 @@ from hashaxe.wordlist import WordlistStreamer, chunk_wordlist, validate_wordlist
 
 # Module-level globals for sharing across pool workers.
 # Set by _init_worker() when the Pool is created.
-_found_event   = None
+_found_event = None
 _shared_counter = None
+
 
 def _init_worker(event, counter):
     """Pool initializer: stores shared Event + counter in module globals."""
     import signal
+
     signal.signal(signal.SIGINT, signal.SIG_IGN)
     global _found_event, _shared_counter
-    _found_event   = event
+    _found_event = event
     _shared_counter = counter
 
 
 def _worker(args: tuple) -> tuple[str | None, int]:
-    (target, wordlist_path, start_byte, end_byte,
-     use_rules, rule_data, mask_str, custom_charsets,
-     use_smart_order) = args
+    (
+        target,
+        wordlist_path,
+        start_byte,
+        end_byte,
+        use_rules,
+        rule_data,
+        mask_str,
+        custom_charsets,
+        use_smart_order,
+    ) = args
 
-    tried    = 0
+    tried = 0
     local_count = 0  # Batched counter to avoid lock contention
     update_mask = {1: 0x3FFF, 2: 0x7FF, 3: 0x0, 4: 0x0, 5: 0x0}.get(target.difficulty.value, 0x3F)
     streamer = WordlistStreamer(wordlist_path)
-    handler  = FormatRegistry().get(target.format_id)
+    handler = FormatRegistry().get(target.format_id)
     if not handler:
         return (None, 0)
-
 
     # Pre-build MaskEngine outside the loop (ARCH-2 fix)
     mask_engine = MaskEngine(mask_str, custom_charsets) if mask_str else None
@@ -98,11 +107,12 @@ def _worker(args: tuple) -> tuple[str | None, int]:
         else:
             candidates = [word]
 
-        # Sorting 500+ generated candidates per word using regexes crushes CPU 
+        # Sorting 500+ generated candidates per word using regexes crushes CPU
         # performance (yielding 2.4 H/s). Only apply smart_sort for small candidate expansions.
         if use_smart_order and 1 < len(candidates) <= 20:
             try:
                 from hashaxe.cpu.wordfreq import smart_sort
+
                 candidates = smart_sort(candidates)
             except ImportError:
                 pass
@@ -134,9 +144,9 @@ def _worker(args: tuple) -> tuple[str | None, int]:
 
 def _mask_worker(args: tuple) -> tuple[str | None, int]:
     (target, mask_str, custom_charsets, skip, count) = args
-    engine   = MaskEngine(mask_str, custom_charsets)
-    handler  = FormatRegistry().get(target.format_id)
-    tried    = 0
+    engine = MaskEngine(mask_str, custom_charsets)
+    handler = FormatRegistry().get(target.format_id)
+    tried = 0
     local_count = 0
     update_mask = {1: 0x3FFF, 2: 0x7FF, 3: 0x0, 4: 0x0, 5: 0x0}.get(target.difficulty.value, 0x3F)
     if not handler:
@@ -169,7 +179,8 @@ def _mask_worker(args: tuple) -> tuple[str | None, int]:
 def _plugin_worker(args: tuple) -> tuple[str | None, int]:
     """Generic worker for advanced AttackRegistry generator plugins."""
     (target, attack_mode, config_dict, worker_id, num_workers) = args
-    from hashaxe.attacks import AttackRegistry, AttackConfig
+    from hashaxe.attacks import AttackConfig, AttackRegistry
+
     atk_plugin = AttackRegistry().get(attack_mode)
     if not atk_plugin:
         return (None, 0)
@@ -186,6 +197,7 @@ def _plugin_worker(args: tuple) -> tuple[str | None, int]:
     if attack_mode in ("ai", "osint", "pcfg"):
         update_mask = 0x0
     import itertools
+
     gen = atk_plugin.generate(config)
     # Partition generation using islice so workers share the load round-robin
     for candidate in itertools.islice(gen, worker_id, None, num_workers):
@@ -213,9 +225,9 @@ def _plugin_worker(args: tuple) -> tuple[str | None, int]:
 def _progress_poller(counter, found_event, display, total, t_start, n_workers, poll_interval=0.3):
     """Background thread: polls shared counter and updates the display live."""
     while not found_event.is_set():
-        tried   = counter.value
+        tried = counter.value
         elapsed = time.time() - t_start
-        speed   = tried / elapsed if elapsed > 0 else 0
+        speed = tried / elapsed if elapsed > 0 else 0
         display.progress(tried, total, speed, n_workers)
         time.sleep(poll_interval)
         # Check if all workers are done (counter stopped changing)
@@ -230,6 +242,7 @@ def benchmark(target: FormatTarget, handler: BaseFormat, display: Display, n_wor
     display.info("Running benchmark (5 seconds)...")
     try:
         from hashaxe.gpu.accelerator import detect_gpu, gpu_info_string
+
         device = detect_gpu()
         if device and not display.quiet:
             display.ok(f"GPU: {gpu_info_string(device)}")
@@ -238,56 +251,56 @@ def benchmark(target: FormatTarget, handler: BaseFormat, display: Display, n_wor
 
     test_passwords = [f"benchmark_test_{i}".encode() for i in range(200)]
     t_start = time.perf_counter()
-    tested  = 0
+    tested = 0
     for pw in test_passwords * 10:
         handler.verify(target, pw)
         tested += 1
         if time.perf_counter() - t_start >= 5.0:
             break
 
-    elapsed        = time.perf_counter() - t_start
+    elapsed = time.perf_counter() - t_start
     speed_per_core = tested / elapsed if elapsed > 0 else 0
     display.benchmark_result(
-        key_path       = "",
-        rounds         = int(target.format_data.get("rounds", 1)),
-        speed_per_core = speed_per_core,
-        workers        = n_workers,
+        key_path="",
+        rounds=int(target.format_data.get("rounds", 1)),
+        speed_per_core=speed_per_core,
+        workers=n_workers,
     )
     return speed_per_core
 
 
 def hashaxe(
-    key_path:         str | None     = None,
-    raw_hash:         str | None     = None,
-    wordlist:         str            = "",
-    threads:          int            = 0,
-    use_rules:        bool           = False,
-    rule_file:        str | None  = None,
-    mask:             str | None  = None,
-    custom_charsets:  dict | None = None,
-    verbose:          bool           = False,
-    quiet:            bool           = False,
-    output:           str | None  = None,
-    session_name:     str | None  = None,
-    restore:          bool           = False,
-    do_benchmark:     bool           = False,
-    use_gpu:          bool           = True,
-    use_smart_order:  bool           = True,
-    distributed_master: bool         = False,
-    distributed_worker: bool         = False,
-    master_host:      str | None  = None,
-    verify_host:      str | None  = None,
-    verify_port:      int            = 22,
-    verify_user:      str | None  = None,
+    key_path: str | None = None,
+    raw_hash: str | None = None,
+    wordlist: str = "",
+    threads: int = 0,
+    use_rules: bool = False,
+    rule_file: str | None = None,
+    mask: str | None = None,
+    custom_charsets: dict | None = None,
+    verbose: bool = False,
+    quiet: bool = False,
+    output: str | None = None,
+    session_name: str | None = None,
+    restore: bool = False,
+    do_benchmark: bool = False,
+    use_gpu: bool = True,
+    use_smart_order: bool = True,
+    distributed_master: bool = False,
+    distributed_worker: bool = False,
+    master_host: str | None = None,
+    verify_host: str | None = None,
+    verify_port: int = 22,
+    verify_user: str | None = None,
     attack_mode_override: str | None = None,
-    wordlist2:        str | None  = None,
-    policy:           str | None  = None,
-    markov_order:     int            = 3,
-    prince_min:       int            = 1,
-    prince_max:       int            = 4,
-    use_tui:          bool           = False,
-    ai_candidates:    int            = 1000,
-    format_override:  str | None  = None,
+    wordlist2: str | None = None,
+    policy: str | None = None,
+    markov_order: int = 3,
+    prince_min: int = 1,
+    prince_max: int = 4,
+    use_tui: bool = False,
+    ai_candidates: int = 1000,
+    format_override: str | None = None,
 ) -> str | None:
     display = Display(verbose=verbose, quiet=quiet)
     display.banner()
@@ -297,8 +310,8 @@ def hashaxe(
             display.error("--distributed-worker requires --master HOST")
             sys.exit(1)
         from hashaxe.distributed.worker import WorkerNode
-        WorkerNode(master_host=master_host, threads=threads,
-                   use_gpu=use_gpu, verbose=verbose).run()
+
+        WorkerNode(master_host=master_host, threads=threads, use_gpu=use_gpu, verbose=verbose).run()
         return None
 
     if raw_hash:
@@ -336,10 +349,7 @@ def hashaxe(
             handler = match.handler
             target = handler.parse(data, src_path)
             # Store alternative candidates for fallback if primary fails
-            alt_candidates = [
-                m for m in all_matches[1:]
-                if m.format_id != match.format_id
-            ]
+            alt_candidates = [m for m in all_matches[1:] if m.format_id != match.format_id]
     except (ValueError, FileNotFoundError) as exc:
         display.error(f"Format parse error: {exc}")
         sys.exit(1)
@@ -354,12 +364,15 @@ def hashaxe(
     _gpu_device = None
     try:
         from hashaxe.gpu.accelerator import HardwareProfiler, detect_gpu, gpu_info_string
+
         _gpu_device = detect_gpu()
         profile = HardwareProfiler.auto_profile(_gpu_device)
         if not quiet:
             if profile["has_gpu"]:
-                display.ok(f"Hardware Profile: {profile['gpu_name']} "
-                           f"({profile['gpu_vram']}MB VRAM, {profile['cpu_cores']} cores)")
+                display.ok(
+                    f"Hardware Profile: {profile['gpu_name']} "
+                    f"({profile['gpu_vram']}MB VRAM, {profile['cpu_cores']} cores)"
+                )
             else:
                 display.info(f"Hardware Profile: CPU-only ({profile['cpu_cores']} cores)")
     except (ImportError, RuntimeError):
@@ -376,8 +389,7 @@ def hashaxe(
     # ODF Argon2id requires a single persistent LibreOffice UNO daemon for verification.
     # Multiple workers would each spawn separate soffice processes (~500MB each), consuming
     # massive RAM and racing on file locks. Force single-worker serial mode for this case.
-    if (target.format_id == "document.odf"
-            and target.format_data.get("kdf") == "argon2id"):
+    if target.format_id == "document.odf" and target.format_data.get("kdf") == "argon2id":
         n_workers = 1
         if not quiet:
             display.info("ODF Argon2id detected — using single-worker UNO bridge mode")
@@ -390,9 +402,8 @@ def hashaxe(
     _stdin_tmpfile = None
     if wordlist == "-":
         import tempfile as _tmpmod
-        _stdin_tmpfile = _tmpmod.NamedTemporaryFile(
-            mode="wb", suffix=".wordlist", delete=False
-        )
+
+        _stdin_tmpfile = _tmpmod.NamedTemporaryFile(mode="wb", suffix=".wordlist", delete=False)
         for chunk_data in iter(lambda: sys.stdin.buffer.read(65536), b""):
             _stdin_tmpfile.write(chunk_data)
         _stdin_tmpfile.close()
@@ -401,10 +412,14 @@ def hashaxe(
 
     # ── Attack mode selection (via AttackRegistry if override) ─────────────
     atk_config = AttackConfig(
-        wordlist=wordlist, wordlist2=wordlist2, mask=mask,
+        wordlist=wordlist,
+        wordlist2=wordlist2,
+        mask=mask,
         custom_charsets=custom_charsets or {},
-        policy=policy, markov_order=markov_order,
-        prince_min_elems=prince_min, prince_max_elems=prince_max,
+        policy=policy,
+        markov_order=markov_order,
+        prince_min_elems=prince_min,
+        prince_max_elems=prince_max,
         ai_candidates=ai_candidates,
     )
     atk_plugin = None
@@ -435,7 +450,9 @@ def hashaxe(
     if attack_mode in ("ai", "osint"):
         n_workers = 1
         if not quiet:
-            display.info(f"Advanced generation ({attack_mode}) active — restricting to single worker to protect memory and strictly order streams")
+            display.info(
+                f"Advanced generation ({attack_mode}) active — restricting to single worker to protect memory and strictly order streams"
+            )
 
     compiled_rules = None
     if rule_file:
@@ -446,8 +463,8 @@ def hashaxe(
             display.error(f"Rule file not found: {rule_file}")
             sys.exit(1)
 
-    sess_name   = session_name or session_name_for(key_path=key_path, wordlist=wordlist or mask or "")
-    session     = None
+    sess_name = session_name or session_name_for(key_path=key_path, wordlist=wordlist or mask or "")
+    session = None
     resume_byte = 0
 
     if restore:
@@ -459,29 +476,32 @@ def hashaxe(
             else:
                 resume_byte = session.bytes_done
                 display.ok(
-                    f"Resuming session '{sess_name}' "
-                    f"({session.words_tried:,} already tried)"
+                    f"Resuming session '{sess_name}' " f"({session.words_tried:,} already tried)"
                 )
         except FileNotFoundError:
             display.warn(f"No session '{sess_name}' found — starting fresh.")
 
     if session is None:
         session = Session(
-            key_path  = key_path,
-            key_hash  = Session.hash_key_file(path=key_path, raw_hash=raw_hash),
-            wordlist  = wordlist or "",
-            mode      = attack_mode,
-            use_rules = use_rules,
-            rule_file = rule_file,
-            mask      = mask,
+            key_path=key_path,
+            key_hash=Session.hash_key_file(path=key_path, raw_hash=raw_hash),
+            wordlist=wordlist or "",
+            mode=attack_mode,
+            use_rules=use_rules,
+            rule_file=rule_file,
+            mask=mask,
         )
 
     if distributed_master:
         from hashaxe.distributed.master import MasterNode
+
         result = MasterNode(
-            key_path=key_path, wordlist=wordlist,
-            use_rules=use_rules, rule_file=rule_file,
-            mask=mask, verbose=verbose,
+            key_path=key_path,
+            wordlist=wordlist,
+            use_rules=use_rules,
+            rule_file=rule_file,
+            mask=mask,
+            verbose=verbose,
         ).run()
         if result:
             display.found(result, key_path, 0, 0, 0)
@@ -496,16 +516,25 @@ def hashaxe(
     if use_gpu:
         try:
             from hashaxe.gpu.fast_hash_cracker import (
-                is_fast_hash, hashcat_available, try_fast_hash_hashaxe_with_display
+                hashcat_available,
+                is_fast_hash,
+                try_fast_hash_hashaxe_with_display,
             )
+
             # Only delegate to hashcat if the attack mode is a simple mode that hashcat understands
             # natively via subprocess, and no Python-side rule engines are active.
             supported_hc_modes = {"wordlist", "mask", "hybrid", "combinator"}
-            if is_fast_hash(target.format_id) and hashcat_available() and attack_mode in supported_hc_modes and not use_rules and not rule_file:
+            if (
+                is_fast_hash(target.format_id)
+                and hashcat_available()
+                and attack_mode in supported_hc_modes
+                and not use_rules
+                and not rule_file
+            ):
                 target_hash = target.format_data.get("target_hash", "")
                 if not target_hash and data:
                     try:
-                        target_hash = data.decode('utf-8').strip()
+                        target_hash = data.decode("utf-8").strip()
                     except Exception:
                         pass
                 if target_hash:
@@ -514,18 +543,29 @@ def hashaxe(
                         target_hash=target_hash,
                         format_id=target.format_id,
                         attack_mode=attack_mode,
-                        wordlist=wordlist if attack_mode in ("wordlist", "hybrid", "combinator") else None,
+                        wordlist=(
+                            wordlist
+                            if attack_mode in ("wordlist", "hybrid", "combinator")
+                            else None
+                        ),
                         wordlist2=wordlist2,
                         mask=mask,
                         display=display,
                         total_candidates=(
                             MaskEngine(mask, custom_charsets).candidate_count()
-                            if mask and attack_mode == "mask" else 0
+                            if mask and attack_mode == "mask"
+                            else 0
                         ),
                         hashcat_mode_override=target.format_data.get("hashcat_mode"),
                     )
                     if gpu_result is not None:
-                        display.found(gpu_result, key_path, hc_tried, hc_elapsed, (hc_tried / hc_elapsed) if hc_elapsed > 0 else 0)
+                        display.found(
+                            gpu_result,
+                            key_path,
+                            hc_tried,
+                            hc_elapsed,
+                            (hc_tried / hc_elapsed) if hc_elapsed > 0 else 0,
+                        )
                         session.delete(sess_name)
                         return gpu_result
                     else:
@@ -541,28 +581,24 @@ def hashaxe(
             display.warn(f"GPU dispatch failed: {_gpu_exc} — falling back to CPU workers")
 
     from hashaxe.formats.base import CHUNK_SIZES
+
     perf_chunk = CHUNK_SIZES.get(target.difficulty, 50_000)
 
     if attack_mode == "mask":
-        engine      = MaskEngine(mask, custom_charsets)
+        engine = MaskEngine(mask, custom_charsets)
         total_cands = engine.candidate_count()
-        chunk_size  = perf_chunk
-        n_chunks    = max(1, total_cands // chunk_size) + (1 if total_cands % chunk_size > 0 else 0)
+        chunk_size = perf_chunk
+        n_chunks = max(1, total_cands // chunk_size) + (1 if total_cands % chunk_size > 0 else 0)
         mask_chunks = [
-            (i * chunk_size,
-             min((i + 1) * chunk_size, total_cands) - i * chunk_size)
+            (i * chunk_size, min((i + 1) * chunk_size, total_cands) - i * chunk_size)
             for i in range(n_chunks)
         ]
-        mask_chunks   = [(s, c) for s, c in mask_chunks if c > 0]
+        mask_chunks = [(s, c) for s, c in mask_chunks if c > 0]
         display_total = total_cands
     elif attack_mode in ("wordlist", "hybrid"):
         display.info("Indexing wordlist...")
         byte_chunks, total_lines = chunk_wordlist(wordlist, chunk_size_bytes=perf_chunk * 10)
-        rule_mult = (
-            len(compiled_rules) if compiled_rules
-            else count_rules()   if use_rules
-            else 1
-        )
+        rule_mult = len(compiled_rules) if compiled_rules else count_rules() if use_rules else 1
         if mask:
             rule_mult *= MaskEngine(mask, custom_charsets).candidate_count()
         display_total = total_lines * rule_mult
@@ -571,49 +607,59 @@ def hashaxe(
         display_total = atk_plugin.estimate_keyspace(atk_config) if atk_plugin else 0
 
     display.attack_header(
-        wordlist=wordlist or "(mask only)", workers=n_workers,
-        use_rules=use_rules, total_candidates=display_total,
-        mode=attack_mode, mask=mask,
+        wordlist=wordlist or "(mask only)",
+        workers=n_workers,
+        use_rules=use_rules,
+        total_candidates=display_total,
+        mode=attack_mode,
+        mask=mask,
         resuming=restore and session is not None,
     )
 
     # PERF-2: Use direct multiprocessing.Event() (shared memory) instead of
     # Manager().Event() (socket IPC). Every is_set() on a Manager proxy
     # costs a cross-process socket RPC — catastrophic at millions of calls.
-    found_event    = multiprocessing.Event()
-    shared_counter = multiprocessing.Value('i', session.words_tried if restore else 0)
+    found_event = multiprocessing.Event()
+    shared_counter = multiprocessing.Value("i", session.words_tried if restore else 0)
 
     if attack_mode == "mask":
         work_items = [
-            (target, mask, custom_charsets or {}, skip, count)
-            for skip, count in mask_chunks
+            (target, mask, custom_charsets or {}, skip, count) for skip, count in mask_chunks
         ]
         worker_fn = _mask_worker
     elif attack_mode in ("wordlist", "hybrid"):
         work_items = [
-            (target, wordlist, start, end,
-             use_rules, compiled_rules,
-             mask if attack_mode == "hybrid" else None,
-             custom_charsets or {},
-             use_smart_order)
+            (
+                target,
+                wordlist,
+                start,
+                end,
+                use_rules,
+                compiled_rules,
+                mask if attack_mode == "hybrid" else None,
+                custom_charsets or {},
+                use_smart_order,
+            )
             for start, end in byte_chunks
         ]
         worker_fn = _worker
     else:
         import dataclasses
+
         work_items = [
             (target, attack_mode, dataclasses.asdict(atk_config), i, n_workers)
             for i in range(n_workers)
         ]
         worker_fn = _plugin_worker
 
-    t_start     = time.time()
+    t_start = time.time()
     total_tried = session.words_tried if restore else 0
     result: str | None = None
-    last_save   = time.time()
+    last_save = time.time()
 
     try:
         if use_tui:
+
             class TUIMonitor:
                 def __init__(self, target, mode, display_total, t_start, shared_counter):
                     self.target = target
@@ -636,11 +682,14 @@ def hashaxe(
                         "elapsed": f"{elapsed:.1f}s",
                         "eta": f"{eta:.1f}s" if eta > 0 else "Unknown",
                     }
+
             from hashaxe.tui.app import Dashboard
+
             monitor = TUIMonitor(target, attack_mode, display_total, t_start, shared_counter)
             dash_ctx = Dashboard(monitor).run()
         else:
             import contextlib
+
             dash_ctx = contextlib.nullcontext()
 
         with dash_ctx:
@@ -654,7 +703,14 @@ def hashaxe(
                     # Start live progress poller thread
                     poller = threading.Thread(
                         target=_progress_poller,
-                        args=(shared_counter, found_event, display, display_total, t_start, n_workers),
+                        args=(
+                            shared_counter,
+                            found_event,
+                            display,
+                            display_total,
+                            t_start,
+                            n_workers,
+                        ),
                         daemon=True,
                     )
                     poller.start()
@@ -687,11 +743,12 @@ def hashaxe(
 
     elapsed = time.time() - t_start
     total_elapsed = session.elapsed + elapsed
-    speed   = total_tried / total_elapsed if total_elapsed > 0 else 0
+    speed = total_tried / total_elapsed if total_elapsed > 0 else 0
 
     if result is not None:
         try:
             from hashaxe.db import CrackDB
+
             CrackDB().log_hashaxe(
                 format_id=target.format_id,
                 passphrase=result,
@@ -728,7 +785,11 @@ def hashaxe(
         # If the primary format didn't hashaxe, try alternative formats.
         # This resolves ambiguous formats like 32hex:username which could
         # be PostgreSQL MD5 (hashcat -m 12) or DCC MS Cache v1 (-m 1100).
-        if alt_candidates and (wordlist or (attack_mode == "mask" and mask)) and not format_override:
+        if (
+            alt_candidates
+            and (wordlist or (attack_mode == "mask" and mask))
+            and not format_override
+        ):
             for alt_match in alt_candidates:
                 alt_handler = alt_match.handler
                 try:
@@ -737,14 +798,12 @@ def hashaxe(
                     continue
                 if not alt_target.is_encrypted:
                     continue
-                display.info(
-                    f"Retrying with alternative format: {alt_target.display_name}"
-                )
+                display.info(f"Retrying with alternative format: {alt_target.display_name}")
                 alt_found = None
                 try:
                     if wordlist:
                         # Lightweight serial verify against wordlist
-                        with open(wordlist, "r", encoding="utf-8", errors="ignore") as wf:
+                        with open(wordlist, encoding="utf-8", errors="ignore") as wf:
                             for line in wf:
                                 pw = line.rstrip("\n\r")
                                 if not pw:
@@ -785,9 +844,16 @@ def _verify_ssh(host, port, user, key_path, passphrase):
         # are ad-hoc machines whose host keys are rarely pre-known.
         c.set_missing_host_key_policy(paramiko.AutoAddPolicy())
         # Skip load_system_host_keys — stale entries conflict with new targets.
-        c.connect(hostname=host, port=port, username=user,
-                  key_filename=key_path, passphrase=passphrase,
-                  timeout=10, look_for_keys=False, allow_agent=False)
+        c.connect(
+            hostname=host,
+            port=port,
+            username=user,
+            key_filename=key_path,
+            passphrase=passphrase,
+            timeout=10,
+            look_for_keys=False,
+            allow_agent=False,
+        )
         c.close()
         return True
     except Exception as e:

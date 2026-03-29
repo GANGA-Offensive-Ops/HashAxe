@@ -81,10 +81,7 @@ class AdaptiveConfig:
 
     def should_adjust(self) -> bool:
         """Check if it's time for a parameter adjustment."""
-        return (
-            self.candidates_generated - self._last_adjustment
-            >= self.adjustment_interval
-        )
+        return self.candidates_generated - self._last_adjustment >= self.adjustment_interval
 
     def adjust(self) -> dict[str, float]:
         """Perform RL-inspired parameter adjustment.
@@ -115,7 +112,10 @@ class AdaptiveConfig:
         if changes.get("action") != "hold":
             logger.debug(
                 "Adaptive AI: %s (temp=%.2f, top_k=%d, rate=%.4f)",
-                changes["action"], self.temperature, self.top_k, rate,
+                changes["action"],
+                self.temperature,
+                self.top_k,
+                rate,
             )
 
         return changes

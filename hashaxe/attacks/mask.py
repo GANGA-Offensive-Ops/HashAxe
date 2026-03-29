@@ -58,7 +58,7 @@ def _parse_mask(mask: str, custom: dict[str, str] = {}) -> list[str]:
     i = 0
     while i < len(mask):
         if i + 1 < len(mask) and mask[i] == "?":
-            token = mask[i:i + 2]
+            token = mask[i : i + 2]
             if token in _BUILTINS:
                 charsets.append(_BUILTINS[token])
             elif token in custom:
@@ -75,7 +75,7 @@ def _parse_mask(mask: str, custom: dict[str, str] = {}) -> list[str]:
 class MaskAttack(BaseAttack):
     """Mask-based brute-force attack — generate all combinations for each position."""
 
-    attack_id   = "mask"
+    attack_id = "mask"
     attack_name = "Mask Attack"
     description = "Generate candidates from character position masks (?l?u?d?s?a)."
 

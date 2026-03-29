@@ -51,6 +51,7 @@ log = logging.getLogger(__name__)
 # ── Optional dependency ───────────────────────────────────────────────────────
 try:
     import pyzipper  # type: ignore
+
     _HAS_PYZIPPER = True
 except ImportError:
     _HAS_PYZIPPER = False
@@ -117,11 +118,11 @@ def _parse_extra_fields(extra: bytes) -> list[tuple[int, bytes]]:
     fields: list[tuple[int, bytes]] = []
     offset = 0
     while offset + 4 <= len(extra):
-        header_id = struct.unpack("<H", extra[offset:offset + 2])[0]
-        size = struct.unpack("<H", extra[offset + 2:offset + 4])[0]
+        header_id = struct.unpack("<H", extra[offset : offset + 2])[0]
+        size = struct.unpack("<H", extra[offset + 2 : offset + 4])[0]
         if offset + 4 + size > len(extra):
             break
-        fields.append((header_id, extra[offset + 4:offset + 4 + size]))
+        fields.append((header_id, extra[offset + 4 : offset + 4 + size]))
         offset += 4 + size
     return fields
 
@@ -132,7 +133,7 @@ class ZipFormat(BaseFormat):
     Supports both ZipCrypto (legacy) and WinZip AES-256 encryption.
     """
 
-    format_id   = "archive.zip"
+    format_id = "archive.zip"
     format_name = "ZIP Archive (ZipCrypto / AES)"
 
     # ── Identification ────────────────────────────────────────────────────────

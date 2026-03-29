@@ -69,6 +69,7 @@ from hashaxe.wordlist import WordlistStreamer, chunk_wordlist, validate_wordlist
 
 KEYS_DIR = Path(__file__).parent.parent / "test_files"
 
+
 def _tmp_file(content: bytes, suffix: str = ".txt") -> str:
     f = tempfile.NamedTemporaryFile(delete=False, suffix=suffix)
     f.write(content)
@@ -83,6 +84,7 @@ def _wordlist(words: list[str]) -> str:
 # ══════════════════════════════════════════════════════════════════════════════
 # PARSER TESTS
 # ══════════════════════════════════════════════════════════════════════════════
+
 
 class TestParser:
 
@@ -168,6 +170,7 @@ class TestParser:
 # ENGINE TESTS
 # ══════════════════════════════════════════════════════════════════════════════
 
+
 class TestEngine:
 
     def test_rsa_correct_password(self):
@@ -211,6 +214,7 @@ class TestEngine:
 # ══════════════════════════════════════════════════════════════════════════════
 # MUTATION RULES TESTS
 # ══════════════════════════════════════════════════════════════════════════════
+
 
 class TestMutations:
 
@@ -260,7 +264,7 @@ class TestMutations:
     def test_count_rules_consistent(self):
         """count_rules() must match actual output."""
         expected = count_rules()
-        actual   = len(list(apply_rules("password")))
+        actual = len(list(apply_rules("password")))
         assert actual == expected, f"count_rules={expected} but actual={actual}"
 
     def test_single_char_no_crash(self):
@@ -277,11 +281,12 @@ class TestMutations:
 # MASK ENGINE TESTS
 # ══════════════════════════════════════════════════════════════════════════════
 
+
 class TestMaskEngine:
 
     def test_digit_mask(self):
         engine = MaskEngine("?d?d?d")
-        cands  = list(engine.candidates())
+        cands = list(engine.candidates())
         assert len(cands) == 1000
         assert "000" in cands
         assert "999" in cands
@@ -289,14 +294,14 @@ class TestMaskEngine:
 
     def test_lower_mask(self):
         engine = MaskEngine("?l?l")
-        cands  = list(engine.candidates())
+        cands = list(engine.candidates())
         assert len(cands) == 26 * 26
         assert "aa" in cands
         assert "zz" in cands
 
     def test_literal_prefix(self):
         engine = MaskEngine("Pass?d?d?d")
-        cands  = list(engine.candidates())
+        cands = list(engine.candidates())
         assert len(cands) == 1000
         assert all(c.startswith("Pass") for c in cands)
         assert "Pass000" in cands
@@ -308,15 +313,15 @@ class TestMaskEngine:
 
     def test_custom_charset(self):
         engine = MaskEngine("?1?1?1", custom={"?1": "abc"})
-        cands  = list(engine.candidates())
+        cands = list(engine.candidates())
         assert len(cands) == 27  # 3^3
         assert "aaa" in cands
         assert "abc" in cands
 
     def test_candidates_from_skip(self):
         engine = MaskEngine("?d?d")
-        all_c  = list(engine.candidates())
-        skip5  = list(engine.candidates_from(5))
+        all_c = list(engine.candidates())
+        skip5 = list(engine.candidates_from(5))
         assert skip5 == all_c[5:]
 
     def test_invalid_token_raises(self):
@@ -328,7 +333,7 @@ class TestMaskEngine:
 
     def test_upper_mask(self):
         engine = MaskEngine("?u?u")
-        cands  = list(engine.candidates())
+        cands = list(engine.candidates())
         assert len(cands) == 26 * 26
         assert all(c.isupper() for c in cands)
 
@@ -348,6 +353,7 @@ class TestMaskEngine:
 # ══════════════════════════════════════════════════════════════════════════════
 # HASHCAT RULE TESTS
 # ══════════════════════════════════════════════════════════════════════════════
+
 
 class TestHashcatRules:
 
@@ -427,10 +433,10 @@ class TestHashcatRules:
     def test_apply_rules_from_file(self):
         rules = get_builtin_rules("best64")
         candidates = list(apply_rules_from_file("puppet", rules))
-        assert "puppet"  in candidates
-        assert "PUPPET"  in candidates
-        assert "Puppet"  in candidates
-        assert "teppup"  in candidates
+        assert "puppet" in candidates
+        assert "PUPPET" in candidates
+        assert "Puppet" in candidates
+        assert "teppup" in candidates
 
     def test_builtin_best64(self):
         rules = get_builtin_rules("best64")
@@ -472,6 +478,7 @@ class TestHashcatRules:
 # WORDLIST TESTS
 # ══════════════════════════════════════════════════════════════════════════════
 
+
 class TestWordlist:
 
     def test_count_lines(self):
@@ -485,7 +492,7 @@ class TestWordlist:
     def test_lines_all(self):
         wl = _wordlist(["alpha", "beta", "gamma"])
         try:
-            s    = WordlistStreamer(wl)
+            s = WordlistStreamer(wl)
             lines = [l.rstrip(b"\n").decode() for l in s.lines()]
             assert lines == ["alpha", "beta", "gamma"]
         finally:
@@ -493,7 +500,7 @@ class TestWordlist:
 
     def test_chunk_wordlist_4_chunks(self):
         words = [f"word{i}" for i in range(100)]
-        wl    = _wordlist(words)
+        wl = _wordlist(words)
         try:
             chunks, total = chunk_wordlist(wl, 4)
             assert total == 100
@@ -580,15 +587,16 @@ class TestWordlist:
 # SESSION TESTS
 # ══════════════════════════════════════════════════════════════════════════════
 
+
 class TestSession:
 
     def _make_session(self) -> tuple[Session, str]:
         s = Session(
-            key_path  = str(KEYS_DIR / "rsa_legacy_puppet.key"),
-            key_hash  = Session.hash_key_file(str(KEYS_DIR / "rsa_legacy_puppet.key")),
-            wordlist  = "/tmp/rockyou.txt",
-            mode      = "wordlist",
-            use_rules = False,
+            key_path=str(KEYS_DIR / "rsa_legacy_puppet.key"),
+            key_hash=Session.hash_key_file(str(KEYS_DIR / "rsa_legacy_puppet.key")),
+            wordlist="/tmp/rockyou.txt",
+            mode="wordlist",
+            use_rules=False,
         )
         name = f"test_{s.session_id}"
         return s, name
@@ -598,9 +606,9 @@ class TestSession:
         try:
             s.save(name)
             loaded = Session.load(name)
-            assert loaded.key_path   == s.key_path
+            assert loaded.key_path == s.key_path
             assert loaded.session_id == s.session_id
-            assert loaded.mode       == "wordlist"
+            assert loaded.mode == "wordlist"
         finally:
             s.delete(name)
 
@@ -624,7 +632,7 @@ class TestSession:
     def test_progress_update(self):
         s, name = self._make_session()
         s.update(bytes_done=500, words_tried=1000)
-        assert s.bytes_done  == 500
+        assert s.bytes_done == 500
         assert s.words_tried == 1000
 
     def test_not_stale(self):
@@ -640,7 +648,7 @@ class TestSession:
         try:
             s.save(name)
             sessions = Session.list_sessions()
-            names    = [x["name"] for x in sessions]
+            names = [x["name"] for x in sessions]
             assert name in names
         finally:
             s.delete(name)
@@ -660,13 +668,14 @@ class TestSession:
 # DISPLAY TESTS
 # ══════════════════════════════════════════════════════════════════════════════
 
+
 def _progress_bar_str(tried, total, speed, width=38):
     """Thin wrapper to test progress bar rendering."""
     d = Display(quiet=True)
     # Access private method for testing
-    pct    = tried / total if total > 0 else 0
+    pct = tried / total if total > 0 else 0
     filled = int(width * pct)
-    bar    = "█" * filled + "░" * (width - filled)
+    bar = "█" * filled + "░" * (width - filled)
     remaining = (total - tried) / speed if speed > 0 and total > 0 else 0
     return f"[{bar}] {tried}/{total} ({pct*100:.1f}%) {speed:.1f} pw/s"
 
@@ -704,19 +713,21 @@ class TestDisplay:
 # INTEGRATION TESTS
 # ══════════════════════════════════════════════════════════════════════════════
 
+
 class TestIntegration:
     """End-to-end tests using real keys and tiny wordlists."""
 
     def test_hashaxe_rsa_wordlist_hit(self):
         """Should find 'puppet' in a small wordlist."""
         from hashaxe.hashaxeer import hashaxe
+
         wl = _wordlist(["wrong1", "wrong2", "puppet", "wrong3"])
         try:
             result = hashaxe(
-                key_path = str(KEYS_DIR / "rsa_legacy_puppet.key"),
-                wordlist = wl,
-                threads  = 1,
-                quiet    = True,
+                key_path=str(KEYS_DIR / "rsa_legacy_puppet.key"),
+                wordlist=wl,
+                threads=1,
+                quiet=True,
             )
             assert result == "puppet", f"Expected 'puppet', got {result!r}"
         finally:
@@ -725,13 +736,14 @@ class TestIntegration:
     def test_hashaxe_rsa_wordlist_miss(self):
         """Should return None when passphrase not in wordlist."""
         from hashaxe.hashaxeer import hashaxe
+
         wl = _wordlist(["wrong1", "wrong2", "wrong3"])
         try:
             result = hashaxe(
-                key_path = str(KEYS_DIR / "rsa_legacy_puppet.key"),
-                wordlist = wl,
-                threads  = 1,
-                quiet    = True,
+                key_path=str(KEYS_DIR / "rsa_legacy_puppet.key"),
+                wordlist=wl,
+                threads=1,
+                quiet=True,
             )
             assert result is None
         finally:
@@ -740,17 +752,18 @@ class TestIntegration:
     def test_hashaxe_with_rules_hit(self):
         """'Puppet123!' should be found via --rules mutations of 'puppet'."""
         from hashaxe.hashaxeer import hashaxe
+
         # rsa_legacy_puppet.key has passphrase 'puppet'
         # with rules, 'puppet123!' will be generated but won't match 'puppet'
         # So let's test that rules finds 'puppet' from 'puppet' (noop)
         wl = _wordlist(["wrong", "puppet", "other"])
         try:
             result = hashaxe(
-                key_path  = str(KEYS_DIR / "rsa_legacy_puppet.key"),
-                wordlist  = wl,
-                threads   = 1,
-                use_rules = True,
-                quiet     = True,
+                key_path=str(KEYS_DIR / "rsa_legacy_puppet.key"),
+                wordlist=wl,
+                threads=1,
+                use_rules=True,
+                quiet=True,
             )
             assert result == "puppet"
         finally:
@@ -759,13 +772,14 @@ class TestIntegration:
     def test_hashaxe_unencrypted_returns_empty(self):
         """Unencrypted key should return empty string immediately."""
         from hashaxe.hashaxeer import hashaxe
+
         wl = _wordlist(["anything"])
         try:
             result = hashaxe(
-                key_path = str(KEYS_DIR / "rsa_legacy_nopass.key"),
-                wordlist = wl,
-                threads  = 1,
-                quiet    = True,
+                key_path=str(KEYS_DIR / "rsa_legacy_nopass.key"),
+                wordlist=wl,
+                threads=1,
+                quiet=True,
             )
             assert result == ""
         finally:
@@ -774,13 +788,14 @@ class TestIntegration:
     def test_hashaxe_ecdsa_wordlist_hit(self):
         """Should find 'abc123' for ECDSA key."""
         from hashaxe.hashaxeer import hashaxe
+
         wl = _wordlist(["wrong", "abc123", "other"])
         try:
             result = hashaxe(
-                key_path = str(KEYS_DIR / "ecdsa_legacy_abc123.key"),
-                wordlist = wl,
-                threads  = 1,
-                quiet    = True,
+                key_path=str(KEYS_DIR / "ecdsa_legacy_abc123.key"),
+                wordlist=wl,
+                threads=1,
+                quiet=True,
             )
             assert result == "abc123"
         finally:
@@ -789,27 +804,29 @@ class TestIntegration:
     def test_hashaxe_mask_hit(self):
         """Mask '?l?l?l?d?d?d' should find 'abc123'."""
         from hashaxe.hashaxeer import hashaxe
+
         result = hashaxe(
-            key_path = str(KEYS_DIR / "ecdsa_legacy_abc123.key"),
-            wordlist = "",
-            mask     = "?l?l?l?d?d?d",
-            threads  = 1,
-            quiet    = True,
+            key_path=str(KEYS_DIR / "ecdsa_legacy_abc123.key"),
+            wordlist="",
+            mask="?l?l?l?d?d?d",
+            threads=1,
+            quiet=True,
         )
         assert result == "abc123"
 
     def test_hashaxe_output_file(self):
         """Result should be written to output file."""
         from hashaxe.hashaxeer import hashaxe
-        wl      = _wordlist(["puppet"])
+
+        wl = _wordlist(["puppet"])
         out_tmp = _tmp_file(b"")
         try:
             result = hashaxe(
-                key_path = str(KEYS_DIR / "rsa_legacy_puppet.key"),
-                wordlist = wl,
-                threads  = 1,
-                quiet    = True,
-                output   = out_tmp,
+                key_path=str(KEYS_DIR / "rsa_legacy_puppet.key"),
+                wordlist=wl,
+                threads=1,
+                quiet=True,
+                output=out_tmp,
             )
             assert result == "puppet"
             content = Path(out_tmp).read_text()
@@ -823,13 +840,20 @@ class TestIntegration:
 # STANDALONE RUNNER
 # ══════════════════════════════════════════════════════════════════════════════
 
+
 def _run_all() -> tuple[int, int]:
     """Run all tests without pytest.  Returns (passed, failed)."""
     import traceback
 
     test_classes = [
-        TestParser, TestEngine, TestMutations, TestMaskEngine,
-        TestHashcatRules, TestWordlist, TestSession, TestDisplay,
+        TestParser,
+        TestEngine,
+        TestMutations,
+        TestMaskEngine,
+        TestHashcatRules,
+        TestWordlist,
+        TestSession,
+        TestDisplay,
         TestIntegration,
     ]
 
@@ -837,7 +861,7 @@ def _run_all() -> tuple[int, int]:
 
     for cls in test_classes:
         instance = cls()
-        methods  = [m for m in dir(instance) if m.startswith("test_")]
+        methods = [m for m in dir(instance) if m.startswith("test_")]
         cls_pass = cls_fail = 0
 
         for name in sorted(methods):
@@ -845,11 +869,11 @@ def _run_all() -> tuple[int, int]:
             try:
                 method()
                 cls_pass += 1
-                passed   += 1
+                passed += 1
                 print(f"    ✔  {cls.__name__}.{name}")
             except Exception as exc:
                 cls_fail += 1
-                failed   += 1
+                failed += 1
                 print(f"    ✘  {cls.__name__}.{name}")
                 print(f"       {exc}")
                 if os.environ.get("VERBOSE_TESTS"):

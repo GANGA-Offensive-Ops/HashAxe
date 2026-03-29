@@ -40,7 +40,7 @@ import re
 from dataclasses import dataclass, field
 from typing import Optional
 
-from hashaxe.identify.hash_patterns import HashMatch, identify_hash, identify_best
+from hashaxe.identify.hash_patterns import HashMatch, identify_best, identify_hash
 
 log = logging.getLogger(__name__)
 
@@ -48,6 +48,7 @@ log = logging.getLogger(__name__)
 @dataclass
 class ClassifiedHash:
     """Rich classification result with attack recommendations."""
+
     format_id: str
     algorithm: str
     confidence: float
@@ -136,9 +137,9 @@ _DIFFICULTY_MAP: dict[str, str] = {
 
 _SPEED_MAP: dict[str, str] = {
     "TRIVIAL": "~10 GH/s (GPU)",
-    "FAST":    "~1 GH/s (GPU)",
-    "MEDIUM":  "~100 MH/s (GPU)",
-    "SLOW":    "~10 KH/s (GPU)",
+    "FAST": "~1 GH/s (GPU)",
+    "MEDIUM": "~100 MH/s (GPU)",
+    "SLOW": "~10 KH/s (GPU)",
     "EXTREME": "~100 H/s (GPU)",
 }
 
@@ -159,21 +160,21 @@ def _detect_context(text: str) -> dict:
     ctx: dict = {}
 
     # Shadow file format
-    if re.match(r'^[a-zA-Z0-9._-]+:\$\d\$', text):
+    if re.match(r"^[a-zA-Z0-9._-]+:\$\d\$", text):
         ctx["source"] = "shadow_file"
         ctx["username"] = text.split(":")[0]
 
     # Windows hashdump
-    elif re.match(r'^[A-Za-z0-9._-]+:\d+:[a-fA-F0-9]{32}:[a-fA-F0-9]{32}', text):
+    elif re.match(r"^[A-Za-z0-9._-]+:\d+:[a-fA-F0-9]{32}:[a-fA-F0-9]{32}", text):
         ctx["source"] = "windows_hashdump"
         ctx["username"] = text.split(":")[0]
 
     # Cisco running-config
-    elif re.match(r'^enable\s+(secret|password)\s+', text, re.IGNORECASE):
+    elif re.match(r"^enable\s+(secret|password)\s+", text, re.IGNORECASE):
         ctx["source"] = "cisco_config"
 
     # Hash:username (DCC style)
-    elif re.match(r'^[a-fA-F0-9]{32}:[a-zA-Z0-9._@-]+$', text):
+    elif re.match(r"^[a-fA-F0-9]{32}:[a-zA-Z0-9._@-]+$", text):
         ctx["source"] = "dcc_format"
         ctx["username"] = text.split(":")[-1]
 

@@ -72,7 +72,7 @@ class JWTFormat(BaseFormat):
     Cracks the HMAC secret key by brute-forcing signatures.
     """
 
-    format_id   = "token.jwt"
+    format_id = "token.jwt"
     format_name = "JWT (HMAC-SHA256/384/512)"
 
     def can_handle(self, data: bytes, path: Path | None = None) -> FormatMatch | None:

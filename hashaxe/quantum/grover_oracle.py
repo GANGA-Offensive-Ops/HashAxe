@@ -56,6 +56,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class GroverResult:
     """Result from a Grover's algorithm execution."""
+
     target: int = 0
     found: int = -1
     probability: float = 0.0
@@ -96,6 +97,7 @@ class GroverOracle:
     def _detect(self) -> None:
         try:
             import qiskit  # type: ignore
+
             self._qiskit_available = True
         except ImportError:
             self._qiskit_available = False
@@ -132,9 +134,10 @@ class GroverOracle:
     def _run_qiskit(self, n_qubits: int, target: int, shots: int) -> GroverResult:
         """Run Grover's algorithm using Qiskit."""
         import time
+
         from qiskit import QuantumCircuit  # type: ignore
 
-        N = 2 ** n_qubits
+        N = 2**n_qubits
         if target >= N or target < 0:
             raise ValueError(f"Target {target} out of range [0, {N-1}]")
 
@@ -163,8 +166,9 @@ class GroverOracle:
             counts = result.counts
             elapsed = result.execution_time
         else:
-            from qiskit_aer import AerSimulator  # type: ignore
             from qiskit import transpile  # type: ignore
+            from qiskit_aer import AerSimulator  # type: ignore
+
             sim = AerSimulator()
             transpiled = transpile(qc, sim)
             job = sim.run(transpiled, shots=shots)
@@ -230,19 +234,17 @@ class GroverOracle:
         qc.x(range(n_qubits))
         qc.h(range(n_qubits))
 
-    def _simulate_classical(
-        self, n_qubits: int, target: int, shots: int
-    ) -> GroverResult:
+    def _simulate_classical(self, n_qubits: int, target: int, shots: int) -> GroverResult:
         """Classical simulation of Grover's probability distribution.
 
         This doesn't use Qiskit but mathematically computes the exact
         output probability distribution of Grover's algorithm.
         """
-        import time
         import random
+        import time
 
         t_start = time.time()
-        N = 2 ** n_qubits
+        N = 2**n_qubits
         if target >= N or target < 0:
             return GroverResult(success=False)
 
@@ -287,13 +289,15 @@ class GroverOracle:
         """
         results = []
         for n in range(2, max_qubits + 1):
-            N = 2 ** n
+            N = 2**n
             quantum_ops = int(math.ceil(math.pi / 4 * math.sqrt(N)))
-            results.append({
-                "qubits": n,
-                "keyspace": N,
-                "classical_ops": N,
-                "quantum_ops": quantum_ops,
-                "speedup": round(N / quantum_ops, 2),
-            })
+            results.append(
+                {
+                    "qubits": n,
+                    "keyspace": N,
+                    "classical_ops": N,
+                    "quantum_ops": quantum_ops,
+                    "speedup": round(N / quantum_ops, 2),
+                }
+            )
         return results

@@ -34,24 +34,25 @@ from __future__ import annotations
 
 import hashlib
 import hmac
+
 import pytest
 
 from hashaxe.formats.base import FormatDifficulty
+from hashaxe.formats.disk_dpapi import DPAPIMasterkeyV1Format, DPAPIMasterkeyV2Format
+from hashaxe.formats.network_dcc import DCC1Format, DCC2Format
 
 # Direct imports — avoids singleton reset/discover issues
 from hashaxe.formats.network_kerberos import (
-    Kerberos5TGS_RC4Format,
     Kerberos5ASREP_RC4Format,
     Kerberos5TGS_AES128Format,
     Kerberos5TGS_AES256Format,
+    Kerberos5TGS_RC4Format,
 )
-from hashaxe.formats.network_dcc import DCC1Format, DCC2Format
-from hashaxe.formats.disk_dpapi import DPAPIMasterkeyV1Format, DPAPIMasterkeyV2Format
-
 
 # ══════════════════════════════════════════════════════════════════════════════
 # Kerberoast TGS-REP RC4 (hashcat -m 13100)
 # ══════════════════════════════════════════════════════════════════════════════
+
 
 class TestKerberosTGSRC4:
     """Tests for Kerberoast TGS-REP RC4 etype 23."""
@@ -103,13 +104,12 @@ class TestKerberosTGSRC4:
 # AS-REP Roast (hashcat -m 18200)
 # ══════════════════════════════════════════════════════════════════════════════
 
+
 class TestASREPRoast:
     """Tests for AS-REP Roast RC4 etype 23."""
 
     SAMPLE = (
-        "$krb5asrep$23$svc_sql@CORP.LOCAL:"
-        "aabbccdd11223344aabbccdd11223344"
-        "$deadbeef00112233"
+        "$krb5asrep$23$svc_sql@CORP.LOCAL:" "aabbccdd11223344aabbccdd11223344" "$deadbeef00112233"
     )
 
     def setup_method(self):
@@ -122,11 +122,7 @@ class TestASREPRoast:
 
     def test_can_handle_no_domain(self):
         """AS-REP format sometimes has no domain after @."""
-        sample = (
-            "$krb5asrep$23$user:"
-            "aabbccdd11223344aabbccdd11223344"
-            "$deadbeef00112233"
-        )
+        sample = "$krb5asrep$23$user:" "aabbccdd11223344aabbccdd11223344" "$deadbeef00112233"
         match = self.handler.can_handle(sample.encode())
         assert match is not None
 
@@ -148,6 +144,7 @@ class TestASREPRoast:
 # ══════════════════════════════════════════════════════════════════════════════
 # Kerberos AES128/256 TGS
 # ══════════════════════════════════════════════════════════════════════════════
+
 
 class TestKerberosAES:
     """Tests for Kerberos AES128 (19600) and AES256 (19700) TGS."""
@@ -206,6 +203,7 @@ class TestKerberosAES:
 # DCC v1 (hashcat -m 1100)
 # ══════════════════════════════════════════════════════════════════════════════
 
+
 class TestDCC1:
     """Tests for DCC MS Cache v1."""
 
@@ -261,6 +259,7 @@ class TestDCC1:
 # DCC2 (hashcat -m 2100)
 # ══════════════════════════════════════════════════════════════════════════════
 
+
 class TestDCC2:
     """Tests for DCC2 MS Cache v2."""
 
@@ -301,6 +300,7 @@ class TestDCC2:
 # ══════════════════════════════════════════════════════════════════════════════
 # DPAPI
 # ══════════════════════════════════════════════════════════════════════════════
+
 
 class TestDPAPI:
     """Tests for DPAPI masterkey v1/v2 handlers."""
@@ -358,11 +358,13 @@ class TestDPAPI:
 # Hash Pattern Identification Integration
 # ══════════════════════════════════════════════════════════════════════════════
 
+
 class TestHashPatternIntegration:
     """Verify hash_patterns.py correctly identifies the new T1 formats."""
 
     def test_identify_kerberoast(self):
         from hashaxe.identify.hash_patterns import identify_best
+
         h = (
             "$krb5tgs$23$*user$TESTLAB.LOCAL$test/spn*"
             "$aabbccdd11223344aabbccdd11223344"
@@ -374,29 +376,29 @@ class TestHashPatternIntegration:
 
     def test_identify_asrep(self):
         from hashaxe.identify.hash_patterns import identify_best
-        h = (
-            "$krb5asrep$23$user@DOMAIN.COM:"
-            "aabbccdd11223344aabbccdd11223344"
-            "$deadbeef00112233"
-        )
+
+        h = "$krb5asrep$23$user@DOMAIN.COM:" "aabbccdd11223344aabbccdd11223344" "$deadbeef00112233"
         result = identify_best(h)
         assert result is not None
         assert result.format_id == "network.krb5asrep_rc4"
 
     def test_identify_dcc2(self):
         from hashaxe.identify.hash_patterns import identify_best
+
         result = identify_best("$DCC2$10240#tom#e4e938d12fe5974dc42a90120bd9c90f")
         assert result is not None
         assert result.format_id == "network.dcc2"
 
     def test_identify_dcc1(self):
         from hashaxe.identify.hash_patterns import identify_best
+
         result = identify_best("4dd8965d1d476fa0d026722989a6b772:testuser")
         assert result is not None
         assert result.format_id == "network.dcc1"
 
     def test_identify_dpapi(self):
         from hashaxe.identify.hash_patterns import identify_best
+
         h = "$DPAPImk$1*1*S-1-5-21-111*des3*sha1*4000*aabb*64*ccdd"
         result = identify_best(h)
         assert result is not None
@@ -407,18 +409,21 @@ class TestHashPatternIntegration:
 # Registry Integration (no reset — uses existing singleton)
 # ══════════════════════════════════════════════════════════════════════════════
 
+
 class TestRegistryIntegration:
     """Verify the new handlers integrate cleanly with existing registry."""
 
     def test_total_handler_count(self):
         """34 handlers total after adding 8 new T1 handlers."""
         from hashaxe.formats._registry import FormatRegistry
+
         reg = FormatRegistry()
         reg.discover()
         assert len(reg) >= 34
 
     def test_all_new_handlers_discoverable(self):
         from hashaxe.formats._registry import FormatRegistry
+
         reg = FormatRegistry()
         reg.discover()
         new_ids = [

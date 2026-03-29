@@ -49,6 +49,7 @@ log = logging.getLogger(__name__)
 # ── Optional dependency ───────────────────────────────────────────────────────
 try:
     import pikepdf  # type: ignore
+
     _HAS_PIKEPDF = True
 except ImportError:
     _HAS_PIKEPDF = False
@@ -56,11 +57,11 @@ except ImportError:
 
 # ── Revision → Hashcat mode mapping ──────────────────────────────────────────
 _PDF_HASHCAT_MODES: dict[int, int] = {
-    2: 10400,   # PDF 1.1-1.3 (Acrobat 2-4), RC4-40
-    3: 10500,   # PDF 1.4-1.6 (Acrobat 5-8), RC4-128
-    4: 10600,   # PDF 1.7 Level 3 (Acrobat 9), AES-128
-    5: 10700,   # PDF 1.7 Level 8 (Acrobat 10+), AES-256
-    6: 10700,   # PDF 2.0, AES-256
+    2: 10400,  # PDF 1.1-1.3 (Acrobat 2-4), RC4-40
+    3: 10500,  # PDF 1.4-1.6 (Acrobat 5-8), RC4-128
+    4: 10600,  # PDF 1.7 Level 3 (Acrobat 9), AES-128
+    5: 10700,  # PDF 1.7 Level 8 (Acrobat 10+), AES-256
+    6: 10700,  # PDF 2.0, AES-256
 }
 
 
@@ -98,7 +99,7 @@ def _detect_pdf_encryption(data: bytes) -> dict[str, Any]:
     # ── Locate the Encrypt dictionary object ──────────────────────────────
     # Find the object containing /Filter /Standard (unique to encrypt dict)
     encrypt_section = None
-    enc_pattern = rb'(\d+\s+\d+\s+obj\s*<<(?:(?!>>).)*?/Filter\s*/Standard(?:(?!>>).)*?>>)'
+    enc_pattern = rb"(\d+\s+\d+\s+obj\s*<<(?:(?!>>).)*?/Filter\s*/Standard(?:(?!>>).)*?>>)"
     enc_m = re.search(enc_pattern, data, re.DOTALL)
     if enc_m:
         encrypt_section = enc_m.group(1)
@@ -111,7 +112,7 @@ def _detect_pdf_encryption(data: bytes) -> dict[str, Any]:
             start = data.rfind(b"<<", 0, idx)
             end = data.find(b">>", idx)
             if start >= 0 and end >= 0:
-                encrypt_section = data[start:end + 2]
+                encrypt_section = data[start : end + 2]
 
     if encrypt_section is None:
         # Can't find encrypt dict — fall back to global regex (less accurate)
@@ -205,7 +206,7 @@ class PDFFormat(BaseFormat):
     Supports all PDF encryption revisions via pikepdf.
     """
 
-    format_id   = "document.pdf"
+    format_id = "document.pdf"
     format_name = "PDF Document (RC4 / AES)"
 
     # ── Identification ────────────────────────────────────────────────────────
@@ -287,6 +288,7 @@ class PDFFormat(BaseFormat):
     def _verify_pikepdf(self, target: FormatTarget, password: bytes) -> bool:
         """Verify using pikepdf — handles all encryption versions."""
         from io import BytesIO
+
         data = target.format_data.get("raw_data")
         if not data:
             return False

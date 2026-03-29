@@ -52,12 +52,12 @@ from typing import Optional
 
 # ── Standard charsets ─────────────────────────────────────────────────────────
 
-CHARSET_LOWER   = string.ascii_lowercase                          # 26 chars
-CHARSET_UPPER   = string.ascii_uppercase                          # 26 chars
-CHARSET_DIGITS  = string.digits                                   # 10 chars
-CHARSET_SPECIAL = string.punctuation                              # 32 chars
-CHARSET_ALL     = CHARSET_LOWER + CHARSET_UPPER + CHARSET_DIGITS + CHARSET_SPECIAL  # 94
-CHARSET_BYTES   = "".join(chr(i) for i in range(256))             # 256 chars
+CHARSET_LOWER = string.ascii_lowercase  # 26 chars
+CHARSET_UPPER = string.ascii_uppercase  # 26 chars
+CHARSET_DIGITS = string.digits  # 10 chars
+CHARSET_SPECIAL = string.punctuation  # 32 chars
+CHARSET_ALL = CHARSET_LOWER + CHARSET_UPPER + CHARSET_DIGITS + CHARSET_SPECIAL  # 94
+CHARSET_BYTES = "".join(chr(i) for i in range(256))  # 256 chars
 
 _STD_CHARSETS = {
     "?l": CHARSET_LOWER,
@@ -70,6 +70,7 @@ _STD_CHARSETS = {
 
 
 # ── Mask parser ───────────────────────────────────────────────────────────────
+
 
 class MaskEngine:
     """
@@ -88,11 +89,11 @@ class MaskEngine:
 
     def __init__(
         self,
-        mask:   str,
+        mask: str,
         custom: dict[str, str] | None = None,
     ):
-        self.mask      = mask
-        self.custom    = custom or {}
+        self.mask = mask
+        self.custom = custom or {}
         self._segments = self._parse(mask)
 
     def _parse(self, mask: str) -> list[str | list[str]]:
@@ -158,9 +159,10 @@ class MaskEngine:
 
 # ── Hybrid mode: wordlist + mask appended ────────────────────────────────────
 
+
 def hybrid_candidates(
     words: list[str],
-    mask:  str,
+    mask: str,
     custom: dict[str, str] | None = None,
 ) -> Generator[str, None, None]:
     """
@@ -176,10 +178,11 @@ def hybrid_candidates(
 
 # ── Incremental mask generator (for --increment mode) ─────────────────────────
 
+
 def incremental_candidates(
-    charset:  str = CHARSET_ALL,
-    min_len:  int = 1,
-    max_len:  int = 8,
+    charset: str = CHARSET_ALL,
+    min_len: int = 1,
+    max_len: int = 8,
 ) -> Generator[str, None, None]:
     """
     Brute-force all combinations of *charset* from min_len to max_len.

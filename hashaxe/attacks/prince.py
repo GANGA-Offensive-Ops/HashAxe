@@ -46,7 +46,7 @@ log = logging.getLogger(__name__)
 class PrinceAttack(BaseAttack):
     """PRINCE algorithm — chain wordlist elements by length-ordered probability."""
 
-    attack_id   = "prince"
+    attack_id = "prince"
     attack_name = "PRINCE Attack"
     description = "Probability-ordered chaining of wordlist elements (1→N words combined)."
 
@@ -119,7 +119,7 @@ class PrinceAttack(BaseAttack):
 
         total = 0
         for n in range(config.prince_min_elems, config.prince_max_elems + 1):
-            total += count ** n
+            total += count**n
         return total
 
     def validate_config(self, config: AttackConfig) -> str | None:

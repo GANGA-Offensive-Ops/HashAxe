@@ -108,7 +108,7 @@ def _check_policy(candidate: str, constraints: dict) -> bool:
 class PolicyAttack(BaseAttack):
     """Generate candidates constrained by password policy rules."""
 
-    attack_id   = "policy"
+    attack_id = "policy"
     attack_name = "Policy-Constrained Attack"
     description = "Generate candidates matching password policy (len>=8,upper,digit,symbol)."
 
@@ -140,10 +140,13 @@ class PolicyAttack(BaseAttack):
         """Brute-force generation within policy constraints."""
         # Build charset based on required classes
         charset = ""
-        if constraints["require_lower"] or not any([
-            constraints["require_upper"], constraints["require_digit"],
-            constraints["require_symbol"]
-        ]):
+        if constraints["require_lower"] or not any(
+            [
+                constraints["require_upper"],
+                constraints["require_digit"],
+                constraints["require_symbol"],
+            ]
+        ):
             charset += string.ascii_lowercase
         if constraints["require_upper"]:
             charset += string.ascii_uppercase
@@ -175,17 +178,22 @@ class PolicyAttack(BaseAttack):
 
         constraints = _parse_policy(config.policy)
         charset_size = 0
-        if constraints["require_lower"]: charset_size += 26
-        if constraints["require_upper"]: charset_size += 26
-        if constraints["require_digit"]: charset_size += 10
-        if constraints["require_symbol"]: charset_size += 14
-        if charset_size == 0: charset_size = 36
+        if constraints["require_lower"]:
+            charset_size += 26
+        if constraints["require_upper"]:
+            charset_size += 26
+        if constraints["require_digit"]:
+            charset_size += 10
+        if constraints["require_symbol"]:
+            charset_size += 14
+        if charset_size == 0:
+            charset_size = 36
 
         total = 0
         min_len = constraints["min_length"]
         max_len = min(constraints["max_length"], config.max_length)
         for l in range(min_len, max_len + 1):
-            total += charset_size ** l
+            total += charset_size**l
         return total
 
     def validate_config(self, config: AttackConfig) -> str | None:

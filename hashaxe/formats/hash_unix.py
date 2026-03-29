@@ -48,12 +48,14 @@ _HAS_PASSLIB = False
 
 try:
     import crypt as _crypt_mod
+
     _HAS_CRYPT = True
 except ImportError:
     pass
 
 try:
     from passlib.hash import des_crypt, md5_crypt, sha256_crypt, sha512_crypt
+
     _HAS_PASSLIB = True
 except ImportError:
     pass
@@ -61,9 +63,9 @@ except ImportError:
 
 # ── Regex patterns ────────────────────────────────────────────────────────────
 
-_MD5CRYPT_RE    = re.compile(r'^\$1\$([./A-Za-z0-9]{1,8})\$([./A-Za-z0-9]{22})$')
-_SHA256CRYPT_RE = re.compile(r'^\$5\$(rounds=(\d+)\$)?([./A-Za-z0-9]+)\$([./A-Za-z0-9]{43})$')
-_SHA512CRYPT_RE = re.compile(r'^\$6\$(rounds=(\d+)\$)?([./A-Za-z0-9]+)\$([./A-Za-z0-9]{86})$')
+_MD5CRYPT_RE = re.compile(r"^\$1\$([./A-Za-z0-9]{1,8})\$([./A-Za-z0-9]{22})$")
+_SHA256CRYPT_RE = re.compile(r"^\$5\$(rounds=(\d+)\$)?([./A-Za-z0-9]+)\$([./A-Za-z0-9]{43})$")
+_SHA512CRYPT_RE = re.compile(r"^\$6\$(rounds=(\d+)\$)?([./A-Za-z0-9]+)\$([./A-Za-z0-9]{86})$")
 
 
 def _verify_crypt(password: str, full_hash: str) -> bool:
@@ -95,7 +97,7 @@ class UnixCryptFormat(BaseFormat):
     (sha512crypt with rounds=500000, ~10 pw/s).
     """
 
-    format_id   = "hash.unix_crypt"
+    format_id = "hash.unix_crypt"
     format_name = "Unix Crypt (md5crypt / sha256crypt / sha512crypt)"
 
     def can_handle(self, data: bytes, path: Path | None = None) -> FormatMatch | None:
@@ -189,8 +191,10 @@ class UnixCryptFormat(BaseFormat):
         else:
             raise ValueError(f"Unrecognised Unix crypt format: {text[:20]}...")
 
-        difficulty = FormatDifficulty.SLOW if rounds >= 100_000 else (
-            FormatDifficulty.MEDIUM if rounds >= 5000 else FormatDifficulty.FAST
+        difficulty = (
+            FormatDifficulty.SLOW
+            if rounds >= 100_000
+            else (FormatDifficulty.MEDIUM if rounds >= 5000 else FormatDifficulty.FAST)
         )
 
         return FormatTarget(
@@ -227,8 +231,10 @@ class UnixCryptFormat(BaseFormat):
             "Hash": target.format_data.get("full_hash", "")[:30] + "...",
         }
 
+
 # ── Auto-register ────────────────────────────────────────────────────────────
 from hashaxe.formats._registry import FormatRegistry
+
 _registry = FormatRegistry()
 _unix_handler = UnixCryptFormat()
 _registry.register(_unix_handler)

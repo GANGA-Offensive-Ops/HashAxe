@@ -29,11 +29,11 @@ from __future__ import annotations
 
 import logging
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime, timezone
 
 from hashaxe.identify.classifier import ClassifiedHash, classify
-from hashaxe.identify.mitre import get_mitre_mappings, MITREMapping
-from hashaxe.identify.estimator import estimate_time, KEYSPACE
+from hashaxe.identify.estimator import KEYSPACE, estimate_time
+from hashaxe.identify.mitre import MITREMapping, get_mitre_mappings
 
 log = logging.getLogger(__name__)
 
@@ -41,6 +41,7 @@ log = logging.getLogger(__name__)
 @dataclass
 class CrackResult:
     """Individual cracking result for report inclusion."""
+
     hash_value: str
     format_id: str
     algorithm: str
@@ -54,6 +55,7 @@ class CrackResult:
 @dataclass
 class ReportConfig:
     """Report generation configuration."""
+
     title: str = "Password Cracking Assessment Report"
     assessor: str = "Hashaxe V1"
     target: str = "Assessment Target"
@@ -99,7 +101,7 @@ def generate_report(results: list[CrackResult], config: ReportConfig | None = No
         config = ReportConfig()
 
     if not config.date:
-        config.date = datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M UTC")
+        config.date = datetime.now(UTC).strftime("%Y-%m-%d %H:%M UTC")
 
     sections: list[str] = []
 
@@ -117,11 +119,15 @@ def generate_report(results: list[CrackResult], config: ReportConfig | None = No
     unique_types = len(set(r.format_id for r in results))
 
     sections.append("## Executive Summary")
-    sections.append(f"A total of **{total}** password hashes were analyzed across "
-                    f"**{unique_types}** distinct hash types.")
+    sections.append(
+        f"A total of **{total}** password hashes were analyzed across "
+        f"**{unique_types}** distinct hash types."
+    )
     if cracked > 0:
         pct = (cracked / total * 100) if total > 0 else 0
-        sections.append(f"**{cracked}/{total} ({pct:.0f}%)** passwords were successfully recovered.")
+        sections.append(
+            f"**{cracked}/{total} ({pct:.0f}%)** passwords were successfully recovered."
+        )
         sections.append("This indicates a significant risk of unauthorized access.")
     else:
         sections.append("No passwords were recovered during this assessment.")
@@ -137,7 +143,9 @@ def generate_report(results: list[CrackResult], config: ReportConfig | None = No
         cracked_str = "✅ YES" if r.cracked else "❌ No"
         time_str = f"{r.time_taken:.1f}s" if r.time_taken > 0 else "N/A"
         hm = str(r.hashcat_mode) if r.hashcat_mode is not None else "—"
-        sections.append(f"| {i} | {r.algorithm} | {hm} | {cracked_str} | {r.attack_mode or '—'} | {time_str} |")
+        sections.append(
+            f"| {i} | {r.algorithm} | {hm} | {cracked_str} | {r.attack_mode or '—'} | {time_str} |"
+        )
 
     sections.append("")
 

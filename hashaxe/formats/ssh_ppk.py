@@ -67,7 +67,7 @@ class PPKFormat(BaseFormat):
                      and ``try_passphrase_full()``.
     """
 
-    format_id   = "ssh.ppk"
+    format_id = "ssh.ppk"
     format_name = "PuTTY PPK Private Key"
 
     # ── Identification ────────────────────────────────────────────────────
@@ -141,11 +141,11 @@ class PPKFormat(BaseFormat):
             is_encrypted=pk.is_encrypted,
             difficulty=difficulty,
             format_data={
-                "version":    version,
-                "algorithm":  algo,
+                "version": version,
+                "algorithm": algo,
                 "encryption": pk.ppk_encryption,
-                "kdf":        pk.ppk_kdf,
-                "comment":    pk.ppk_comment,
+                "kdf": pk.ppk_kdf,
+                "comment": pk.ppk_comment,
             },
             _legacy_pk=pk,
         )
@@ -187,10 +187,10 @@ class PPKFormat(BaseFormat):
     def display_info(self, target: FormatTarget) -> dict[str, str]:
         data = target.format_data
         result: dict[str, str] = {
-            "Type":       f"PPK v{data.get('version', '?')}",
-            "Algorithm":  data.get("algorithm", "unknown"),
+            "Type": f"PPK v{data.get('version', '?')}",
+            "Algorithm": data.get("algorithm", "unknown"),
             "Encryption": data.get("encryption", "none"),
-            "KDF":        data.get("kdf", "none"),
+            "KDF": data.get("kdf", "none"),
         }
         comment = data.get("comment", "")
         if comment:

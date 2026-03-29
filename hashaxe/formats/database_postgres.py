@@ -53,7 +53,7 @@ class PostgreSQLFormat(BaseFormat):
     Requires username (stored in format_data or provided via --format-arg).
     """
 
-    format_id   = "hash.postgres"
+    format_id = "hash.postgres"
     format_name = "PostgreSQL MD5"
 
     def can_handle(self, data: bytes, path: Path | None = None) -> FormatMatch | None:
@@ -82,10 +82,14 @@ class PostgreSQLFormat(BaseFormat):
                     confidence=0.90,
                     metadata={"description": f"PostgreSQL MD5 hash (user: {parts[0]})"},
                 )
-            
+
             # hashcat format hash:user  (hashcat -m 12 uses hash:salt where salt=username)
             hash_part = parts[0].strip()
-            if len(parts) == 2 and len(hash_part) == 32 and re.match(r"^[0-9a-f]{32}$", hash_part, re.IGNORECASE):
+            if (
+                len(parts) == 2
+                and len(hash_part) == 32
+                and re.match(r"^[0-9a-f]{32}$", hash_part, re.IGNORECASE)
+            ):
                 # 32hex:username is AMBIGUOUS between PostgreSQL and DCC1.
                 # Use file path as disambiguation:
                 #   - File contains "postgres"/"pg" → high confidence (0.92, beats DCC1's 0.88)
@@ -94,13 +98,15 @@ class PostgreSQLFormat(BaseFormat):
                 path_hint = False
                 if path is not None:
                     fname = path.name.lower()
-                    path_hint = ("postgres" in fname or "pg_" in fname or "pg." in fname)
+                    path_hint = "postgres" in fname or "pg_" in fname or "pg." in fname
                 conf = 0.92 if path_hint else 0.85
                 return FormatMatch(
                     format_id=self.format_id,
                     handler=self,
                     confidence=conf,
-                    metadata={"description": f"PostgreSQL MD5 hashcat format (user: {parts[1].strip()})"},
+                    metadata={
+                        "description": f"PostgreSQL MD5 hashcat format (user: {parts[1].strip()})"
+                    },
                 )
         return None
 
@@ -117,7 +123,9 @@ class PostgreSQLFormat(BaseFormat):
                 username = parts[0].strip()
                 target_hash = parts[1].strip()
             # Else it's hash:user (hashcat format)
-            elif len(parts[0].strip()) == 32 and re.match(r"^[0-9a-f]{32}$", parts[0].strip(), re.IGNORECASE):
+            elif len(parts[0].strip()) == 32 and re.match(
+                r"^[0-9a-f]{32}$", parts[0].strip(), re.IGNORECASE
+            ):
                 target_hash = parts[0].strip()
                 username = parts[1].strip()
 

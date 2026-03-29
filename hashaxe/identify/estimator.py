@@ -38,6 +38,7 @@ log = logging.getLogger(__name__)
 @dataclass
 class TimeEstimate:
     """Estimated cracking time for a given configuration."""
+
     format_id: str
     hardware: str
     keyspace_size: int
@@ -52,43 +53,43 @@ class TimeEstimate:
 
 _BENCHMARKS: dict[str, dict[str, float]] = {
     # format_id → { hardware_tier: hashes/sec }
-    "hash.md5":          {"cpu": 5e8,  "gpu_mid": 2e10, "gpu_high": 6.5e10},
-    "hash.sha1":         {"cpu": 2e8,  "gpu_mid": 1e10, "gpu_high": 3.5e10},
-    "hash.sha256":       {"cpu": 1e8,  "gpu_mid": 4e9,  "gpu_high": 1.5e10},
-    "hash.sha512":       {"cpu": 5e7,  "gpu_mid": 1.5e9, "gpu_high": 5e9},
-    "hash.md5crypt":     {"cpu": 1e5,  "gpu_mid": 2e7,  "gpu_high": 7e7},
-    "hash.sha256crypt":  {"cpu": 5e4,  "gpu_mid": 5e6,  "gpu_high": 1.5e7},
-    "hash.sha512crypt":  {"cpu": 2e4,  "gpu_mid": 1e6,  "gpu_high": 5e6},
-    "hash.bcrypt":       {"cpu": 5e2,  "gpu_mid": 3e4,  "gpu_high": 1e5},
-    "hash.argon2":       {"cpu": 1e1,  "gpu_mid": 5e2,  "gpu_high": 2e3},
-    "hash.scrypt":       {"cpu": 5e1,  "gpu_mid": 1e3,  "gpu_high": 5e3},
-    "hash.mysql":        {"cpu": 1e9,  "gpu_mid": 1e10, "gpu_high": 4e10},
-    "network.ntlmv2":    {"cpu": 1e7,  "gpu_mid": 3e9,  "gpu_high": 1e10},
-    "network.ntlmv1":    {"cpu": 5e7,  "gpu_mid": 5e9,  "gpu_high": 2e10},
+    "hash.md5": {"cpu": 5e8, "gpu_mid": 2e10, "gpu_high": 6.5e10},
+    "hash.sha1": {"cpu": 2e8, "gpu_mid": 1e10, "gpu_high": 3.5e10},
+    "hash.sha256": {"cpu": 1e8, "gpu_mid": 4e9, "gpu_high": 1.5e10},
+    "hash.sha512": {"cpu": 5e7, "gpu_mid": 1.5e9, "gpu_high": 5e9},
+    "hash.md5crypt": {"cpu": 1e5, "gpu_mid": 2e7, "gpu_high": 7e7},
+    "hash.sha256crypt": {"cpu": 5e4, "gpu_mid": 5e6, "gpu_high": 1.5e7},
+    "hash.sha512crypt": {"cpu": 2e4, "gpu_mid": 1e6, "gpu_high": 5e6},
+    "hash.bcrypt": {"cpu": 5e2, "gpu_mid": 3e4, "gpu_high": 1e5},
+    "hash.argon2": {"cpu": 1e1, "gpu_mid": 5e2, "gpu_high": 2e3},
+    "hash.scrypt": {"cpu": 5e1, "gpu_mid": 1e3, "gpu_high": 5e3},
+    "hash.mysql": {"cpu": 1e9, "gpu_mid": 1e10, "gpu_high": 4e10},
+    "network.ntlmv2": {"cpu": 1e7, "gpu_mid": 3e9, "gpu_high": 1e10},
+    "network.ntlmv1": {"cpu": 5e7, "gpu_mid": 5e9, "gpu_high": 2e10},
     "network.krb5tgs_rc4": {"cpu": 5e6, "gpu_mid": 1e9, "gpu_high": 3e9},
     "network.krb5asrep_rc4": {"cpu": 5e6, "gpu_mid": 1e9, "gpu_high": 3e9},
     "network.krb5tgs_aes128": {"cpu": 1e5, "gpu_mid": 1e7, "gpu_high": 5e7},
     "network.krb5tgs_aes256": {"cpu": 5e4, "gpu_mid": 5e6, "gpu_high": 2e7},
-    "network.dcc1":      {"cpu": 1e8,  "gpu_mid": 5e9,  "gpu_high": 2e10},
-    "network.dcc2":      {"cpu": 5e3,  "gpu_mid": 5e5,  "gpu_high": 2e6},
+    "network.dcc1": {"cpu": 1e8, "gpu_mid": 5e9, "gpu_high": 2e10},
+    "network.dcc2": {"cpu": 5e3, "gpu_mid": 5e5, "gpu_high": 2e6},
     "network.cisco_type5": {"cpu": 1e5, "gpu_mid": 2e7, "gpu_high": 7e7},
     "network.cisco_type8": {"cpu": 5e3, "gpu_mid": 5e5, "gpu_high": 2e6},
     "network.cisco_type9": {"cpu": 5e1, "gpu_mid": 1e3, "gpu_high": 5e3},
     "token.ansible_vault": {"cpu": 5e3, "gpu_mid": 5e5, "gpu_high": 2e6},
-    "hash.jwt":          {"cpu": 1e7,  "gpu_mid": 5e8,  "gpu_high": 2e9},
+    "hash.jwt": {"cpu": 1e7, "gpu_mid": 5e8, "gpu_high": 2e9},
 }
 
 # Common keyspace sizes
 KEYSPACE = {
-    "rockyou":    14_344_392,
-    "top1000":    1_000,
-    "top10000":   10_000,
-    "4char_lower": 26**4,          # 456,976
-    "6char_lower": 26**6,          # 308,915,776
-    "8char_lower": 26**8,          # ~2e11
-    "8char_alnum": 62**8,          # ~2e14
-    "8char_full":  95**8,          # ~6.6e15
-    "10char_full": 95**10,         # ~5.9e19
+    "rockyou": 14_344_392,
+    "top1000": 1_000,
+    "top10000": 10_000,
+    "4char_lower": 26**4,  # 456,976
+    "6char_lower": 26**6,  # 308,915,776
+    "8char_lower": 26**8,  # ~2e11
+    "8char_alnum": 62**8,  # ~2e14
+    "8char_full": 95**8,  # ~6.6e15
+    "10char_full": 95**10,  # ~5.9e19
 }
 
 
@@ -147,7 +148,9 @@ def estimate_time(
     )
 
 
-def estimate_comparison(format_id: str, keyspace_size: int = KEYSPACE["rockyou"]) -> dict[str, TimeEstimate]:
+def estimate_comparison(
+    format_id: str, keyspace_size: int = KEYSPACE["rockyou"]
+) -> dict[str, TimeEstimate]:
     """Estimate cracking time across all hardware tiers."""
     return {
         tier: estimate_time(format_id, keyspace_size, tier)

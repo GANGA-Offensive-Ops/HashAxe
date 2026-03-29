@@ -62,7 +62,6 @@ import time
 from pathlib import Path
 from typing import Optional
 
-
 # ── Hashcat mode map ──────────────────────────────────────────────────────────
 # Derived from the central hash registry — single source of truth.
 # All GPU-routable formats are automatically included.
@@ -76,8 +75,8 @@ HASHCAT_MODES["hash.raw"] = 0  # fallback for generic raw hashes
 HASHCAT_ATTACK_MODES: dict[str, int] = {
     "wordlist": 0,
     "combinator": 1,
-    "mask":     3,
-    "hybrid":   6,
+    "mask": 3,
+    "hybrid": 6,
 }
 
 # ── Mask charset translation ──────────────────────────────────────────────────
@@ -87,18 +86,12 @@ HASHCAT_ATTACK_MODES: dict[str, int] = {
 def hashcat_available() -> bool:
     """Check if hashcat is installed and reachable."""
     try:
-        result = subprocess.run(
-            ["/usr/bin/hashcat", "--version"],
-            capture_output=True, timeout=5
-        )
+        result = subprocess.run(["/usr/bin/hashcat", "--version"], capture_output=True, timeout=5)
         return result.returncode == 0
     except (FileNotFoundError, subprocess.TimeoutExpired):
         pass
     try:
-        result = subprocess.run(
-            ["hashcat", "--version"],
-            capture_output=True, timeout=5
-        )
+        result = subprocess.run(["hashcat", "--version"], capture_output=True, timeout=5)
         return result.returncode == 0
     except (FileNotFoundError, subprocess.TimeoutExpired):
         return False
@@ -121,12 +114,12 @@ def try_fast_hash_hashaxe(
     target_hash: str,
     format_id: str,
     attack_mode: str,
-    wordlist: Optional[str] = None,
-    wordlist2: Optional[str] = None,
-    mask: Optional[str] = None,
+    wordlist: str | None = None,
+    wordlist2: str | None = None,
+    mask: str | None = None,
     display=None,
     on_progress=None,
-) -> Optional[str]:
+) -> str | None:
     """
     Attempt to hashaxe a fast hash using hashcat as the GPU backend.
 
@@ -150,25 +143,25 @@ def try_fast_hash_hashaxe(
       5. Returns the plaintext
     """
     hc_mode = HASHCAT_MODES.get(format_id, 0)
-    hc_atk  = HASHCAT_ATTACK_MODES.get(attack_mode, 3)
-    hc_bin  = _find_hashcat()
+    hc_atk = HASHCAT_ATTACK_MODES.get(attack_mode, 3)
+    hc_bin = _find_hashcat()
 
     # Write hash to temp file
     hash_file = None
     try:
-        with tempfile.NamedTemporaryFile(
-            mode='w', suffix='.hash', delete=False
-        ) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".hash", delete=False) as f:
             f.write(target_hash.strip() + "\n")
             hash_file = f.name
 
         cmd = [
             hc_bin,
-            "-m", str(hc_mode),
-            "-a", str(hc_atk),
-            "--potfile-disable",          # Don't cache — we want live output
-            "--status",                   # Periodic status updates
-            "--status-timer=3",           # Every 3 seconds
+            "-m",
+            str(hc_mode),
+            "-a",
+            str(hc_atk),
+            "--potfile-disable",  # Don't cache — we want live output
+            "--status",  # Periodic status updates
+            "--status-timer=3",  # Every 3 seconds
             hash_file,
         ]
 
@@ -196,7 +189,7 @@ def try_fast_hash_hashaxe(
         )
 
         found_re = re.compile(r"^(.+?):(.+)$", re.MULTILINE)
-        
+
         try:
             stdout_data, stderr_data = proc.communicate(timeout=7200)
         except subprocess.TimeoutExpired:
@@ -208,8 +201,11 @@ def try_fast_hash_hashaxe(
             m = found_re.match(line)
             line_lower = line.lower()
             if line_lower.startswith(normalized_hash + ":"):
-                return line[len(normalized_hash) + 1:].strip()
-            elif format_id == "hash.lm" and (line_lower.startswith(normalized_hash[:16] + ":") or line_lower.startswith(normalized_hash[16:] + ":")):
+                return line[len(normalized_hash) + 1 :].strip()
+            elif format_id == "hash.lm" and (
+                line_lower.startswith(normalized_hash[:16] + ":")
+                or line_lower.startswith(normalized_hash[16:] + ":")
+            ):
                 return line.split(":", 1)[1].strip()
 
         # ── NTLM/LM fallback for ambiguous 32-hex hashes ────────────────
@@ -218,19 +214,21 @@ def try_fast_hash_hashaxe(
         if format_id == "hash.md5" and len(normalized_hash) == 32:
             for fallback_mode, fallback_name in [(1000, "NTLM"), (3000, "LM")]:
                 if display:
-                    display.info(f"Checking ambiguous 32-hex hash against {fallback_name} (mode {fallback_mode})...")
+                    display.info(
+                        f"Checking ambiguous 32-hex hash against {fallback_name} (mode {fallback_mode})..."
+                    )
                 fb_hash_file = None
                 try:
-                    with tempfile.NamedTemporaryFile(
-                        mode='w', suffix='.hash', delete=False
-                    ) as f:
+                    with tempfile.NamedTemporaryFile(mode="w", suffix=".hash", delete=False) as f:
                         f.write(target_hash.strip() + "\n")
                         fb_hash_file = f.name
 
                     fb_cmd = [
                         hc_bin,
-                        "-m", str(fallback_mode),
-                        "-a", str(hc_atk),
+                        "-m",
+                        str(fallback_mode),
+                        "-a",
+                        str(hc_atk),
                         "--potfile-disable",
                         "--status",
                         "--status-timer=3",
@@ -263,8 +261,11 @@ def try_fast_hash_hashaxe(
                         fm = found_re.match(line)
                         line_lower = line.lower()
                         if line_lower.startswith(normalized_hash + ":"):
-                            return line[len(normalized_hash) + 1:].strip()
-                        elif format_id == "hash.lm" and (line_lower.startswith(normalized_hash[:16] + ":") or line_lower.startswith(normalized_hash[16:] + ":")):
+                            return line[len(normalized_hash) + 1 :].strip()
+                        elif format_id == "hash.lm" and (
+                            line_lower.startswith(normalized_hash[:16] + ":")
+                            or line_lower.startswith(normalized_hash[16:] + ":")
+                        ):
                             return line.split(":", 1)[1].strip()
                 finally:
                     if fb_hash_file and os.path.exists(fb_hash_file):
@@ -281,24 +282,28 @@ def try_fast_hash_hashaxe_with_display(
     target_hash: str,
     format_id: str,
     attack_mode: str,
-    wordlist: Optional[str] = None,
-    wordlist2: Optional[str] = None,
-    mask: Optional[str] = None,
+    wordlist: str | None = None,
+    wordlist2: str | None = None,
+    mask: str | None = None,
     display=None,
     total_candidates: int = 0,
-    hashcat_mode_override: Optional[int] = None,
-) -> tuple[Optional[str], int, float]:
+    hashcat_mode_override: int | None = None,
+) -> tuple[str | None, int, float]:
     """
     Wrapper around try_fast_hash_hashaxe that integrates with the Display class.
     Shows real-time speed from hashcat's status output.
     Returns: (found_plaintext, total_tried_candidates, elapsed_seconds)
-    
+
     hashcat_mode_override: If set, overrides the registry mode for this format.
                           Used by PDF handler to specify revision-specific modes.
     """
-    hc_mode = hashcat_mode_override if hashcat_mode_override is not None else HASHCAT_MODES.get(format_id, 0)
-    hc_atk  = HASHCAT_ATTACK_MODES.get(attack_mode, 3)
-    hc_bin  = _find_hashcat()
+    hc_mode = (
+        hashcat_mode_override
+        if hashcat_mode_override is not None
+        else HASHCAT_MODES.get(format_id, 0)
+    )
+    hc_atk = HASHCAT_ATTACK_MODES.get(attack_mode, 3)
+    hc_bin = _find_hashcat()
 
     if not hc_bin:
         raise RuntimeError("hashcat binary not found")
@@ -318,19 +323,19 @@ def try_fast_hash_hashaxe_with_display(
 
     hash_file = None
     try:
-        safe_hash = target_hash.strip().replace('\n', '').replace('\r', '')
+        safe_hash = target_hash.strip().replace("\n", "").replace("\r", "")
         normalized_hash = safe_hash.lower()
 
-        with tempfile.NamedTemporaryFile(
-            mode='w', suffix='.hash', delete=False
-        ) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".hash", delete=False) as f:
             f.write(safe_hash + "\n")
             hash_file = f.name
 
         cmd = [
             hc_bin,
-            "-m", str(hc_mode),
-            "-a", str(hc_atk),
+            "-m",
+            str(hc_mode),
+            "-a",
+            str(hc_atk),
             "--potfile-disable",
             "--status",
             "--status-timer=3",
@@ -352,7 +357,7 @@ def try_fast_hash_hashaxe_with_display(
             stderr=subprocess.STDOUT,
             text=True,
             bufsize=1,
-            stdin=subprocess.DEVNULL
+            stdin=subprocess.DEVNULL,
         )
 
         if proc.stdout is None:
@@ -362,14 +367,14 @@ def try_fast_hash_hashaxe_with_display(
         # so .+ is intentional — we match on the hash side only)
         found_re = re.compile(r"^(.+?):(.+)$", re.MULTILINE)
         speed_re = re.compile(r"Speed\.#\d+\.*:\s+([\d.]+\s+[GMKk]?H/s)")
-        prog_re  = re.compile(r"Progress\.*:\s+(\d+)/(\d+)\s+\(([\d.]+)%\)")
+        prog_re = re.compile(r"Progress\.*:\s+(\d+)/(\d+)\s+\(([\d.]+)%\)")
 
-        all_lines  = []
-        found_pw   = None
+        all_lines = []
+        found_pw = None
         last_speed = ""
         last_speed_val = 0.0
-        max_tried  = 0
-        t0         = time.time()
+        max_tried = 0
+        t0 = time.time()
 
         try:
             for line in proc.stdout:
@@ -382,9 +387,12 @@ def try_fast_hash_hashaxe_with_display(
                     last_speed = m.group(1)
                     try:
                         v = float(last_speed.split()[0])
-                        if "kH/s" in last_speed: v *= 1000
-                        elif "MH/s" in last_speed: v *= 1000000
-                        elif "GH/s" in last_speed: v *= 1000000000
+                        if "kH/s" in last_speed:
+                            v *= 1000
+                        elif "MH/s" in last_speed:
+                            v *= 1000000
+                        elif "GH/s" in last_speed:
+                            v *= 1000000000
                         last_speed_val = v
                     except ValueError:
                         last_speed_val = 0.0
@@ -392,8 +400,8 @@ def try_fast_hash_hashaxe_with_display(
                 # Progress
                 m_prog = prog_re.search(line)
                 if m_prog:
-                    current   = int(m_prog.group(1))
-                    total_hc  = int(m_prog.group(2))
+                    current = int(m_prog.group(1))
+                    total_hc = int(m_prog.group(2))
                     max_tried = max(max_tried, current, total_hc)
                     if display and not display.quiet:
                         display.progress(current, total_hc or total_candidates, last_speed_val, 1)
@@ -404,7 +412,7 @@ def try_fast_hash_hashaxe_with_display(
                 m = found_re.match(line)
                 line_lower = line.lower()
                 if line_lower.startswith(normalized_hash + ":"):
-                    found_pw = line[len(normalized_hash) + 1:].strip()
+                    found_pw = line[len(normalized_hash) + 1 :].strip()
                     proc.terminate()
                     try:
                         proc.wait(timeout=2)
@@ -412,7 +420,10 @@ def try_fast_hash_hashaxe_with_display(
                         proc.kill()
                         proc.wait()
                     break
-                elif format_id == "hash.lm" and (line_lower.startswith(normalized_hash[:16] + ":") or line_lower.startswith(normalized_hash[16:] + ":")):
+                elif format_id == "hash.lm" and (
+                    line_lower.startswith(normalized_hash[:16] + ":")
+                    or line_lower.startswith(normalized_hash[16:] + ":")
+                ):
                     found_pw = line.split(":", 1)[1].strip()
                     proc.terminate()
                     try:
@@ -442,16 +453,19 @@ def try_fast_hash_hashaxe_with_display(
                 m = found_re.match(line)
                 line_lower = line.lower()
                 if line_lower.startswith(normalized_hash + ":"):
-                    found_pw = line[len(normalized_hash) + 1:].strip()
+                    found_pw = line[len(normalized_hash) + 1 :].strip()
                     break
-                elif format_id == "hash.lm" and (line_lower.startswith(normalized_hash[:16] + ":") or line_lower.startswith(normalized_hash[16:] + ":")):
+                elif format_id == "hash.lm" and (
+                    line_lower.startswith(normalized_hash[:16] + ":")
+                    or line_lower.startswith(normalized_hash[16:] + ":")
+                ):
                     found_pw = line.split(":", 1)[1].strip()
                     break
                 elif line.strip() and ":" not in line and proc.returncode == 0:
                     # If hashcat cracked it instantly it might just print the password
                     if target_hash[:8].lower() in line.lower() or target_hash in all_lines:
-                       pass # too broad
-                    
+                        pass  # too broad
+
             if not found_pw and "INFO: All hashes found in potfile" in "\n".join(all_lines):
                 # Hashcat already cracked this earlier and cached it despite potfile-disable (if it was somehow left)
                 pass
@@ -460,11 +474,20 @@ def try_fast_hash_hashaxe_with_display(
             if not found_pw and format_id == "hash.md5" and len(normalized_hash) == 32:
                 for fb_mode, fb_name in [(1000, "NTLM"), (3000, "LM")]:
                     if display:
-                        display.info(f"Checking ambiguous 32-hex hash against {fb_name} (mode {fb_mode})...")
-                    
+                        display.info(
+                            f"Checking ambiguous 32-hex hash against {fb_name} (mode {fb_mode})..."
+                        )
+
                     fb_cmd = [
-                        hc_bin, "-m", str(fb_mode), "-a", str(hc_atk),
-                        "--potfile-disable", "--status", "--status-timer=3", hash_file
+                        hc_bin,
+                        "-m",
+                        str(fb_mode),
+                        "-a",
+                        str(hc_atk),
+                        "--potfile-disable",
+                        "--status",
+                        "--status-timer=3",
+                        hash_file,
                     ]
                     if attack_mode == "wordlist" and wordlist:
                         fb_cmd.append(wordlist)
@@ -474,12 +497,16 @@ def try_fast_hash_hashaxe_with_display(
                         fb_cmd.append(mask)
                     elif attack_mode == "hybrid" and wordlist and mask:
                         fb_cmd.extend([wordlist, mask])
-                        
+
                     fb_proc = subprocess.Popen(
-                        fb_cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT,
-                        text=True, bufsize=1, stdin=subprocess.DEVNULL
+                        fb_cmd,
+                        stdout=subprocess.PIPE,
+                        stderr=subprocess.STDOUT,
+                        text=True,
+                        bufsize=1,
+                        stdin=subprocess.DEVNULL,
                     )
-                    
+
                     fb_all_lines = []
                     try:
                         for line in fb_proc.stdout:
@@ -495,14 +522,17 @@ def try_fast_hash_hashaxe_with_display(
 
                             line_lower = line.lower()
                             if line_lower.startswith(normalized_hash + ":"):
-                                found_pw = line[len(normalized_hash) + 1:].strip()
+                                found_pw = line[len(normalized_hash) + 1 :].strip()
                                 fb_proc.terminate()
                                 try:
                                     fb_proc.wait(timeout=2)
                                 except subprocess.TimeoutExpired:
                                     fb_proc.kill()
                                 break
-                            elif fb_mode == 3000 and (line_lower.startswith(normalized_hash[:16] + ":") or line_lower.startswith(normalized_hash[16:] + ":")):
+                            elif fb_mode == 3000 and (
+                                line_lower.startswith(normalized_hash[:16] + ":")
+                                or line_lower.startswith(normalized_hash[16:] + ":")
+                            ):
                                 found_pw = line.split(":", 1)[1].strip()
                                 fb_proc.terminate()
                                 try:
@@ -520,17 +550,20 @@ def try_fast_hash_hashaxe_with_display(
                             fb_proc.kill()
                             fb_proc.wait()
                         raise
-                    
+
                     if not found_pw:
                         for line in fb_all_lines:
                             line_lower = line.lower()
                             if line_lower.startswith(normalized_hash + ":"):
-                                found_pw = line[len(normalized_hash) + 1:].strip()
+                                found_pw = line[len(normalized_hash) + 1 :].strip()
                                 break
-                            elif fb_mode == 3000 and (line_lower.startswith(normalized_hash[:16] + ":") or line_lower.startswith(normalized_hash[16:] + ":")):
+                            elif fb_mode == 3000 and (
+                                line_lower.startswith(normalized_hash[:16] + ":")
+                                or line_lower.startswith(normalized_hash[16:] + ":")
+                            ):
                                 found_pw = line.split(":", 1)[1].strip()
                                 break
-                                
+
                     if found_pw:
                         break
 
@@ -542,10 +575,12 @@ def try_fast_hash_hashaxe_with_display(
         if hash_file and os.path.exists(hash_file):
             os.unlink(hash_file)
 
+
 # ── Pre-compiled libhashaxe_engine fast hash dispatch ───────────────────────────
 
 _LIBCRACK_ENGINE = None
 _LIBCRACK_HASH_TYPES = {"md5": 0, "ntlm": 1, "sha256": 2}
+
 
 def _load_libhashaxe_engine():
     """Load the pre-compiled libhashaxe_engine.so shared library."""
@@ -554,18 +589,21 @@ def _load_libhashaxe_engine():
         return _LIBCRACK_ENGINE
     try:
         import ctypes
-        lib_path = Path(__file__).parent.parent / "native" / "libhashaxe_engine" / "libhashaxe_engine.so"
+
+        lib_path = (
+            Path(__file__).parent.parent / "native" / "libhashaxe_engine" / "libhashaxe_engine.so"
+        )
         if not lib_path.exists():
             return None
         lib = ctypes.CDLL(str(lib_path))
         lib.engine_fast_hash_hashaxe.restype = ctypes.c_int
         lib.engine_fast_hash_hashaxe.argtypes = [
-            ctypes.c_int,                                     # hash_type
-            ctypes.POINTER(ctypes.c_uint8),                   # candidates
-            ctypes.POINTER(ctypes.c_int),                     # lengths
-            ctypes.c_int,                                     # num_candidates
-            ctypes.POINTER(ctypes.c_uint8),                   # target_hash
-            ctypes.c_int,                                     # target_hash_bytes
+            ctypes.c_int,  # hash_type
+            ctypes.POINTER(ctypes.c_uint8),  # candidates
+            ctypes.POINTER(ctypes.c_int),  # lengths
+            ctypes.c_int,  # num_candidates
+            ctypes.POINTER(ctypes.c_uint8),  # target_hash
+            ctypes.c_int,  # target_hash_bytes
         ]
         _LIBCRACK_ENGINE = lib
         return lib
@@ -577,7 +615,7 @@ def run_libhashaxe_fast_hash(
     hash_type_name: str,
     target_hash: str,
     candidates: list[str],
-) -> Optional[str]:
+) -> str | None:
     """
     Use pre-compiled CUDA kernels in libhashaxe_engine.so for fast hash cracking.
     Eliminates PyCUDA JIT compilation overhead entirely.
@@ -589,6 +627,7 @@ def run_libhashaxe_fast_hash(
     Returns the matching password string, or None.
     """
     import ctypes
+
     import numpy as np
 
     lib = _load_libhashaxe_engine()
@@ -609,7 +648,7 @@ def run_libhashaxe_fast_hash(
         for i, c in enumerate(candidates):
             b = c.encode("utf-8", "replace")[:MAX_LEN]
             offset = i * MAX_LEN
-            pw_flat[offset:offset + len(b)] = list(b)
+            pw_flat[offset : offset + len(b)] = list(b)
             lengths[i] = len(b)
 
         # Parse target hash
@@ -630,24 +669,29 @@ def run_libhashaxe_fast_hash(
             return candidates[result]
     except Exception as e:
         import logging
+
         logging.getLogger(__name__).warning("Native libhashaxe_engine dispatch failed: %s", e)
 
     return None
 
 
 _CUDA_CTX = None
+
+
 def _ensure_cuda_context():
     global _CUDA_CTX
     if _CUDA_CTX is None:
         import pycuda.driver as drv
+
         drv.init()
         _CUDA_CTX = drv.Device(0).make_context()
     return _CUDA_CTX
 
+
 def run_pycuda_md5_hashaxe(
     target_hash: str,
     candidates: list[str],
-) -> Optional[str]:
+) -> str | None:
     """
     Run the custom CUDA MD5 kernel (gpu/kernels/md5.cu) against a batch
     of candidates. Used when hashcat is not available.
@@ -657,6 +701,7 @@ def run_pycuda_md5_hashaxe(
     """
     try:
         import numpy as np
+
         _ensure_cuda_context()
         import pycuda.compiler as compiler
         import pycuda.driver as drv
@@ -669,34 +714,39 @@ def run_pycuda_md5_hashaxe(
 
         # Parse target hash into uint32[4]
         target_bytes = bytes.fromhex(target_hash)
-        target_u32   = np.frombuffer(target_bytes, dtype=np.dtype('<u4'))
+        target_u32 = np.frombuffer(target_bytes, dtype=np.dtype("<u4"))
 
         # Build candidate array
-        n    = len(candidates)
+        n = len(candidates)
         MAX_LEN = 64
         pw_flat = np.zeros((n, MAX_LEN), dtype=np.uint8)
         lengths = np.zeros(n, dtype=np.int32)
 
         for i, c in enumerate(candidates):
             b = c.encode("utf-8", "replace")[:MAX_LEN]
-            pw_flat[i, :len(b)] = list(b)
+            pw_flat[i, : len(b)] = list(b)
             lengths[i] = len(b)
 
         found_idx = np.array([-1], dtype=np.int32)
 
         # GPU dispatch
-        pw_gpu    = drv.to_device(pw_flat.flatten())
-        lens_gpu  = drv.to_device(lengths)
-        tgt_gpu   = drv.to_device(target_u32)
+        pw_gpu = drv.to_device(pw_flat.flatten())
+        lens_gpu = drv.to_device(lengths)
+        tgt_gpu = drv.to_device(target_u32)
         found_gpu = drv.to_device(found_idx)
 
         BLOCK = 256
-        grid  = (n + BLOCK - 1) // BLOCK
+        grid = (n + BLOCK - 1) // BLOCK
 
         md5_kernel(
-            pw_gpu, lens_gpu, np.int32(MAX_LEN), np.int32(n),
-            tgt_gpu, found_gpu,
-            block=(BLOCK, 1, 1), grid=(grid, 1),
+            pw_gpu,
+            lens_gpu,
+            np.int32(MAX_LEN),
+            np.int32(n),
+            tgt_gpu,
+            found_gpu,
+            block=(BLOCK, 1, 1),
+            grid=(grid, 1),
         )
 
         result = drv.from_device(found_gpu, (1,), np.int32)

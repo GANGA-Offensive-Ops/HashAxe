@@ -47,14 +47,11 @@ from hashaxe.formats.base import (
 log = logging.getLogger(__name__)
 
 # Ansible Vault header pattern
-_VAULT_HEADER_RE = re.compile(
-    r'^\$ANSIBLE_VAULT;(\d+\.\d+);(AES\d*)\s*$', re.MULTILINE
-)
+_VAULT_HEADER_RE = re.compile(r"^\$ANSIBLE_VAULT;(\d+\.\d+);(AES\d*)\s*$", re.MULTILINE)
 
 # Full vault format: header + hex lines
 _VAULT_FULL_RE = re.compile(
-    r'^\$ANSIBLE_VAULT;(\d+\.\d+);(AES\d*)\s*\n'
-    r'([0-9a-f\n]+)\s*$',
+    r"^\$ANSIBLE_VAULT;(\d+\.\d+);(AES\d*)\s*\n" r"([0-9a-f\n]+)\s*$",
     re.MULTILINE,
 )
 
@@ -136,15 +133,15 @@ class AnsibleVaultFormat(BaseFormat):
             hex_payload = target.format_data.get("hex_payload", "")
             if not hex_payload:
                 return False
-                
+
             # Decode the outer hex wrapper
             inner_text = bytes.fromhex(hex_payload).decode("utf-8")
-            
+
             # The inner text is: salt_hex \n hmac_hex \n ciphertext_hex
             inner_lines = inner_text.strip().split("\n")
             if len(inner_lines) < 3:
                 return False
-                
+
             salt = bytes.fromhex(inner_lines[0])
             stored_hmac = bytes.fromhex(inner_lines[1])
             ciphertext = bytes.fromhex(inner_lines[2])

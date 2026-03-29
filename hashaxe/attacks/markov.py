@@ -40,13 +40,13 @@ from hashaxe.attacks import AttackConfig, AttackRegistry, BaseAttack
 log = logging.getLogger(__name__)
 
 _START = "\x02"  # Start-of-word sentinel
-_END   = "\x03"  # End-of-word sentinel
+_END = "\x03"  # End-of-word sentinel
 
 
 class MarkovAttack(BaseAttack):
     """Character-level Markov chain password generator."""
 
-    attack_id   = "markov"
+    attack_id = "markov"
     attack_name = "Markov Chain Attack"
     description = "Generate candidates using character-level Markov chains built from a wordlist."
 
@@ -141,7 +141,7 @@ class MarkovAttack(BaseAttack):
                     padded = _START * order + word + _END
 
                     for i in range(len(padded) - order):
-                        context = padded[i:i + order]
+                        context = padded[i : i + order]
                         next_char = padded[i + order]
                         transitions[context][next_char] += 1
         except OSError as e:
@@ -171,4 +171,3 @@ class MarkovAttack(BaseAttack):
 
 _registry = AttackRegistry()
 _registry.register(MarkovAttack())
-

@@ -36,6 +36,7 @@ log = logging.getLogger(__name__)
 @dataclass
 class MITREMapping:
     """MITRE ATT&CK mapping for a hash/credential type."""
+
     technique_id: str
     technique_name: str
     tactic: str
@@ -89,7 +90,6 @@ _MITRE_MAP: dict[str, list[MITREMapping]] = {
             url="https://attack.mitre.org/techniques/T1558/003/",
         ),
     ],
-
     # Domain Cached Credentials
     "network.dcc1": [
         MITREMapping(
@@ -111,7 +111,6 @@ _MITRE_MAP: dict[str, list[MITREMapping]] = {
             url="https://attack.mitre.org/techniques/T1003/005/",
         ),
     ],
-
     # DPAPI
     "disk.dpapi": [
         MITREMapping(
@@ -123,7 +122,6 @@ _MITRE_MAP: dict[str, list[MITREMapping]] = {
             url="https://attack.mitre.org/techniques/T1555/004/",
         ),
     ],
-
     # NTLM
     "network.ntlmv2": [
         MITREMapping(
@@ -145,7 +143,6 @@ _MITRE_MAP: dict[str, list[MITREMapping]] = {
             url="https://attack.mitre.org/techniques/T1557/001/",
         ),
     ],
-
     # Unix password hashes
     "hash.sha512crypt": [
         MITREMapping(
@@ -167,7 +164,6 @@ _MITRE_MAP: dict[str, list[MITREMapping]] = {
             url="https://attack.mitre.org/techniques/T1003/008/",
         ),
     ],
-
     # Cisco
     "network.cisco_type5": [
         MITREMapping(
@@ -199,7 +195,6 @@ _MITRE_MAP: dict[str, list[MITREMapping]] = {
             url="https://attack.mitre.org/techniques/T1552/001/",
         ),
     ],
-
     # Ansible Vault
     "token.ansible_vault": [
         MITREMapping(
@@ -211,7 +206,6 @@ _MITRE_MAP: dict[str, list[MITREMapping]] = {
             url="https://attack.mitre.org/techniques/T1552/001/",
         ),
     ],
-
     # JWT
     "hash.jwt": [
         MITREMapping(

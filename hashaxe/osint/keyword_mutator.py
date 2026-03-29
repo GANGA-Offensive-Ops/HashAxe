@@ -46,23 +46,60 @@ logger = logging.getLogger(__name__)
 
 # ── Leet speak table ──────────────────────────────────────────────────────────
 
-_LEET = str.maketrans({
-    "a": "@", "A": "@", "e": "3", "E": "3",
-    "i": "1", "I": "1", "o": "0", "O": "0",
-    "s": "$", "S": "$", "t": "7", "T": "7",
-})
+_LEET = str.maketrans(
+    {
+        "a": "@",
+        "A": "@",
+        "e": "3",
+        "E": "3",
+        "i": "1",
+        "I": "1",
+        "o": "0",
+        "O": "0",
+        "s": "$",
+        "S": "$",
+        "t": "7",
+        "T": "7",
+    }
+)
 
 # ── Common password patterns ─────────────────────────────────────────────────
 
 _YEAR_SUFFIXES = [str(y) for y in range(2018, 2027)]
 _DIGIT_SUFFIXES = [
-    "1", "2", "12", "123", "1234", "12345", "0", "01", "007",
-    "11", "22", "69", "99", "100", "00",
+    "1",
+    "2",
+    "12",
+    "123",
+    "1234",
+    "12345",
+    "0",
+    "01",
+    "007",
+    "11",
+    "22",
+    "69",
+    "99",
+    "100",
+    "00",
 ]
 _SYMBOL_SUFFIXES = [
-    "!", "@", "#", "$", ".", "*", "?",
-    "!1", "!!", "!@#", "#1", "@1",
-    "123!", "1!", "1234!", "!@#$",
+    "!",
+    "@",
+    "#",
+    "$",
+    ".",
+    "*",
+    "?",
+    "!1",
+    "!!",
+    "!@#",
+    "#1",
+    "@1",
+    "123!",
+    "1!",
+    "1234!",
+    "!@#$",
 ]
 _SEPARATORS = ["", "_", "-", ".", "@", "#"]
 _PREFIXES = ["!", "1", "The", "My", "I", "iLove", "ILove"]
@@ -87,11 +124,7 @@ class KeywordMutator:
         def _emit(candidate: str) -> Iterator[str]:
             nonlocal total
             c = candidate.strip()
-            if (
-                c
-                and c not in seen
-                and self.min_length <= len(c) <= self.max_length
-            ):
+            if c and c not in seen and self.min_length <= len(c) <= self.max_length:
                 seen.add(c)
                 total += 1
                 yield c

@@ -74,23 +74,25 @@ from typing import List, Optional
 
 # ── Backend enum ──────────────────────────────────────────────────────────────
 
+
 class GPUBackend(Enum):
-    CUDA    = auto()
-    OPENCL  = auto()
-    NONE    = auto()   # CPU fallback
+    CUDA = auto()
+    OPENCL = auto()
+    NONE = auto()  # CPU fallback
 
 
 # ── Device info ───────────────────────────────────────────────────────────────
 
+
 @dataclass
 class GPUDevice:
-    backend:       GPUBackend
-    name:          str        = "Unknown"
-    vendor:        str        = ""
-    compute_units: int        = 0
-    global_mem_mb: int        = 0
-    driver_version:str        = ""
-    est_speed_pw_s:float      = 0.0    # estimated pw/s at 16 rounds bcrypt
+    backend: GPUBackend
+    name: str = "Unknown"
+    vendor: str = ""
+    compute_units: int = 0
+    global_mem_mb: int = 0
+    driver_version: str = ""
+    est_speed_pw_s: float = 0.0  # estimated pw/s at 16 rounds bcrypt
 
     # Convenience aliases for cleaner API
     @property
@@ -103,6 +105,7 @@ class GPUDevice:
 
 
 # ── Detection ─────────────────────────────────────────────────────────────────
+
 
 def detect_gpu() -> GPUDevice | None:
     """
@@ -129,31 +132,37 @@ def _try_cuda() -> GPUDevice | None:
     """Attempt NVIDIA CUDA detection via nvidia-smi."""
     try:
         # SECURITY FIX: Use absolute path to prevent PATH hijacking
-        out = subprocess.check_output(
-            ["/usr/bin/nvidia-smi",
-             "--query-gpu=name,driver_version,memory.total,compute_cap",
-             "--format=csv,noheader,nounits"],
-            timeout=5, stderr=subprocess.DEVNULL
-        ).decode().strip()
+        out = (
+            subprocess.check_output(
+                [
+                    "/usr/bin/nvidia-smi",
+                    "--query-gpu=name,driver_version,memory.total,compute_cap",
+                    "--format=csv,noheader,nounits",
+                ],
+                timeout=5,
+                stderr=subprocess.DEVNULL,
+            )
+            .decode()
+            .strip()
+        )
         if not out:
             return None
 
         parts = [p.strip() for p in out.split(",")]
-        name        = parts[0] if len(parts) > 0 else "NVIDIA GPU"
-        driver_ver  = parts[1] if len(parts) > 1 else "?"
-        mem_mb      = int(parts[2]) if len(parts) > 2 else 0
+        name = parts[0] if len(parts) > 0 else "NVIDIA GPU"
+        driver_ver = parts[1] if len(parts) > 1 else "?"
+        mem_mb = int(parts[2]) if len(parts) > 2 else 0
         compute_cap = parts[3] if len(parts) > 3 else "?"
 
         return GPUDevice(
-            backend        = GPUBackend.CUDA,
-            name           = name,
-            vendor         = "NVIDIA",
-            global_mem_mb  = mem_mb,
-            driver_version = driver_ver,
-            est_speed_pw_s = 0.0,
+            backend=GPUBackend.CUDA,
+            name=name,
+            vendor="NVIDIA",
+            global_mem_mb=mem_mb,
+            driver_version=driver_ver,
+            est_speed_pw_s=0.0,
         )
-    except (FileNotFoundError, subprocess.TimeoutExpired,
-            subprocess.CalledProcessError):
+    except (FileNotFoundError, subprocess.TimeoutExpired, subprocess.CalledProcessError):
         return None
 
 
@@ -161,6 +170,7 @@ def _try_opencl() -> GPUDevice | None:
     """Attempt OpenCL detection via pyopencl."""
     try:
         import pyopencl as cl
+
         platforms = cl.get_platforms()
         if not platforms:
             return None
@@ -173,17 +183,17 @@ def _try_opencl() -> GPUDevice | None:
                 continue
             if devices:
                 dev = devices[0]
-                name   = dev.name.strip()
+                name = dev.name.strip()
                 vendor = dev.vendor.strip()
                 mem_mb = dev.global_mem_size // (1024 * 1024)
-                cu     = dev.max_compute_units
+                cu = dev.max_compute_units
                 return GPUDevice(
-                    backend        = GPUBackend.OPENCL,
-                    name           = name,
-                    vendor         = vendor,
-                    compute_units  = cu,
-                    global_mem_mb  = mem_mb,
-                    est_speed_pw_s = 0.0,
+                    backend=GPUBackend.OPENCL,
+                    name=name,
+                    vendor=vendor,
+                    compute_units=cu,
+                    global_mem_mb=mem_mb,
+                    est_speed_pw_s=0.0,
                 )
     except ImportError:
         pass
@@ -204,7 +214,7 @@ def live_benchmark(pk, duration: float = 3.0) -> float:
     from hashaxe.engine import try_passphrase
 
     passwords = [f"__bench_{i:06d}__".encode() for i in range(500)]
-    t0     = time.perf_counter()
+    t0 = time.perf_counter()
     tested = 0
     for pw in passwords * 20:
         try_passphrase(pk, pw)
@@ -216,6 +226,7 @@ def live_benchmark(pk, duration: float = 3.0) -> float:
 
 
 # ── GPU cracker session ───────────────────────────────────────────────────────
+
 
 class GPUCracker:
     """
@@ -232,17 +243,17 @@ class GPUCracker:
     """
 
     def __init__(self, device: GPUDevice | None = None):
-        self.device  = device or detect_gpu()
+        self.device = device or detect_gpu()
         self.backend = self.device.backend if self.device else GPUBackend.NONE
-        self._ctx    = None
-        self._prog   = None
+        self._ctx = None
+        self._prog = None
         self._warned = False
-        self._lib    = None
+        self._lib = None
         self._engine_ctx = None
         self._using_libhashaxe = False
         self._max_batch = 8192
         self._max_pw = 72
-        
+
         if self.backend == GPUBackend.CUDA:
             self._init_cuda()
         elif self.backend == GPUBackend.OPENCL:
@@ -264,7 +275,9 @@ class GPUCracker:
 
     def _init_cuda(self):
         """Compile and cache the CUDA PTX kernel or load libhashaxe_engine."""
-        engine_path = Path(__file__).parent.parent / "native" / "libhashaxe_engine" / "libhashaxe_engine.so"
+        engine_path = (
+            Path(__file__).parent.parent / "native" / "libhashaxe_engine" / "libhashaxe_engine.so"
+        )
         if engine_path.exists():
             try:
                 self._lib = ctypes.CDLL(str(engine_path))
@@ -274,24 +287,33 @@ class GPUCracker:
                 self._lib.engine_get_pw_lens.restype = ctypes.POINTER(ctypes.c_int)
                 self._lib.engine_get_results.restype = ctypes.POINTER(ctypes.c_uint8)
                 self._lib.engine_launch.argtypes = [
-                    ctypes.c_void_p, ctypes.c_int, ctypes.c_int,
-                    ctypes.c_char_p, ctypes.c_int, ctypes.c_int,
-                    ctypes.c_int, ctypes.c_int,
-                    ctypes.c_char_p, ctypes.c_int
+                    ctypes.c_void_p,
+                    ctypes.c_int,
+                    ctypes.c_int,
+                    ctypes.c_char_p,
+                    ctypes.c_int,
+                    ctypes.c_int,
+                    ctypes.c_int,
+                    ctypes.c_int,
+                    ctypes.c_char_p,
+                    ctypes.c_int,
                 ]
-                
+
                 self._max_batch = 8192
-                self._max_pw    = 72
+                self._max_pw = 72
                 self._engine_ctx = self._lib.engine_init(0, self._max_batch, self._max_pw)
                 self._using_libhashaxe = True
                 return
             except Exception as e:
-                print(f"\033[93m[!]\033[0m Failed to load libhashaxe_engine.so: {e}. Falling back to PyCUDA.")
-        
+                print(
+                    f"\033[93m[!]\033[0m Failed to load libhashaxe_engine.so: {e}. Falling back to PyCUDA."
+                )
+
         self._using_libhashaxe = False
         try:
             import pycuda.compiler as compiler
             import pycuda.driver as drv
+
             drv.init()
             self._cuda_ctx = drv.Device(0).make_context()
             kernel_path = Path(__file__).parent / "cuda_kernel.cu"
@@ -299,8 +321,7 @@ class GPUCracker:
             mod = compiler.SourceModule(src, options=["-O3", "-arch=sm_86"])
             self._cuda_fn = mod.get_function("hashaxe_bcrypt_ssh")
         except Exception as exc:
-            print(f"\033[93m[!]\033[0m CUDA init failed: {exc}\n"
-                  f"    Falling back to CPU mode.")
+            print(f"\033[93m[!]\033[0m CUDA init failed: {exc}\n" f"    Falling back to CPU mode.")
             self.backend = GPUBackend.NONE
             self._warn_no_gpu()
 
@@ -318,19 +339,21 @@ class GPUCracker:
         """Compile and cache the OpenCL kernel."""
         try:
             import pyopencl as cl
+
             platforms = cl.get_platforms()
             for p in platforms:
                 devs = p.get_devices(cl.device_type.GPU)
                 if devs:
-                    self._ctx  = cl.Context(devs[:1])
-                    self._queue= cl.CommandQueue(self._ctx)
+                    self._ctx = cl.Context(devs[:1])
+                    self._queue = cl.CommandQueue(self._ctx)
                     kernel_path = Path(__file__).parent / "opencl_kernel.cl"
-                    src  = kernel_path.read_text()
+                    src = kernel_path.read_text()
                     self._prog = cl.Program(self._ctx, src).build()
                     return
         except Exception as exc:
-            print(f"\033[93m[!]\033[0m OpenCL init failed: {exc}\n"
-                  f"    Falling back to CPU mode.")
+            print(
+                f"\033[93m[!]\033[0m OpenCL init failed: {exc}\n" f"    Falling back to CPU mode."
+            )
             self.backend = GPUBackend.NONE
             self._warn_no_gpu()
 
@@ -367,35 +390,44 @@ class GPUCracker:
         import pycuda.driver as drv
 
         max_pw = max(len(c.encode()) for c in candidates) + 1
-        n      = len(candidates)
+        n = len(candidates)
 
         # Build flat password buffer
-        pw_flat  = np.zeros((n, max_pw), dtype=np.uint8)
-        pw_lens  = np.zeros(n, dtype=np.int32)
+        pw_flat = np.zeros((n, max_pw), dtype=np.uint8)
+        pw_lens = np.zeros(n, dtype=np.int32)
         for i, c in enumerate(candidates):
             b = c.encode("utf-8", "replace")
-            pw_flat[i, :len(b)] = list(b)
+            pw_flat[i, : len(b)] = list(b)
             pw_lens[i] = len(b)
 
         results = np.zeros(n, dtype=np.uint8)
 
         # Prepare GPU buffers
-        pw_gpu   = drv.to_device(pw_flat.flatten())
+        pw_gpu = drv.to_device(pw_flat.flatten())
         lens_gpu = drv.to_device(pw_lens)
         salt_gpu = drv.to_device(np.frombuffer(pk.salt, dtype=np.uint8))
-        edata_gpu= drv.to_device(np.frombuffer(pk.edata[:16], dtype=np.uint8))
-        res_gpu  = drv.to_device(results)
+        edata_gpu = drv.to_device(np.frombuffer(pk.edata[:16], dtype=np.uint8))
+        res_gpu = drv.to_device(results)
 
         # Launch kernel
         block = 256
-        grid  = (n + block - 1) // block
+        grid = (n + block - 1) // block
         self._cuda_fn(
-            pw_gpu, lens_gpu, np.int32(max_pw), np.int32(n),
-            salt_gpu, np.int32(len(pk.salt)), np.int32(pk.rounds),
-            np.int32(pk.key_len), np.int32(pk.iv_len),
-            edata_gpu, np.int32(16), np.int32(0),
+            pw_gpu,
+            lens_gpu,
+            np.int32(max_pw),
+            np.int32(n),
+            salt_gpu,
+            np.int32(len(pk.salt)),
+            np.int32(pk.rounds),
+            np.int32(pk.key_len),
+            np.int32(pk.iv_len),
+            edata_gpu,
+            np.int32(16),
+            np.int32(0),
             res_gpu,
-            block=(block, 1, 1), grid=(grid, 1),
+            block=(block, 1, 1),
+            grid=(grid, 1),
         )
         results = drv.from_device(res_gpu, (n,), np.uint8)
 
@@ -409,19 +441,19 @@ class GPUCracker:
         n = len(candidates)
         if n > self._max_batch:
             n = self._max_batch
-            
-        buf_idx = 0 
-        
+
+        buf_idx = 0
+
         pw_flat_ptr = self._lib.engine_get_pw_flat(self._engine_ctx, buf_idx)
         pw_lens_ptr = self._lib.engine_get_pw_lens(self._engine_ctx, buf_idx)
         results_ptr = self._lib.engine_get_results(self._engine_ctx, buf_idx)
-        
+
         FlatType = ctypes.c_uint8 * (n * self._max_pw)
         LensType = ctypes.c_int * n
-        
+
         pw_flat = ctypes.cast(pw_flat_ptr, ctypes.POINTER(FlatType)).contents
         pw_lens = ctypes.cast(pw_lens_ptr, ctypes.POINTER(LensType)).contents
-        
+
         offset = 0
         for i, c in enumerate(candidates[:n]):
             b = c.encode("utf-8", "replace")
@@ -430,22 +462,28 @@ class GPUCracker:
             for j in range(L):
                 pw_flat[offset + j] = b[j]
             offset += self._max_pw
-            
+
         salt_bytes = pk.salt
         edata_bytes = pk.edata[:16]
-        
+
         self._lib.engine_launch(
-            self._engine_ctx, buf_idx, n,
-            salt_bytes, len(salt_bytes), pk.rounds,
-            pk.key_len, pk.iv_len,
-            edata_bytes, len(edata_bytes)
+            self._engine_ctx,
+            buf_idx,
+            n,
+            salt_bytes,
+            len(salt_bytes),
+            pk.rounds,
+            pk.key_len,
+            pk.iv_len,
+            edata_bytes,
+            len(edata_bytes),
         )
-        
+
         self._lib.engine_sync(self._engine_ctx, buf_idx)
-        
+
         ResType = ctypes.c_uint8 * n
         results = ctypes.cast(results_ptr, ctypes.POINTER(ResType)).contents
-        
+
         for i in range(n):
             if results[i]:
                 return candidates[i]
@@ -457,31 +495,41 @@ class GPUCracker:
         import pyopencl as cl
 
         max_pw = max(len(c.encode()) for c in candidates) + 1
-        n      = len(candidates)
+        n = len(candidates)
 
         pw_flat = np.zeros((n, max_pw), dtype=np.uint8)
         pw_lens = np.zeros(n, dtype=np.int32)
         for i, c in enumerate(candidates):
             b = c.encode("utf-8", "replace")
-            pw_flat[i, :len(b)] = list(b)
+            pw_flat[i, : len(b)] = list(b)
             pw_lens[i] = len(b)
 
         mf = cl.mem_flags
-        pw_buf   = cl.Buffer(self._ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=pw_flat.flatten())
+        pw_buf = cl.Buffer(self._ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=pw_flat.flatten())
         lens_buf = cl.Buffer(self._ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=pw_lens)
         salt_arr = np.frombuffer(pk.salt, dtype=np.uint8)
         salt_buf = cl.Buffer(self._ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=salt_arr)
-        edata_arr= np.frombuffer(pk.edata[:16], dtype=np.uint8)
-        edata_buf= cl.Buffer(self._ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=edata_arr)
-        results  = np.zeros(n, dtype=np.uint8)
-        res_buf  = cl.Buffer(self._ctx, mf.WRITE_ONLY, results.nbytes)
+        edata_arr = np.frombuffer(pk.edata[:16], dtype=np.uint8)
+        edata_buf = cl.Buffer(self._ctx, mf.READ_ONLY | mf.COPY_HOST_PTR, hostbuf=edata_arr)
+        results = np.zeros(n, dtype=np.uint8)
+        res_buf = cl.Buffer(self._ctx, mf.WRITE_ONLY, results.nbytes)
 
         evt = self._prog.hashaxe_bcrypt_checkints(
-            self._queue, (n,), None,
-            pw_buf, lens_buf, np.int32(max_pw), np.int32(n),
-            salt_buf, np.int32(len(pk.salt)), np.int32(pk.rounds),
-            np.int32(pk.key_len), np.int32(pk.iv_len),
-            edata_buf, np.int32(len(pk.edata[:16])), np.int32(0),
+            self._queue,
+            (n,),
+            None,
+            pw_buf,
+            lens_buf,
+            np.int32(max_pw),
+            np.int32(n),
+            salt_buf,
+            np.int32(len(pk.salt)),
+            np.int32(pk.rounds),
+            np.int32(pk.key_len),
+            np.int32(pk.iv_len),
+            edata_buf,
+            np.int32(len(pk.edata[:16])),
+            np.int32(0),
             res_buf,
         )
         evt.wait()
@@ -498,10 +546,12 @@ class GPUCracker:
         Delegates to cpu/simd.py for actual implementation.
         """
         from hashaxe.cpu.simd import simd_batch_hashaxe
+
         return simd_batch_hashaxe(pk, candidates, found_event)
 
 
 # ── GPU info display ──────────────────────────────────────────────────────────
+
 
 def gpu_info_string(device: GPUDevice | None) -> str:
     if device is None:
@@ -512,12 +562,12 @@ def gpu_info_string(device: GPUDevice | None) -> str:
         else "Run --benchmark for actual speed"
     )
     return (
-        f"{device.backend.name}: {device.name}  "
-        f"({device.global_mem_mb} MB VRAM, {speed_info})"
+        f"{device.backend.name}: {device.name}  " f"({device.global_mem_mb} MB VRAM, {speed_info})"
     )
 
 
 # ── Hardware Profiler & Multi-GPU ──────────────────────────────────────────────
+
 
 class HardwareProfiler:
     """Auto-profiles system hardware to determine optimal dispatch strategies."""
@@ -527,7 +577,7 @@ class HardwareProfiler:
         """Run quick benchmarks to establish baseline capability."""
         dev = device or detect_gpu()
         cpu_cores = os.cpu_count() or 1
-        
+
         profile = {
             "cpu_cores": cpu_cores,
             "has_gpu": dev is not None,
@@ -536,19 +586,19 @@ class HardwareProfiler:
             "gpu_vram": dev.global_mem_mb if dev else 0,
             "recommended_workers": cpu_cores,
             "fast_hash_target": "gpu" if dev else "cpu",
-            "slow_hash_target": "cpu"  # bcrypt remains CPU bound for orchestrator
+            "slow_hash_target": "cpu",  # bcrypt remains CPU bound for orchestrator
         }
-        
+
         # Adjust worker count based on RAM/CPU balance
         if dev and dev.backend == GPUBackend.CUDA:
-            profile["recommended_workers"] = min(cpu_cores, 16) # Don't oversubscribe CUDA context
-            
+            profile["recommended_workers"] = min(cpu_cores, 16)  # Don't oversubscribe CUDA context
+
         return profile
 
 
 class MultiGPUManager:
     """Manages distribution of workload across multiple CUDA devices."""
-    
+
     def __init__(self):
         self.devices = []
         self._init_devices()
@@ -556,21 +606,20 @@ class MultiGPUManager:
     def _init_devices(self):
         try:
             import pycuda.driver as drv
+
             drv.init()
             count = drv.Device.count()
             for i in range(count):
                 dev = drv.Device(i)
-                self.devices.append({
-                    "id": i,
-                    "name": dev.name(),
-                    "memory": dev.total_memory() // (1024 * 1024)
-                })
+                self.devices.append(
+                    {"id": i, "name": dev.name(), "memory": dev.total_memory() // (1024 * 1024)}
+                )
         except Exception:
             pass
-            
+
     def get_device_count(self) -> int:
         return len(self.devices)
-        
+
     def dispatch_kernel(self, kernel_fn, num_candidates: int, *args):
         """Distribute candidates equally among available GPUs.
 

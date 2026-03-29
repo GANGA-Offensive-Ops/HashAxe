@@ -83,8 +83,10 @@ logger = logging.getLogger(__name__)
 
 # ── Enums ─────────────────────────────────────────────────────────────────────
 
+
 class FPGAAlgorithm(Enum):
     """Hash algorithms supported by FPGA acceleration."""
+
     MD5 = "md5"
     SHA256 = "sha256"
     SHA512 = "sha512"
@@ -97,6 +99,7 @@ class FPGAAlgorithm(Enum):
 
 class EnvironmentState(Enum):
     """FPGA environment state classification."""
+
     NO_HARDWARE = "NO_HARDWARE"
     TOOLCHAIN_ONLY = "TOOLCHAIN_ONLY"
     DEVICE_PRESENT = "DEVICE_PRESENT"
@@ -114,22 +117,24 @@ _KNOWN_VENDORS = {
 
 # Simulated hash rates (H/s) by algorithm for benchmark fixture
 _SIM_HASH_RATES: dict[FPGAAlgorithm, float] = {
-    FPGAAlgorithm.MD5: 500_000_000.0,     # 500 MH/s
-    FPGAAlgorithm.SHA256: 200_000_000.0,   # 200 MH/s
-    FPGAAlgorithm.SHA512: 100_000_000.0,   # 100 MH/s
-    FPGAAlgorithm.BCRYPT: 50_000.0,        # 50 KH/s (memory-hard)
-    FPGAAlgorithm.SCRYPT: 25_000.0,        # 25 KH/s (memory-hard)
-    FPGAAlgorithm.ARGON2: 10_000.0,        # 10 KH/s (memory-hard + time-hard)
-    FPGAAlgorithm.NTLM: 800_000_000.0,     # 800 MH/s
-    FPGAAlgorithm.PBKDF2: 150_000.0,       # 150 KH/s
+    FPGAAlgorithm.MD5: 500_000_000.0,  # 500 MH/s
+    FPGAAlgorithm.SHA256: 200_000_000.0,  # 200 MH/s
+    FPGAAlgorithm.SHA512: 100_000_000.0,  # 100 MH/s
+    FPGAAlgorithm.BCRYPT: 50_000.0,  # 50 KH/s (memory-hard)
+    FPGAAlgorithm.SCRYPT: 25_000.0,  # 25 KH/s (memory-hard)
+    FPGAAlgorithm.ARGON2: 10_000.0,  # 10 KH/s (memory-hard + time-hard)
+    FPGAAlgorithm.NTLM: 800_000_000.0,  # 800 MH/s
+    FPGAAlgorithm.PBKDF2: 150_000.0,  # 150 KH/s
 }
 
 
 # ── Output Models ─────────────────────────────────────────────────────────────
 
+
 @dataclass
 class FPGADevice:
     """Detected or simulated FPGA device."""
+
     id: str = ""
     name: str = ""
     vendor: str = ""
@@ -144,6 +149,7 @@ class FPGADevice:
 @dataclass
 class FPGAWorkUnit:
     """A unit of work to dispatch to the FPGA."""
+
     algorithm: FPGAAlgorithm = FPGAAlgorithm.MD5
     target_hash: bytes = b""
     candidates: list[bytes] = field(default_factory=list)
@@ -154,6 +160,7 @@ class FPGAWorkUnit:
 @dataclass
 class FPGADispatchResult:
     """Result of dispatching work to the FPGA or simulator."""
+
     found: bool = False
     password: bytes = b""
     candidates_checked: int = 0
@@ -161,18 +168,19 @@ class FPGADispatchResult:
     elapsed_ms: float = 0.0
 
     # Provenance
-    mode: str = "SIMULATOR"         # MEASURED when real HW, SIMULATOR when simulated
+    mode: str = "SIMULATOR"  # MEASURED when real HW, SIMULATOR when simulated
     measured: bool = False
     simulation: bool = True
     implementation_status: str = "PRODUCTION"
     result_origin: str = "cpu_simulation"
     device: str = ""
-    simulation_warning: str = ""     # Human-readable warning if in simulation
+    simulation_warning: str = ""  # Human-readable warning if in simulation
 
 
 @dataclass
 class ToolchainInfo:
     """Detected FPGA toolchain information."""
+
     vivado: bool = False
     vivado_path: str = ""
     quartus: bool = False
@@ -187,6 +195,7 @@ class ToolchainInfo:
 # ══════════════════════════════════════════════════════════════════════════════
 # FPGABridge — Main Bridge Class
 # ══════════════════════════════════════════════════════════════════════════════
+
 
 class FPGABridge:
     """FPGA/ASIC Hardware Acceleration Bridge.
@@ -220,7 +229,7 @@ class FPGABridge:
         self._device: FPGADevice | None = None
         self._toolchain = ToolchainInfo()
         self._env_state = EnvironmentState.NO_HARDWARE
-        self._sim_warned = False   # Only warn once per instance
+        self._sim_warned = False  # Only warn once per instance
 
         if simulation:
             self._env_state = EnvironmentState.SIMULATION_ONLY
@@ -238,10 +247,14 @@ class FPGABridge:
         """Detect FPGA hardware and toolchains."""
         # Scan for toolchains first
         self._toolchain = self._scan_toolchains()
-        has_toolchain = any([
-            self._toolchain.vivado, self._toolchain.quartus,
-            self._toolchain.radiant, self._toolchain.yosys,
-        ])
+        has_toolchain = any(
+            [
+                self._toolchain.vivado,
+                self._toolchain.quartus,
+                self._toolchain.radiant,
+                self._toolchain.yosys,
+            ]
+        )
 
         # Scan PCIe bus for FPGA devices
         detected = self._scan_pcie_devices()
@@ -251,7 +264,9 @@ class FPGABridge:
             self._env_state = EnvironmentState.DEVICE_PRESENT
             logger.info(
                 "FPGA device detected: %s %s at %s",
-                self._device.vendor, self._device.name, self._device.pcie_address,
+                self._device.vendor,
+                self._device.name,
+                self._device.pcie_address,
             )
         elif has_toolchain:
             self._env_state = EnvironmentState.TOOLCHAIN_ONLY
@@ -295,7 +310,11 @@ class FPGABridge:
 
                 try:
                     vendor_id = vendor_file.read_text().strip().lstrip("0x").lower()
-                    device_id = device_file.read_text().strip().lstrip("0x").lower() if device_file.exists() else ""
+                    device_id = (
+                        device_file.read_text().strip().lstrip("0x").lower()
+                        if device_file.exists()
+                        else ""
+                    )
                 except Exception:
                     continue
 
@@ -399,7 +418,9 @@ class FPGABridge:
             # Real hardware bitstream loading
             logger.info(
                 "Loading bitstream for %s onto %s at %s",
-                algorithm.value, self._device.name, self._device.pcie_address,
+                algorithm.value,
+                self._device.name,
+                self._device.pcie_address,
             )
             # NOTE: Real FPGA bitstream loading is not implemented —
             # This requires hardware-specific drivers (Xilinx xclmgmt, etc.)
@@ -551,19 +572,23 @@ class FPGABridge:
             "environment_state": self._env_state.value,
             "simulation": self._env_state != EnvironmentState.DEVICE_PRESENT,
             "real_hardware": self.is_real_hardware,
-            "device": {
-                "id": self._device.id if self._device else "",
-                "name": self._device.name if self._device else "",
-                "vendor": self._device.vendor if self._device else "",
-                "family": self._device.family if self._device else "",
-                "frequency_mhz": self._device.frequency_mhz if self._device else 0,
-                "status": self._device.status if self._device else "unavailable",
-                "loaded_algo": (
-                    self._device.loaded_algorithm.value
-                    if self._device and self._device.loaded_algorithm
-                    else "none"
-                ),
-            } if self._device else None,
+            "device": (
+                {
+                    "id": self._device.id if self._device else "",
+                    "name": self._device.name if self._device else "",
+                    "vendor": self._device.vendor if self._device else "",
+                    "family": self._device.family if self._device else "",
+                    "frequency_mhz": self._device.frequency_mhz if self._device else 0,
+                    "status": self._device.status if self._device else "unavailable",
+                    "loaded_algo": (
+                        self._device.loaded_algorithm.value
+                        if self._device and self._device.loaded_algorithm
+                        else "none"
+                    ),
+                }
+                if self._device
+                else None
+            ),
             "toolchain": {
                 "vivado": self._toolchain.vivado,
                 "vivado_path": self._toolchain.vivado_path,

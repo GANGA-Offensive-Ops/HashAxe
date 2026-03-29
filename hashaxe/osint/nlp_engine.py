@@ -50,17 +50,83 @@ _RE_HASHTAG = re.compile(r"#([A-Za-z0-9_]{2,40})")
 _RE_WORD = re.compile(r"[A-Za-z]{3,20}")
 
 # Common English stopwords to filter out
-_STOPWORDS = frozenset({
-    "the", "and", "for", "are", "but", "not", "you", "all", "can", "had",
-    "her", "was", "one", "our", "out", "has", "have", "been", "from",
-    "this", "that", "with", "they", "will", "each", "make", "like",
-    "just", "over", "such", "take", "than", "them", "very", "some",
-    "could", "would", "about", "which", "come", "made", "find", "more",
-    "long", "look", "many", "then", "also", "into", "year", "your",
-    "what", "when", "where", "who", "how", "why", "here", "there",
-    "does", "did", "doing", "should", "because", "being", "these",
-    "those", "other", "than", "most", "must", "said", "say",
-})
+_STOPWORDS = frozenset(
+    {
+        "the",
+        "and",
+        "for",
+        "are",
+        "but",
+        "not",
+        "you",
+        "all",
+        "can",
+        "had",
+        "her",
+        "was",
+        "one",
+        "our",
+        "out",
+        "has",
+        "have",
+        "been",
+        "from",
+        "this",
+        "that",
+        "with",
+        "they",
+        "will",
+        "each",
+        "make",
+        "like",
+        "just",
+        "over",
+        "such",
+        "take",
+        "than",
+        "them",
+        "very",
+        "some",
+        "could",
+        "would",
+        "about",
+        "which",
+        "come",
+        "made",
+        "find",
+        "more",
+        "long",
+        "look",
+        "many",
+        "then",
+        "also",
+        "into",
+        "year",
+        "your",
+        "what",
+        "when",
+        "where",
+        "who",
+        "how",
+        "why",
+        "here",
+        "there",
+        "does",
+        "did",
+        "doing",
+        "should",
+        "because",
+        "being",
+        "these",
+        "those",
+        "other",
+        "than",
+        "most",
+        "must",
+        "said",
+        "say",
+    }
+)
 
 
 @dataclass
@@ -84,9 +150,16 @@ class ExtractedProfile:
         seen: set[str] = set()
         result: list[str] = []
         for group in (
-            self.names, self.emails, self.usernames, self.dates,
-            self.years, self.phones, self.hashtags, self.organizations,
-            self.locations, self.keywords,
+            self.names,
+            self.emails,
+            self.usernames,
+            self.dates,
+            self.years,
+            self.phones,
+            self.hashtags,
+            self.organizations,
+            self.locations,
+            self.keywords,
         ):
             for token in group:
                 low = token.lower()
@@ -141,8 +214,10 @@ class NLPEngine:
                     return
                 except OSError:
                     continue
-            logger.info("spaCy installed but no English model found. "
-                        "Run: python -m spacy download en_core_web_sm")
+            logger.info(
+                "spaCy installed but no English model found. "
+                "Run: python -m spacy download en_core_web_sm"
+            )
         except ImportError:
             logger.debug("spaCy not installed. Using regex-only NLP.")
 
@@ -159,10 +234,12 @@ class NLPEngine:
         profile.usernames = list(set(_RE_USERNAME.findall(text)))
         profile.hashtags = list(set(_RE_HASHTAG.findall(text)))
         profile.years = list(set(_RE_YEAR.findall(text)))
-        profile.phones = list(set(
-            p.replace(" ", "").replace("-", "").replace(".", "")
-            for p in _RE_PHONE.findall(text)
-        ))
+        profile.phones = list(
+            set(
+                p.replace(" ", "").replace("-", "").replace(".", "")
+                for p in _RE_PHONE.findall(text)
+            )
+        )
 
         # Date extraction (DD/MM/YYYY etc.)
         raw_dates = _RE_DATE_SLASH.findall(text)

@@ -35,4 +35,4 @@ GANGA Offensive Ops · Hashaxe V1
 """
 from __future__ import annotations
 
-__all__ = ["QiskitBridge", "GroverOracle"]
+__all__ = ["GroverOracle", "QiskitBridge"]

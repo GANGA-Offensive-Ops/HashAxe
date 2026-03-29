@@ -45,6 +45,7 @@ log = logging.getLogger(__name__)
 try:
     from argon2 import PasswordHasher, Type  # type: ignore
     from argon2.exceptions import VerifyMismatchError  # type: ignore
+
     _HAS_ARGON2 = True
     _PH = PasswordHasher()  # Cached instance — verify() is stateless
 except ImportError:
@@ -52,7 +53,9 @@ except ImportError:
     _PH = None
 
 # $argon2id$v=19$m=65536,t=3,p=4$salt$hash
-_ARGON2_RE = re.compile(r"^\$argon2(id|i|d)\$v=\d+\$m=\d+,t=\d+,p=\d+\$[A-Za-z0-9+/=]+\$[A-Za-z0-9+/=]+$")
+_ARGON2_RE = re.compile(
+    r"^\$argon2(id|i|d)\$v=\d+\$m=\d+,t=\d+,p=\d+\$[A-Za-z0-9+/=]+\$[A-Za-z0-9+/=]+$"
+)
 
 
 class Argon2Format(BaseFormat):
@@ -61,7 +64,7 @@ class Argon2Format(BaseFormat):
     Supports Argon2id (recommended), Argon2i, and Argon2d variants.
     """
 
-    format_id   = "hash.argon2"
+    format_id = "hash.argon2"
     format_name = "Argon2 (id/i/d)"
 
     def can_handle(self, data: bytes, path: Path | None = None) -> FormatMatch | None:
@@ -71,8 +74,10 @@ class Argon2Format(BaseFormat):
             return None
 
         if _ARGON2_RE.match(text):
-            variant = "argon2id" if "$argon2id$" in text else (
-                "argon2i" if "$argon2i$" in text else "argon2d"
+            variant = (
+                "argon2id"
+                if "$argon2id$" in text
+                else ("argon2i" if "$argon2i$" in text else "argon2d")
             )
             return FormatMatch(
                 format_id=self.format_id,

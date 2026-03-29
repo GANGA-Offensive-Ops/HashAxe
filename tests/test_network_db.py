@@ -51,9 +51,11 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 # MySQL Tests
 # ══════════════════════════════════════════════════════════════════════════════
 
+
 class TestMySQL(unittest.TestCase):
     def _handler(self):
         from hashaxe.formats.database_mysql import MySQLFormat
+
         return MySQLFormat()
 
     def test_detect_mysql_hash(self):
@@ -92,9 +94,11 @@ class TestMySQL(unittest.TestCase):
 # PostgreSQL Tests
 # ══════════════════════════════════════════════════════════════════════════════
 
+
 class TestPostgreSQL(unittest.TestCase):
     def _handler(self):
         from hashaxe.formats.database_postgres import PostgreSQLFormat
+
         return PostgreSQLFormat()
 
     def test_detect_pg_hash(self):
@@ -132,9 +136,11 @@ class TestPostgreSQL(unittest.TestCase):
 # MSSQL Tests
 # ══════════════════════════════════════════════════════════════════════════════
 
+
 class TestMSSQL(unittest.TestCase):
     def _handler(self):
         from hashaxe.formats.database_mssql import MSSQLFormat
+
         return MSSQLFormat()
 
     def _make_mssql_hash(self, password: str, salt: bytes = b"\x01\x02\x03\x04") -> str:
@@ -170,14 +176,17 @@ class TestMSSQL(unittest.TestCase):
 # JWT Tests
 # ══════════════════════════════════════════════════════════════════════════════
 
+
 class TestJWT(unittest.TestCase):
     def _handler(self):
         from hashaxe.formats.token_jwt import JWTFormat
+
         return JWTFormat()
 
     def _make_jwt(self, secret: str, alg: str = "HS256") -> str:
         """Create a valid JWT for testing."""
         from hashaxe.formats.token_jwt import _b64url_encode
+
         header = _b64url_encode(json.dumps({"alg": alg, "typ": "JWT"}).encode())
         payload = _b64url_encode(json.dumps({"sub": "1234"}).encode())
         signing_input = f"{header}.{payload}".encode("ascii")
@@ -227,9 +236,11 @@ class TestJWT(unittest.TestCase):
 # NetNTLM Tests
 # ══════════════════════════════════════════════════════════════════════════════
 
+
 class TestNetNTLM(unittest.TestCase):
     def _handler(self):
         from hashaxe.formats.network_ntlm import NetNTLMFormat
+
         return NetNTLMFormat()
 
     def test_detect_ntlmv2(self):
@@ -263,9 +274,11 @@ class TestNetNTLM(unittest.TestCase):
 # Argon2 Tests
 # ══════════════════════════════════════════════════════════════════════════════
 
+
 class TestArgon2(unittest.TestCase):
     def _handler(self):
         from hashaxe.formats.hash_argon2 import Argon2Format
+
         return Argon2Format()
 
     def test_detect_argon2id(self):
@@ -305,9 +318,11 @@ class TestArgon2(unittest.TestCase):
 # scrypt Tests
 # ══════════════════════════════════════════════════════════════════════════════
 
+
 class TestScrypt(unittest.TestCase):
     def _handler(self):
         from hashaxe.formats.hash_scrypt import ScryptFormat
+
         return ScryptFormat()
 
     def _make_scrypt_hash(self, password: str, salt: bytes = b"somesalt") -> str:
@@ -353,9 +368,11 @@ class TestScrypt(unittest.TestCase):
 # WPA Tests
 # ══════════════════════════════════════════════════════════════════════════════
 
+
 class TestWPA(unittest.TestCase):
     def _handler(self):
         from hashaxe.formats.network_wpa import WPAFormat
+
         return WPAFormat()
 
     def test_detect_hccapx(self):
@@ -379,6 +396,7 @@ class TestWPA(unittest.TestCase):
     def test_display_info(self):
         h = self._handler()
         from hashaxe.formats.base import FormatTarget
+
         target = FormatTarget(
             format_id="network.wpa",
             is_encrypted=True,
@@ -392,15 +410,22 @@ class TestWPA(unittest.TestCase):
 # Registry Integration
 # ══════════════════════════════════════════════════════════════════════════════
 
+
 class TestBatch5Registry(unittest.TestCase):
     def test_all_batch5_in_registry(self):
         from hashaxe.formats._registry import FormatRegistry
+
         reg = FormatRegistry()
         reg.discover()
         expected = [
-            "database.mysql", "hash.postgres", "database.mssql",
-            "token.jwt", "network.netntlm",
-            "hash.argon2", "hash.scrypt", "network.wpa",
+            "database.mysql",
+            "hash.postgres",
+            "database.mssql",
+            "token.jwt",
+            "network.netntlm",
+            "hash.argon2",
+            "hash.scrypt",
+            "network.wpa",
         ]
         for fmt_id in expected:
             self.assertIn(fmt_id, reg, f"{fmt_id} not in registry")

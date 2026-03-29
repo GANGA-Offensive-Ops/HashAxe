@@ -53,39 +53,63 @@ log = logging.getLogger(__name__)
 # ── Regex patterns ────────────────────────────────────────────────────────────
 
 # Cisco Type 5: $1$salt$hash (MD5 crypt)
-_CISCO5_RE = re.compile(
-    r'^\$1\$([./A-Za-z0-9]{1,8})\$([./A-Za-z0-9]{22})$'
-)
+_CISCO5_RE = re.compile(r"^\$1\$([./A-Za-z0-9]{1,8})\$([./A-Za-z0-9]{22})$")
 
 # Cisco Type 7: reversible Vigenère (2-char hex prefix + hex encoded)
-_CISCO7_RE = re.compile(
-    r'^[0-9]{2}[0-9A-Fa-f]{4,}$'
-)
+_CISCO7_RE = re.compile(r"^[0-9]{2}[0-9A-Fa-f]{4,}$")
 
 # Cisco Type 8: $8$salt$hash (PBKDF2-HMAC-SHA256)
 # Salt and hash lengths vary in real configs (14-16 salt, 43-44 hash)
-_CISCO8_RE = re.compile(
-    r'^\$8\$([A-Za-z0-9./]+)\$([A-Za-z0-9./]+)$'
-)
+_CISCO8_RE = re.compile(r"^\$8\$([A-Za-z0-9./]+)\$([A-Za-z0-9./]+)$")
 
 # Cisco Type 9: $9$salt$hash (scrypt)
 # Salt and hash lengths vary in real configs (14-16 salt, 43-44 hash)
-_CISCO9_RE = re.compile(
-    r'^\$9\$([A-Za-z0-9./]+)\$([A-Za-z0-9./]+)$'
-)
+_CISCO9_RE = re.compile(r"^\$9\$([A-Za-z0-9./]+)\$([A-Za-z0-9./]+)$")
 
 # Cisco Type 4: plain SHA-256 (deprecated)
-_CISCO4_RE = re.compile(
-    r'^[a-fA-F0-9]{64}$'
-)
+_CISCO4_RE = re.compile(r"^[a-fA-F0-9]{64}$")
 
 # Vigenère key for Type 7 decoding
 _TYPE7_KEY = [
-    0x64, 0x73, 0x66, 0x64, 0x3B, 0x6B, 0x66, 0x6F,
-    0x41, 0x2C, 0x2E, 0x69, 0x79, 0x65, 0x77, 0x72,
-    0x6B, 0x6C, 0x64, 0x4A, 0x4B, 0x44, 0x48, 0x53,
-    0x55, 0x42, 0x73, 0x67, 0x76, 0x63, 0x61, 0x36,
-    0x39, 0x38, 0x33, 0x34, 0x6E, 0x63, 0x78,
+    0x64,
+    0x73,
+    0x66,
+    0x64,
+    0x3B,
+    0x6B,
+    0x66,
+    0x6F,
+    0x41,
+    0x2C,
+    0x2E,
+    0x69,
+    0x79,
+    0x65,
+    0x77,
+    0x72,
+    0x6B,
+    0x6C,
+    0x64,
+    0x4A,
+    0x4B,
+    0x44,
+    0x48,
+    0x53,
+    0x55,
+    0x42,
+    0x73,
+    0x67,
+    0x76,
+    0x63,
+    0x61,
+    0x36,
+    0x39,
+    0x38,
+    0x33,
+    0x34,
+    0x6E,
+    0x63,
+    0x78,
 ]
 
 
@@ -95,7 +119,7 @@ def decode_type7(encoded: str) -> str:
         seed = int(encoded[:2])
         decoded = ""
         for i in range(2, len(encoded), 2):
-            val = int(encoded[i:i+2], 16)
+            val = int(encoded[i : i + 2], 16)
             decoded += chr(val ^ _TYPE7_KEY[(seed + (i - 2) // 2) % len(_TYPE7_KEY)])
         return decoded
     except (ValueError, IndexError):
@@ -153,6 +177,7 @@ class CiscoType5Format(BaseFormat):
         """MD5 crypt verification — delegates to crypt library if available."""
         try:
             import crypt as _crypt
+
             full = target.format_data["full"]
             salt = target.format_data["salt"]
             computed = _crypt.crypt(password.decode("utf-8", "replace"), f"$1${salt}$")
@@ -226,6 +251,7 @@ class CiscoType8Format(BaseFormat):
     def verify(self, target: FormatTarget, password: bytes) -> bool:
         try:
             from passlib.hash import cisco_type8
+
             pwd_str = password.decode("utf-8", "replace")
             full_hash = target.format_data["full"]
             return cisco_type8.verify(pwd_str, full_hash)
@@ -295,6 +321,7 @@ class CiscoType9Format(BaseFormat):
     def verify(self, target: FormatTarget, password: bytes) -> bool:
         try:
             from passlib.hash import cisco_type9
+
             pwd_str = password.decode("utf-8", "replace")
             full_hash = target.format_data["full"]
             return cisco_type9.verify(pwd_str, full_hash)

@@ -53,12 +53,13 @@ log = logging.getLogger(__name__)
 # ── Optional dependency ───────────────────────────────────────────────────────
 try:
     import rarfile  # type: ignore
+
     _HAS_RARFILE = True
 except ImportError:
     _HAS_RARFILE = False
 
 # RAR magic bytes
-_RAR_MAGIC_V1 = b"Rar!\x1a\x07\x00"     # RAR 1.5–4.x
+_RAR_MAGIC_V1 = b"Rar!\x1a\x07\x00"  # RAR 1.5–4.x
 _RAR_MAGIC_V5 = b"Rar!\x1a\x07\x01\x00"  # RAR 5.0+
 
 
@@ -91,6 +92,7 @@ def _detect_rar_encryption(data: bytes) -> dict[str, Any]:
     # Fallback: try with rarfile if available
     if _HAS_RARFILE and not result["encrypted"]:
         from io import BytesIO
+
         try:
             rf = rarfile.RarFile(BytesIO(data))
             if rf.needs_password():
@@ -185,6 +187,7 @@ class RARFormat(BaseFormat):
 
     def _verify_rarfile(self, target: FormatTarget, password: bytes) -> bool:
         from io import BytesIO
+
         data = target.format_data.get("raw_data")
         if not data:
             return False

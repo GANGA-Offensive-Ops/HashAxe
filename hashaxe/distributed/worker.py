@@ -68,29 +68,30 @@ class WorkerNode:
 
     def __init__(
         self,
-        master_host:  str,
-        work_port:    int  = 5555,
-        result_port:  int  = 5556,
-        ctrl_port:    int  = 5557,
-        threads:      int  = 0,
-        use_gpu:      bool = True,
-        verbose:      bool = False,
+        master_host: str,
+        work_port: int = 5555,
+        result_port: int = 5556,
+        ctrl_port: int = 5557,
+        threads: int = 0,
+        use_gpu: bool = True,
+        verbose: bool = False,
     ):
-        self.master_host  = master_host
-        self.work_port    = work_port
-        self.result_port  = result_port
-        self.ctrl_port    = ctrl_port
-        self.threads      = threads or os.cpu_count() or 2
-        self.use_gpu      = use_gpu
-        self.verbose      = verbose
-        self.worker_id    = f"worker_{uuid.uuid4().hex[:8]}"
-        self.hostname     = socket.gethostname()
+        self.master_host = master_host
+        self.work_port = work_port
+        self.result_port = result_port
+        self.ctrl_port = ctrl_port
+        self.threads = threads or os.cpu_count() or 2
+        self.use_gpu = use_gpu
+        self.verbose = verbose
+        self.worker_id = f"worker_{uuid.uuid4().hex[:8]}"
+        self.hostname = socket.gethostname()
 
         # GPU detection
-        self._gpu_device  = None
+        self._gpu_device = None
         if use_gpu:
             try:
                 from hashaxe.gpu.accelerator import detect_gpu
+
                 self._gpu_device = detect_gpu()
             except Exception:
                 pass
@@ -103,10 +104,10 @@ class WorkerNode:
             print("[!] pyzmq required: pip install pyzmq")
             return
 
-        ctx        = zmq.Context()
-        work_sock  = ctx.socket(zmq.PULL)
-        result_sock= ctx.socket(zmq.PUSH)
-        ctrl_sock  = ctx.socket(zmq.SUB)
+        ctx = zmq.Context()
+        work_sock = ctx.socket(zmq.PULL)
+        result_sock = ctx.socket(zmq.PUSH)
+        ctrl_sock = ctx.socket(zmq.SUB)
 
         work_sock.connect(f"tcp://{self.master_host}:{self.work_port}")
         result_sock.connect(f"tcp://{self.master_host}:{self.result_port}")
@@ -120,8 +121,8 @@ class WorkerNode:
         )
 
         poller = zmq.Poller()
-        poller.register(work_sock,  zmq.POLLIN)
-        poller.register(ctrl_sock,  zmq.POLLIN)
+        poller.register(work_sock, zmq.POLLIN)
+        poller.register(ctrl_sock, zmq.POLLIN)
 
         paused = False
 
@@ -148,16 +149,18 @@ class WorkerNode:
 
                 # Work items
                 if work_sock in events:
-                    raw  = work_sock.recv_json()
+                    raw = work_sock.recv_json()
                     item = WorkItem(**raw)
                     result = self._process(item)
-                    result_sock.send_json({
-                        "job_id":     result.job_id,
-                        "found":      result.found,
-                        "passphrase": result.passphrase,
-                        "tried":      result.tried,
-                        "speed":      result.speed,
-                    })
+                    result_sock.send_json(
+                        {
+                            "job_id": result.job_id,
+                            "found": result.found,
+                            "passphrase": result.passphrase,
+                            "tried": result.tried,
+                            "speed": result.speed,
+                        }
+                    )
                     if result.found:
                         break
 
@@ -185,6 +188,7 @@ class WorkerNode:
         # uploads the key via EC2 user-data to /tmp/target.key.
         registry = FormatRegistry()
         from pathlib import Path
+
         data = Path(item.key_path).read_bytes()
         match = registry.identify(data, Path(item.key_path))
         if not match:
@@ -193,15 +197,17 @@ class WorkerNode:
         handler = match.handler
 
         streamer = WordlistStreamer(item.wordlist)
-        t_start  = time.time()
-        tried    = 0
+        t_start = time.time()
+        tried = 0
 
         compiled_rules = None
         if item.rule_file:
             try:
                 compiled_rules = load_rule_file(item.rule_file)
             except Exception as e:
-                print(f"[!] Worker {self.worker_id}: Failed to load rule file {item.rule_file}: {e}")
+                print(
+                    f"[!] Worker {self.worker_id}: Failed to load rule file {item.rule_file}: {e}"
+                )
 
         # ARCH-3: Pre-build MaskEngine once per work item, not per line
         mask_engine = MaskEngine(item.mask) if item.mask else None
@@ -227,21 +233,21 @@ class WorkerNode:
                 if handler.verify(target, pw):
                     if handler.verify_full(target, pw):
                         elapsed = time.time() - t_start
-                        speed   = tried / elapsed if elapsed > 0 else 0
+                        speed = tried / elapsed if elapsed > 0 else 0
                         return WorkResult(
-                            job_id    = item.job_id,
-                            found     = True,
-                            passphrase= candidate,
-                            tried     = tried,
-                            speed     = speed,
+                            job_id=item.job_id,
+                            found=True,
+                            passphrase=candidate,
+                            tried=tried,
+                            speed=speed,
                         )
 
         elapsed = time.time() - t_start
-        speed   = tried / elapsed if elapsed > 0 else 0
+        speed = tried / elapsed if elapsed > 0 else 0
         return WorkResult(
-            job_id    = item.job_id,
-            found     = False,
-            passphrase= None,
-            tried     = tried,
-            speed     = speed,
+            job_id=item.job_id,
+            found=False,
+            passphrase=None,
+            tried=tried,
+            speed=speed,
         )

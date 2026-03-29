@@ -39,6 +39,7 @@ log = logging.getLogger(__name__)
 @dataclass
 class AttackPlan:
     """Recommended attack plan for a hash target."""
+
     hash_type: str
     hashcat_mode: int | None
     phases: list[AttackPhase] = field(default_factory=list)
@@ -50,6 +51,7 @@ class AttackPlan:
 @dataclass
 class AttackPhase:
     """Single phase of an attack plan."""
+
     phase_name: str
     attack_mode: str  # wordlist, mask, hybrid, rules, combinator
     command: str  # Exact hashaxe / hashcat command
@@ -59,8 +61,10 @@ class AttackPhase:
 
 # ── Phase templates by difficulty ─────────────────────────────────────────────
 
-def recommend(hash_type: str, hashcat_mode: int | None = None,
-              difficulty: str = "unknown") -> AttackPlan:
+
+def recommend(
+    hash_type: str, hashcat_mode: int | None = None, difficulty: str = "unknown"
+) -> AttackPlan:
     """Generate a multi-phase attack plan based on hash difficulty."""
     plan = AttackPlan(
         hash_type=hash_type,

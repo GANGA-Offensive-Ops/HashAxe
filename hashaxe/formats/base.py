@@ -79,17 +79,18 @@ from pathlib import Path
 from typing import Any
 
 __all__ = [
-    "FormatDifficulty",
-    "FormatTarget",
-    "FormatMatch",
-    "BaseFormat",
     "CHUNK_SIZES",
+    "BaseFormat",
+    "FormatDifficulty",
+    "FormatMatch",
+    "FormatTarget",
 ]
 
 logger = logging.getLogger(__name__)
 
 
 # ── Difficulty classification ──────────────────────────────────────────────────
+
 
 class FormatDifficulty(Enum):
     """
@@ -115,24 +116,25 @@ class FormatDifficulty(Enum):
     """
 
     TRIVIAL = auto()
-    FAST    = auto()
-    MEDIUM  = auto()
-    SLOW    = auto()
+    FAST = auto()
+    MEDIUM = auto()
+    SLOW = auto()
     EXTREME = auto()
 
 
 # ── Dynamic Chunking Mapping ───────────────────────────────────────────────────
 
 CHUNK_SIZES: dict[FormatDifficulty, int] = {
-    FormatDifficulty.EXTREME: 1,       # argon2id, scrypt
-    FormatDifficulty.SLOW:    1,       # bcrypt $12/$14, WPA2
-    FormatDifficulty.MEDIUM:  100,     # bcrypt $10, PBKDF2
-    FormatDifficulty.FAST:    5_000,   # SHA-256crypt, MD5crypt
+    FormatDifficulty.EXTREME: 1,  # argon2id, scrypt
+    FormatDifficulty.SLOW: 1,  # bcrypt $12/$14, WPA2
+    FormatDifficulty.MEDIUM: 100,  # bcrypt $10, PBKDF2
+    FormatDifficulty.FAST: 5_000,  # SHA-256crypt, MD5crypt
     FormatDifficulty.TRIVIAL: 50_000,  # MD5, NTLM, SHA-1
 }
 
 
 # ── Format target (picklable crypto context) ───────────────────────────────────
+
 
 @dataclass
 class FormatTarget:
@@ -169,12 +171,12 @@ class FormatTarget:
                       Will be removed in v2.0.
     """
 
-    format_id:    str             = ""
-    display_name: str             = ""
-    source_path:  str             = ""
-    is_encrypted: bool            = True
-    difficulty:   FormatDifficulty = FormatDifficulty.MEDIUM
-    format_data:  dict[str, Any]  = field(default_factory=dict)
+    format_id: str = ""
+    display_name: str = ""
+    source_path: str = ""
+    is_encrypted: bool = True
+    difficulty: FormatDifficulty = FormatDifficulty.MEDIUM
+    format_data: dict[str, Any] = field(default_factory=dict)
 
     # Internal compatibility shim — not part of the public API.
     # Stores legacy ParsedKey objects so existing GPU/SIMD dispatch paths
@@ -184,6 +186,7 @@ class FormatTarget:
 
 
 # ── Format match (identification result) ──────────────────────────────────────
+
 
 @dataclass
 class FormatMatch:
@@ -219,10 +222,10 @@ class FormatMatch:
                     Example: ``{"variant": "ppk-v3", "cipher": "aes256-cbc"}``.
     """
 
-    format_id:  str                   = ""
-    confidence: float                 = 0.0
-    handler:    "BaseFormat | None"   = field(default=None, repr=False)
-    metadata:   dict[str, str]        = field(default_factory=dict)
+    format_id: str = ""
+    confidence: float = 0.0
+    handler: BaseFormat | None = field(default=None, repr=False)
+    metadata: dict[str, str] = field(default_factory=dict)
 
     def __post_init__(self) -> None:
         # Clamp confidence to valid range — guard against handler bugs.
@@ -230,6 +233,7 @@ class FormatMatch:
 
 
 # ── Base format handler ABC ────────────────────────────────────────────────────
+
 
 class BaseFormat(ABC):
     """
@@ -280,8 +284,8 @@ class BaseFormat(ABC):
     """
 
     # ── Class-level identity (must be overridden) ─────────────────────────
-    format_id:   str = ""   # e.g. "ssh.openssh", "hash.md5", "archive.zip"
-    format_name: str = ""   # e.g. "OpenSSH Private Key", "MD5 Raw Hash"
+    format_id: str = ""  # e.g. "ssh.openssh", "hash.md5", "archive.zip"
+    format_name: str = ""  # e.g. "OpenSSH Private Key", "MD5 Raw Hash"
 
     # ── Identification ─────────────────────────────────────────────────────
 
@@ -290,7 +294,7 @@ class BaseFormat(ABC):
         self,
         data: bytes,
         path: Path | None = None,
-    ) -> "FormatMatch | None":
+    ) -> FormatMatch | None:
         """
         Determine whether this handler can process the given input.
 

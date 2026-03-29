@@ -53,14 +53,10 @@ log = logging.getLogger(__name__)
 # ── Regex patterns ────────────────────────────────────────────────────────────
 
 # DCC v1: 32-hex-chars:username  (or just the 32 hex with username context)
-_DCC1_RE = re.compile(
-    r'^([a-fA-F0-9]{32}):([a-zA-Z0-9._@\-]+)$'
-)
+_DCC1_RE = re.compile(r"^([a-fA-F0-9]{32}):([a-zA-Z0-9._@\-]+)$")
 
 # DCC2: $DCC2$<iterations>#<username>#<hash_hex_32>
-_DCC2_RE = re.compile(
-    r'^\$DCC2\$(\d+)#([^#]+)#([a-fA-F0-9]{32})$'
-)
+_DCC2_RE = re.compile(r"^\$DCC2\$(\d+)#([^#]+)#([a-fA-F0-9]{32})$")
 
 
 class DCC1Format(BaseFormat):

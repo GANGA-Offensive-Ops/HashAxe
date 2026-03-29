@@ -49,6 +49,7 @@ log = logging.getLogger(__name__)
 
 # ── Default storage directory ─────────────────────────────────────────────────
 
+
 def _default_db_dir() -> Path:
     """Return ~/.shadowhashaxe/ — created lazily on first write."""
     d = Path.home() / ".shadowhashaxe"
@@ -171,13 +172,9 @@ class CrackDB:
         source_hash = None
         if source_path:
             try:
-                source_hash = hashlib.sha256(
-                    Path(source_path).read_bytes()
-                ).hexdigest()[:16]
+                source_hash = hashlib.sha256(Path(source_path).read_bytes()).hexdigest()[:16]
             except (OSError, FileNotFoundError):
-                source_hash = hashlib.sha256(
-                    source_path.encode()
-                ).hexdigest()[:16]
+                source_hash = hashlib.sha256(source_path.encode()).hexdigest()[:16]
 
         # Pre-compute passphrase hex for binary-safe storage
         passphrase_hex = passphrase.encode("utf-8").hex()
@@ -195,11 +192,25 @@ class CrackDB:
                 ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """,
                 (
-                    source_path, source_hash, format_id, format_name,
-                    hash_preview, passphrase, passphrase_hex,
-                    attack_mode, wordlist_path, rule_file, mask_pattern,
-                    candidates, elapsed_sec, speed_pw_s,
-                    __version__, _cpu_model(), gpu_model, workers, notes,
+                    source_path,
+                    source_hash,
+                    format_id,
+                    format_name,
+                    hash_preview,
+                    passphrase,
+                    passphrase_hex,
+                    attack_mode,
+                    wordlist_path,
+                    rule_file,
+                    mask_pattern,
+                    candidates,
+                    elapsed_sec,
+                    speed_pw_s,
+                    __version__,
+                    _cpu_model(),
+                    gpu_model,
+                    workers,
+                    notes,
                 ),
             )
             conn.commit()
@@ -210,7 +221,11 @@ class CrackDB:
 
             log.info(
                 "Logged hashaxe #%d: %s → %s (%.1fs, %d candidates)",
-                row_id, format_id, passphrase[:20], elapsed_sec, candidates,
+                row_id,
+                format_id,
+                passphrase[:20],
+                elapsed_sec,
+                candidates,
             )
             return row_id or 0
 
@@ -284,9 +299,7 @@ class CrackDB:
         """Get a single hashaxe result by ID."""
         conn = self._connect()
         try:
-            row = conn.execute(
-                "SELECT * FROM cracks WHERE id = ?", (hashaxe_id,)
-            ).fetchone()
+            row = conn.execute("SELECT * FROM cracks WHERE id = ?", (hashaxe_id,)).fetchone()
             return dict(row) if row else None
         finally:
             conn.close()
@@ -318,9 +331,7 @@ class CrackDB:
         """
         conn = self._connect()
         try:
-            total = conn.execute(
-                "SELECT COUNT(*) as cnt FROM cracks"
-            ).fetchone()["cnt"]
+            total = conn.execute("SELECT COUNT(*) as cnt FROM cracks").fetchone()["cnt"]
 
             if total == 0:
                 return {
@@ -334,7 +345,8 @@ class CrackDB:
                     "by_format": {},
                 }
 
-            agg = conn.execute("""
+            agg = conn.execute(
+                """
                 SELECT
                     MIN(elapsed_sec) as fastest,
                     MAX(elapsed_sec) as slowest,
@@ -342,7 +354,8 @@ class CrackDB:
                     SUM(candidates)  as total_candidates,
                     COUNT(DISTINCT passphrase) as unique_pw
                 FROM cracks
-            """).fetchone()
+            """
+            ).fetchone()
 
             formats = conn.execute(
                 "SELECT DISTINCT format_id FROM cracks ORDER BY format_id"
@@ -352,14 +365,17 @@ class CrackDB:
             # Per-format breakdown
             by_format: dict[str, dict[str, Any]] = {}
             for fmt in format_list:
-                row = conn.execute("""
+                row = conn.execute(
+                    """
                     SELECT
                         COUNT(*) as count,
                         AVG(speed_pw_s) as avg_speed,
                         MIN(elapsed_sec) as fastest,
                         SUM(candidates) as total_candidates
                     FROM cracks WHERE format_id = ?
-                """, (fmt,)).fetchone()
+                """,
+                    (fmt,),
+                ).fetchone()
                 by_format[fmt] = dict(row) if row else {}
 
             return {

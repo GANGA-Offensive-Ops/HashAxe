@@ -50,20 +50,21 @@ from __future__ import annotations
 
 import os
 import re
-import sys
-import time
-import threading
 import shutil
-from datetime import datetime, timezone
+import sys
+import threading
+import time
+from datetime import UTC, datetime, timezone
 from typing import Any
 
 # ── Optional rich import (non-fatal) ─────────────────────────────────────────
 try:
+    from rich import box as _box
     from rich.console import Console as _RichConsole
     from rich.panel import Panel as _Panel
     from rich.table import Table as _Table
     from rich.text import Text as _Text
-    from rich import box as _box
+
     _RICH_AVAILABLE = True
 except ImportError:
     _RICH_AVAILABLE = False
@@ -73,14 +74,14 @@ except ImportError:
 # ANSI detection
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 def _ansi_supported() -> bool:
     """True if the terminal supports ANSI escape sequences."""
     if sys.platform == "win32":
         try:
             import ctypes
-            ctypes.windll.kernel32.SetConsoleMode(
-                ctypes.windll.kernel32.GetStdHandle(-11), 7
-            )
+
+            ctypes.windll.kernel32.SetConsoleMode(ctypes.windll.kernel32.GetStdHandle(-11), 7)
             return True
         except Exception:
             return False
@@ -91,43 +92,44 @@ _USE_ANSI = _ansi_supported()
 
 # ── Colour constants ──────────────────────────────────────────────────────────
 # Standard colours
-RED           = "\033[31m" if _USE_ANSI else ""
-BRIGHT_RED    = "\033[91m" if _USE_ANSI else ""
-GREEN         = "\033[32m" if _USE_ANSI else ""
-BRIGHT_GREEN  = "\033[92m" if _USE_ANSI else ""
-YELLOW        = "\033[33m" if _USE_ANSI else ""
+RED = "\033[31m" if _USE_ANSI else ""
+BRIGHT_RED = "\033[91m" if _USE_ANSI else ""
+GREEN = "\033[32m" if _USE_ANSI else ""
+BRIGHT_GREEN = "\033[92m" if _USE_ANSI else ""
+YELLOW = "\033[33m" if _USE_ANSI else ""
 BRIGHT_YELLOW = "\033[93m" if _USE_ANSI else ""
-BLUE          = "\033[34m" if _USE_ANSI else ""
-BRIGHT_BLUE   = "\033[94m" if _USE_ANSI else ""
-PURPLE        = "\033[35m" if _USE_ANSI else ""
+BLUE = "\033[34m" if _USE_ANSI else ""
+BRIGHT_BLUE = "\033[94m" if _USE_ANSI else ""
+PURPLE = "\033[35m" if _USE_ANSI else ""
 BRIGHT_PURPLE = "\033[95m" if _USE_ANSI else ""
-CYAN          = "\033[36m" if _USE_ANSI else ""
-BRIGHT_CYAN   = "\033[96m" if _USE_ANSI else ""
-WHITE         = "\033[97m" if _USE_ANSI else ""
-BRIGHT_WHITE  = "\033[97m" if _USE_ANSI else ""    # alias — 97 is already bright
-GREY          = "\033[90m" if _USE_ANSI else ""
-PINK          = "\033[35m" if _USE_ANSI else ""
+CYAN = "\033[36m" if _USE_ANSI else ""
+BRIGHT_CYAN = "\033[96m" if _USE_ANSI else ""
+WHITE = "\033[97m" if _USE_ANSI else ""
+BRIGHT_WHITE = "\033[97m" if _USE_ANSI else ""  # alias — 97 is already bright
+GREY = "\033[90m" if _USE_ANSI else ""
+PINK = "\033[35m" if _USE_ANSI else ""
 
 # Formatting
-BOLD          = "\033[1m"  if _USE_ANSI else ""
-DIM           = "\033[2m"  if _USE_ANSI else ""
-ITALIC        = "\033[3m"  if _USE_ANSI else ""
-UNDERLINE     = "\033[4m"  if _USE_ANSI else ""
-BLINK         = "\033[5m"  if _USE_ANSI else ""
-REVERSE       = "\033[7m"  if _USE_ANSI else ""
-RESET         = "\033[0m"  if _USE_ANSI else ""
+BOLD = "\033[1m" if _USE_ANSI else ""
+DIM = "\033[2m" if _USE_ANSI else ""
+ITALIC = "\033[3m" if _USE_ANSI else ""
+UNDERLINE = "\033[4m" if _USE_ANSI else ""
+BLINK = "\033[5m" if _USE_ANSI else ""
+REVERSE = "\033[7m" if _USE_ANSI else ""
+RESET = "\033[0m" if _USE_ANSI else ""
 
 # ── Semantic colour aliases (use these in new code) ───────────────────────────
-C_SUCCESS  = BRIGHT_GREEN
-C_FAIL     = BRIGHT_RED
-C_WARN     = BRIGHT_YELLOW
-C_INFO     = BRIGHT_CYAN
-C_DIM      = GREY
-C_VALUE    = WHITE
-C_KEY      = CYAN
-C_HASH     = YELLOW
-C_SPEED    = GREEN
+C_SUCCESS = BRIGHT_GREEN
+C_FAIL = BRIGHT_RED
+C_WARN = BRIGHT_YELLOW
+C_INFO = BRIGHT_CYAN
+C_DIM = GREY
+C_VALUE = WHITE
+C_KEY = CYAN
+C_HASH = YELLOW
+C_SPEED = GREEN
 C_CRITICAL = f"{BOLD}{BRIGHT_RED}"
+
 
 # ── Speed-tier colours for progress (changes with current rate) ───────────────
 def _speed_colour(speed: float, baseline: float = 1.0) -> str:
@@ -217,12 +219,13 @@ def _rule(char: str = "─", width: int | None = None) -> str:
 
 def _ts() -> str:
     """ISO-8601 timestamp in UTC, for log-mode output."""
-    return datetime.now(timezone.utc).strftime("%H:%M:%S")
+    return datetime.now(UTC).strftime("%H:%M:%S")
 
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Display class
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 class Display:
     """
@@ -249,21 +252,21 @@ class Display:
     """
 
     __slots__ = (
-        "verbose",
-        "quiet",
+        "_bar_baseline",
         "_last_bar_len",
         "_lock",
-        "_bar_baseline",
         "_start_time",
+        "quiet",
+        "verbose",
     )
 
     def __init__(self, verbose: bool = False, quiet: bool = False) -> None:
-        self.verbose                     = verbose
-        self.quiet                       = quiet
-        self._last_bar_len: int          = 0
-        self._lock                       = threading.Lock()
-        self._bar_baseline: float | None = None   # None until first non-zero speed
-        self._start_time: float          = time.monotonic()
+        self.verbose = verbose
+        self.quiet = quiet
+        self._last_bar_len: int = 0
+        self._lock = threading.Lock()
+        self._bar_baseline: float | None = None  # None until first non-zero speed
+        self._start_time: float = time.monotonic()
 
     # ── Static / class utilities ──────────────────────────────────────────────
 
@@ -278,10 +281,13 @@ class Display:
     # ── Internal helpers ──────────────────────────────────────────────────────
 
     def _rounds_note(self, rounds: int) -> str:
-        if rounds >= 64:  return "very slow  (~1 pw/s/core) — will take a while"
-        if rounds >= 32:  return "slow       (~2–4 pw/s/core)"
-        if rounds >= 16:  return "standard   (~5–10 pw/s/core)"
-        return                   "fast       (>10 pw/s/core)"
+        if rounds >= 64:
+            return "very slow  (~1 pw/s/core) — will take a while"
+        if rounds >= 32:
+            return "slow       (~2–4 pw/s/core)"
+        if rounds >= 16:
+            return "standard   (~5–10 pw/s/core)"
+        return "fast       (>10 pw/s/core)"
 
     def _print(self, *args: Any, **kwargs: Any) -> None:
         """Write to stdout, no-op when quiet."""
@@ -310,7 +316,7 @@ class Display:
             return
         w = _term_width()
         pad = max(0, (w - len(title) - 4) // 2)
-        left  = char * pad
+        left = char * pad
         right = char * (w - pad - len(title) - 2)
         self._print(f"\n{BOLD}{PURPLE}{left} {title} {right}{RESET}")
 
@@ -340,19 +346,19 @@ class Display:
 
     def attack_header(
         self,
-        wordlist:          str,
-        workers:           int,
-        use_rules:         bool,
-        total_candidates:  int,
-        mode:              str          = "wordlist",
-        mask:              str | None   = None,
-        resuming:          bool         = False,
+        wordlist: str,
+        workers: int,
+        use_rules: bool,
+        total_candidates: int,
+        mode: str = "wordlist",
+        mask: str | None = None,
+        resuming: bool = False,
         *,
-        rule_file:         str | None   = None,
-        hybrid_mask:       str | None   = None,
-        charset:           str | None   = None,
-        ai_enabled:        bool         = False,
-        gpu_workers:       int          = 0,
+        rule_file: str | None = None,
+        hybrid_mask: str | None = None,
+        charset: str | None = None,
+        ai_enabled: bool = False,
+        gpu_workers: int = 0,
     ) -> None:
         """
         Print attack startup information.
@@ -367,11 +373,7 @@ class Display:
         if self.quiet:
             return
 
-        prefix = (
-            f"{C_SUCCESS}[~]{RESET} Resuming"
-            if resuming
-            else f"{BOLD}[*]{RESET} Starting"
-        )
+        prefix = f"{C_SUCCESS}[~]{RESET} Resuming" if resuming else f"{BOLD}[*]{RESET} Starting"
         self._print(f"\n{prefix} {C_HASH}{mode}{RESET} attack...")
         self._print(f"{BOLD}[*]{RESET} Wordlist  : {C_KEY}{wordlist}{RESET}")
 
@@ -384,16 +386,16 @@ class Display:
         if rule_file:
             self._print(f"{BOLD}[*]{RESET} Rule file : {C_KEY}{rule_file}{RESET}")
         if ai_enabled:
-            self._print(f"{BOLD}[*]{RESET} AI        : {BRIGHT_PURPLE}ENABLED — OSINT-tuned mutations{RESET}")
+            self._print(
+                f"{BOLD}[*]{RESET} AI        : {BRIGHT_PURPLE}ENABLED — OSINT-tuned mutations{RESET}"
+            )
 
         cpu_tag = f"{C_SUCCESS}{workers}{RESET} CPU"
-        gpu_tag = (
-            f"  +  {BRIGHT_YELLOW}{gpu_workers}{RESET} GPU"
-            if gpu_workers > 0
-            else ""
-        )
+        gpu_tag = f"  +  {BRIGHT_YELLOW}{gpu_workers}{RESET} GPU" if gpu_workers > 0 else ""
         self._print(f"{BOLD}[*]{RESET} Workers   : {cpu_tag} processes{gpu_tag}")
-        self._print(f"{BOLD}[*]{RESET} Rules     : {C_SUCCESS}{'ON' if use_rules else 'OFF'}{RESET}")
+        self._print(
+            f"{BOLD}[*]{RESET} Rules     : {C_SUCCESS}{'ON' if use_rules else 'OFF'}{RESET}"
+        )
         self._print(f"{BOLD}[*]{RESET} Candidates: {C_VALUE}{total_candidates:,}{RESET}")
         self._print()
 
@@ -401,11 +403,11 @@ class Display:
 
     def progress(
         self,
-        tried:   int,
-        total:   int,
-        speed:   float,
+        tried: int,
+        total: int,
+        speed: float,
         workers: int,
-        width:   int = 38,
+        width: int = 38,
     ) -> None:
         """
         Print an in-place progress bar.
@@ -441,26 +443,22 @@ class Display:
             eta = "--:--:--"
 
         total_s = f"{total:,}" if total > 0 else "?"
-        pct_s   = f"{pct * 100:.1f}%" if total > 0 else "?"
-        spd_s   = _fmt_speed(speed)
+        pct_s = f"{pct * 100:.1f}%" if total > 0 else "?"
+        spd_s = _fmt_speed(speed)
 
         # Compute bar width from the visible (ANSI-stripped) length of a
         # placeholder line so that escape-code bytes are never counted as
         # terminal columns.  This fixes the bar-sizing drift that occurred
         # when _USE_ANSI was True and the old code used len() on the raw line.
         _sample = (
-            f"[{'█' * 5}] "
-            f"{tried:>12,}/{total_s} "
-            f"({pct_s}) "
-            f"{spd_s} "
-            f"ETA {eta}  "
+            f"[{'█' * 5}] " f"{tried:>12,}/{total_s} " f"({pct_s}) " f"{spd_s} " f"ETA {eta}  "
         )
         term_cols = _term_width()
-        reserved  = _visible_len(_sample)
+        reserved = _visible_len(_sample)
         bar_width = max(5, min(term_cols - reserved, width))
 
         filled = int(bar_width * pct)
-        bar    = "█" * filled + "░" * (bar_width - filled)
+        bar = "█" * filled + "░" * (bar_width - filled)
 
         # Initialise baseline inside the lock so that concurrent workers
         # cannot both pass the None-check and write simultaneously.
@@ -469,7 +467,11 @@ class Display:
         with self._lock:
             if speed > 0 and self._bar_baseline is None:
                 self._bar_baseline = speed
-            baseline = self._bar_baseline if self._bar_baseline is not None else (speed if speed > 0 else 1.0)
+            baseline = (
+                self._bar_baseline
+                if self._bar_baseline is not None
+                else (speed if speed > 0 else 1.0)
+            )
 
         sc = _speed_colour(speed, baseline)
 
@@ -496,15 +498,15 @@ class Display:
 
     def _verbose_progress(
         self,
-        tried:   int,
-        total:   int,
-        speed:   float,
+        tried: int,
+        total: int,
+        speed: float,
         workers: int,
     ) -> None:
         # Wall-clock elapsed via monotonic timer — not tried/speed which gives
         # an estimated processing time rather than actual time since session start.
         elapsed = time.monotonic() - self._start_time
-        pct     = min(100.0, (tried / total * 100)) if total > 0 else 0.0
+        pct = min(100.0, (tried / total * 100)) if total > 0 else 0.0
         self._print(
             f"{GREY}[~]{RESET} [{_ts()}] "
             f"Tried {C_VALUE}{tried:,}{RESET}  "
@@ -541,9 +543,9 @@ class Display:
         if self.quiet:
             return
         with self._lock:
-            line    = f"\r{GREY}[~]{RESET} {msg}"
+            line = f"\r{GREY}[~]{RESET} {msg}"
             visible = _visible_len(line)
-            pad     = max(0, self._last_bar_len - visible)
+            pad = max(0, self._last_bar_len - visible)
             print(f"{line}{' ' * pad}", end="", flush=True)
             self._last_bar_len = visible
 
@@ -552,13 +554,13 @@ class Display:
     def found(
         self,
         passphrase: str,
-        key_path:   str,
-        tried:      int,
-        elapsed:    float,
-        speed:      float,
+        key_path: str,
+        tried: int,
+        elapsed: float,
+        speed: float,
         *,
-        hash_type:  str | None = None,
-        worker_id:  int | None = None,
+        hash_type: str | None = None,
+        worker_id: int | None = None,
     ) -> None:
         """
         Print the success box.
@@ -587,9 +589,7 @@ class Display:
         """Print the failure box with actionable suggestions."""
         self.clear_progress()
         self._print(f"\n{C_FAIL}[✘] Passphrase NOT found in wordlist.{RESET}")
-        self._print(
-            f"    Tried    : {tried:,} candidates in {_fmt_time(elapsed)}"
-        )
+        self._print(f"    Tried    : {tried:,} candidates in {_fmt_time(elapsed)}")
         self._print(f"\n{C_WARN}[?] Suggestions:{RESET}")
         suggestions = [
             "Add --rules for ~60× more mutations per word",
@@ -609,21 +609,19 @@ class Display:
                 f"{C_SUCCESS}[+] SSH connection VERIFIED — key + passphrase confirmed.{RESET}"
             )
         else:
-            self._print(
-                f"{C_WARN}[-] SSH verify failed (key may still be correct){RESET}"
-            )
+            self._print(f"{C_WARN}[-] SSH verify failed (key may still be correct){RESET}")
 
     # ── Benchmark display ─────────────────────────────────────────────────────
 
     def benchmark_result(
         self,
-        key_path:       str,
-        rounds:         int,
+        key_path: str,
+        rounds: int,
         speed_per_core: float,
-        workers:        int,
+        workers: int,
         *,
-        gpu_speed:      float = 0.0,
-        algorithm:      str   = "",
+        gpu_speed: float = 0.0,
+        algorithm: str = "",
     ) -> None:
         """
         Print benchmark results table.
@@ -632,9 +630,9 @@ class Display:
           gpu_speed  — combined GPU H/s (0 if no GPU)
           algorithm  — algorithm identifier string
         """
-        total_speed     = speed_per_core * workers + gpu_speed
-        rockyou_14m     = 14_000_000
-        w               = 60
+        total_speed = speed_per_core * workers + gpu_speed
+        rockyou_14m = 14_000_000
+        w = 60
 
         self._print(f"\n{BOLD}{'─' * w}{RESET}")
         self._print(f"  {BOLD}Benchmark Results{RESET}")
@@ -651,11 +649,11 @@ class Display:
         self._print(f"{'─' * w}")
         self._print(f"  Time estimates ({workers} CPU workers{' + GPU' if gpu_speed else ''}):")
         estimates = [
-            ("top 1k   words",  1_000),
-            ("top 10k  words",  10_000),
-            ("rockyou 14M   ",  rockyou_14m),
-            ("+ best64 rule ",  rockyou_14m * 64),
-            ("+ top1M rules ",  rockyou_14m * 1_000_000),
+            ("top 1k   words", 1_000),
+            ("top 10k  words", 10_000),
+            ("rockyou 14M   ", rockyou_14m),
+            ("+ best64 rule ", rockyou_14m * 64),
+            ("+ top1M rules ", rockyou_14m * 1_000_000),
         ]
         for label, count in estimates:
             t = _fmt_time(count / total_speed) if total_speed > 0 else "n/a"
@@ -672,15 +670,14 @@ class Display:
         w = 76
         self._print(f"\n{'─' * w}")
         self._print(
-            f"  {'NAME':<16}  {'KEY':<22}  {'TRIED':>10}  "
-            f"{'ELAPSED':>8}  {'FORMAT':<12}  MODE"
+            f"  {'NAME':<16}  {'KEY':<22}  {'TRIED':>10}  " f"{'ELAPSED':>8}  {'FORMAT':<12}  MODE"
         )
         self._print(f"{'─' * w}")
         for s in sessions:
-            elapsed   = _fmt_time(s.get("elapsed", 0))
-            key_path  = s.get("key_path") or ""
+            elapsed = _fmt_time(s.get("elapsed", 0))
+            key_path = s.get("key_path") or ""
             key_short = key_path[-22:] if len(key_path) > 22 else key_path
-            fmt       = s.get("format", s.get("mode", ""))[:12]
+            fmt = s.get("format", s.get("mode", ""))[:12]
             self._print(
                 f"  {s.get('name',''):<16}  {key_short:<22}  "
                 f"{s.get('words_tried', 0):>10,}  {elapsed:>8}  "
@@ -709,14 +706,14 @@ class Display:
         )
         self._print(f"{'─' * w}")
         for d in devices:
-            gid    = str(d.get("id", "?"))
-            name   = str(d.get("name", "Unknown"))[:28]
-            vram   = f"{d.get('vram_mb', 0):,} MB" if "vram_mb" in d else "  n/a"
-            temp   = f"{d.get('temp_c', 0)}°C"     if "temp_c"  in d else " n/a"
-            util   = f"{d.get('util_pct', 0)}%"    if "util_pct" in d else "n/a"
-            spd    = _fmt_speed(d.get("speed", 0.0))
+            gid = str(d.get("id", "?"))
+            name = str(d.get("name", "Unknown"))[:28]
+            vram = f"{d.get('vram_mb', 0):,} MB" if "vram_mb" in d else "  n/a"
+            temp = f"{d.get('temp_c', 0)}°C" if "temp_c" in d else " n/a"
+            util = f"{d.get('util_pct', 0)}%" if "util_pct" in d else "n/a"
+            spd = _fmt_speed(d.get("speed", 0.0))
             status = d.get("status", "idle")
-            sc     = C_SUCCESS if status == "active" else C_DIM
+            sc = C_SUCCESS if status == "active" else C_DIM
             self._print(
                 f"  {gid:<3}  {name:<28}  {vram:>7}  "
                 f"{temp:>6}  {util:>5}  {BRIGHT_YELLOW}{spd:>12}{RESET}  "
@@ -747,12 +744,12 @@ class Display:
 
         total_speed = 0.0
         for wk in workers:
-            wid     = str(wk.get("id", "?"))
-            host    = str(wk.get("host", "?"))[:20]
-            status  = wk.get("status", "unknown")
-            speed   = wk.get("speed", 0.0)
-            tried   = wk.get("tried", 0)
-            last    = wk.get("last_seen", "")
+            wid = str(wk.get("id", "?"))
+            host = str(wk.get("host", "?"))[:20]
+            status = wk.get("status", "unknown")
+            speed = wk.get("speed", 0.0)
+            tried = wk.get("tried", 0)
+            last = wk.get("last_seen", "")
             total_speed += speed
 
             if status == "active":
@@ -769,9 +766,7 @@ class Display:
             )
 
         self._print(f"{'─' * w}")
-        self._print(
-            f"  {'TOTAL':>38}  {C_SUCCESS}{_fmt_speed(total_speed):>12}{RESET}"
-        )
+        self._print(f"  {'TOTAL':>38}  {C_SUCCESS}{_fmt_speed(total_speed):>12}{RESET}")
         self._print(f"{'─' * w}\n")
 
     # ── Multi-hash hashaxe summary ──────────────────────────────────────────────
@@ -787,7 +782,7 @@ class Display:
             return
 
         cracked = sum(1 for r in results if r.get("plaintext"))
-        w       = 80
+        w = 80
 
         self._print(f"\n{'═' * w}")
         self._print(
@@ -795,16 +790,14 @@ class Display:
             f"{C_SUCCESS}{cracked}{RESET}/{len(results)} cracked"
         )
         self._print(f"{'═' * w}")
-        self._print(
-            f"  {'Hash':<32}  {'Type':<14}  {'Plaintext':<18}  {'Time':>8}"
-        )
+        self._print(f"  {'Hash':<32}  {'Type':<14}  {'Plaintext':<18}  {'Time':>8}")
         self._print(f"{'─' * w}")
 
         for r in results:
-            h      = str(r.get("hash", ""))[:32]
-            htype  = str(r.get("hash_type", ""))[:14]
-            plain  = r.get("plaintext")
-            elap   = r.get("elapsed", 0.0)
+            h = str(r.get("hash", ""))[:32]
+            htype = str(r.get("hash_type", ""))[:14]
+            plain = r.get("plaintext")
+            elap = r.get("elapsed", 0.0)
 
             if plain is not None:
                 plain_s = f"{C_SUCCESS}{str(plain)[:18]}{RESET}"
@@ -818,9 +811,7 @@ class Display:
 
         self._print(f"{'═' * w}")
         rate = cracked / len(results) * 100 if results else 0
-        self._print(
-            f"  Success rate : {C_SUCCESS if rate > 50 else C_WARN}{rate:.1f}%{RESET}\n"
-        )
+        self._print(f"  Success rate : {C_SUCCESS if rate > 50 else C_WARN}{rate:.1f}%{RESET}\n")
 
     # ── Hash identification panel ─────────────────────────────────────────────
 
@@ -842,19 +833,16 @@ class Display:
         if raw:
             self._print(f"    Input : {C_DIM}{raw[:72]}{RESET}")
         self._print(f"{'─' * 70}")
-        self._print(
-            f"  {'#':<3}  {'Name':<30}  {'Hashcat':>8}  "
-            f"{'Confidence':>11}  MITRE"
-        )
+        self._print(f"  {'#':<3}  {'Name':<30}  {'Hashcat':>8}  " f"{'Confidence':>11}  MITRE")
         self._print(f"{'─' * 70}")
 
         for i, c in enumerate(candidates[:6], 1):
-            conf  = c.get("confidence", 0.0)
-            cbar  = "█" * int(conf * 10) + "░" * (10 - int(conf * 10))
-            cc    = C_SUCCESS if conf >= 0.8 else (C_WARN if conf >= 0.5 else C_DIM)
+            conf = c.get("confidence", 0.0)
+            cbar = "█" * int(conf * 10) + "░" * (10 - int(conf * 10))
+            cc = C_SUCCESS if conf >= 0.8 else (C_WARN if conf >= 0.5 else C_DIM)
             self._print(
-                f"  {i:<3}  {str(c.get('name','')):<30}  "
-                f"{str(c.get('hashcat_id','')):<8}  "
+                f"  {i:<3}  {c.get('name','')!s:<30}  "
+                f"{c.get('hashcat_id','')!s:<8}  "
                 f"{cc}{cbar}{RESET} {conf*100:4.0f}%  "
                 f"{C_DIM}{c.get('mitre_id','')}{RESET}"
             )
@@ -875,10 +863,10 @@ class Display:
             return
 
         self._print(f"\n{BOLD}{BRIGHT_PURPLE}[AI]{RESET} Target analysis complete:")
-        src  = result.get("profile_source", "")
-        kws  = result.get("keywords", [])
-        ent  = result.get("entropy_score", 0.0)
-        mut  = result.get("top_mutations", [])
+        src = result.get("profile_source", "")
+        kws = result.get("keywords", [])
+        ent = result.get("entropy_score", 0.0)
+        mut = result.get("top_mutations", [])
         hits = result.get("osint_hits", 0)
         conf = result.get("confidence", 0.0)
 
@@ -910,10 +898,10 @@ class Display:
         if self.quiet:
             return
 
-        algo    = result.get("algorithm", "")
-        safe    = result.get("quantum_safe", True)
-        threat  = result.get("threat_level", "low")
-        repl    = result.get("nist_replacement", "")
+        algo = result.get("algorithm", "")
+        safe = result.get("quantum_safe", True)
+        threat = result.get("threat_level", "low")
+        repl = result.get("nist_replacement", "")
         harvest = result.get("harvest_risk", "")
 
         threat_c = C_FAIL if threat == "critical" else (C_WARN if threat == "high" else C_DIM)
@@ -921,7 +909,9 @@ class Display:
         self._print(f"\n{BOLD}[PQC]{RESET} Quantum threat assessment:")
         self._print(f"{'─' * 60}")
         self._print(f"  Algorithm       : {C_HASH}{algo}{RESET}")
-        safe_s = f"{C_SUCCESS}YES{RESET}" if safe else f"{C_FAIL}NO — vulnerable to Shor/Grover{RESET}"
+        safe_s = (
+            f"{C_SUCCESS}YES{RESET}" if safe else f"{C_FAIL}NO — vulnerable to Shor/Grover{RESET}"
+        )
         self._print(f"  Quantum-safe    : {safe_s}")
         self._print(f"  Threat level    : {threat_c}{threat.upper()}{RESET}")
         if repl:
@@ -956,7 +946,4 @@ class Display:
     # ── Dunder ───────────────────────────────────────────────────────────────
 
     def __repr__(self) -> str:
-        return (
-            f"Display(verbose={self.verbose!r}, quiet={self.quiet!r}, "
-            f"ansi={_USE_ANSI!r})"
-        )
+        return f"Display(verbose={self.verbose!r}, quiet={self.quiet!r}, " f"ansi={_USE_ANSI!r})"

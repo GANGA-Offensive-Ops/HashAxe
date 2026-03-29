@@ -49,27 +49,27 @@ from typing import Optional
 
 # ── OpenSSH constants ─────────────────────────────────────────────────────────
 
-_SK_MAGIC  = b"openssh-key-v1\x00"     # 15 bytes
-_NONE      = b"none"
-_BCRYPT    = b"bcrypt"
+_SK_MAGIC = b"openssh-key-v1\x00"  # 15 bytes
+_NONE = b"none"
+_BCRYPT = b"bcrypt"
 
 # Cipher table: name → (key_len, iv_len, block_len, is_aead)
 _CIPHER_PARAMS: dict[bytes, tuple[int, int, int, bool]] = {
-    b"aes128-ctr":                    (16, 16,  1, False),
-    b"aes192-ctr":                    (24, 16,  1, False),
-    b"aes256-ctr":                    (32, 16,  1, False),
-    b"aes128-cbc":                    (16, 16, 16, False),
-    b"aes192-cbc":                    (24, 16, 16, False),
-    b"aes256-cbc":                    (32, 16, 16, False),
-    b"chacha20-poly1305@openssh.com": (64,  0,  8,  True),
-    b"3des-cbc":                      (24,  8,  8, False),
+    b"aes128-ctr": (16, 16, 1, False),
+    b"aes192-ctr": (24, 16, 1, False),
+    b"aes256-ctr": (32, 16, 1, False),
+    b"aes128-cbc": (16, 16, 16, False),
+    b"aes192-cbc": (24, 16, 16, False),
+    b"aes256-cbc": (32, 16, 16, False),
+    b"chacha20-poly1305@openssh.com": (64, 0, 8, True),
+    b"3des-cbc": (24, 8, 8, False),
 }
 
 # Legacy PEM headers
 _LEGACY_HEADERS = {
-    b"-----BEGIN RSA PRIVATE KEY-----":     "ssh-rsa",
-    b"-----BEGIN EC PRIVATE KEY-----":      "ecdsa",
-    b"-----BEGIN DSA PRIVATE KEY-----":     "ssh-dss",
+    b"-----BEGIN RSA PRIVATE KEY-----": "ssh-rsa",
+    b"-----BEGIN EC PRIVATE KEY-----": "ecdsa",
+    b"-----BEGIN DSA PRIVATE KEY-----": "ssh-dss",
     b"-----BEGIN OPENSSH PRIVATE KEY-----": "openssh",
 }
 
@@ -80,14 +80,16 @@ _PPK_V3_HEADER = b"PuTTY-User-Key-File-3:"
 
 # ── Key format enum ───────────────────────────────────────────────────────────
 
+
 class KeyFormat(Enum):
-    OPENSSH_NEW    = auto()   # openssh-key-v1 format
-    OPENSSH_LEGACY = auto()   # old PEM RSA/EC/DSA
-    PPK_V2         = auto()   # PuTTY v2
-    PPK_V3         = auto()   # PuTTY v3
+    OPENSSH_NEW = auto()  # openssh-key-v1 format
+    OPENSSH_LEGACY = auto()  # old PEM RSA/EC/DSA
+    PPK_V2 = auto()  # PuTTY v2
+    PPK_V3 = auto()  # PuTTY v3
 
 
 # ── Parsed key dataclass ──────────────────────────────────────────────────────
+
 
 @dataclass
 class ParsedKey:
@@ -97,38 +99,38 @@ class ParsedKey:
     """
 
     # Common fields
-    fmt:          KeyFormat  = field(default=KeyFormat.OPENSSH_NEW)
-    key_type:     str        = ""          # e.g. "ssh-ed25519"
-    is_encrypted: bool       = True
-    raw_bytes:    bytes      = b""         # original (CRLF-fixed) bytes
+    fmt: KeyFormat = field(default=KeyFormat.OPENSSH_NEW)
+    key_type: str = ""  # e.g. "ssh-ed25519"
+    is_encrypted: bool = True
+    raw_bytes: bytes = b""  # original (CRLF-fixed) bytes
 
     # OpenSSH-specific
-    ciphername:   bytes      = b""
-    kdfname:      bytes      = b""
-    salt:         bytes      = b""
-    rounds:       int        = 0
-    edata:        bytes      = b""
-    tag:          bytes      = b""         # AEAD tag (chacha20-poly1305)
-    key_len:      int        = 0
-    iv_len:       int        = 0
-    block_len:    int        = 0
-    is_aead:      bool       = False
+    ciphername: bytes = b""
+    kdfname: bytes = b""
+    salt: bytes = b""
+    rounds: int = 0
+    edata: bytes = b""
+    tag: bytes = b""  # AEAD tag (chacha20-poly1305)
+    key_len: int = 0
+    iv_len: int = 0
+    block_len: int = 0
+    is_aead: bool = False
 
     # Legacy PEM-specific
-    legacy_iv:    bytes      = b""         # PEM AES-128-CBC IV (from DEK-Info)
+    legacy_iv: bytes = b""  # PEM AES-128-CBC IV (from DEK-Info)
 
     # PPK-specific
-    ppk_algorithm:   str     = ""          # e.g. "ed25519"
-    ppk_encryption:  str     = ""          # "aes256-cbc" or "none"
-    ppk_kdf:         str     = ""          # "argon2id" / "md5" / "none"
-    ppk_comment:     str     = ""          # Comment header value (needed for MAC)
-    ppk_argon2_salt: bytes   = b""
-    ppk_argon2_mem:  int     = 8192
-    ppk_argon2_ops:  int     = 13
-    ppk_argon2_par:  int     = 1
-    ppk_public_blob: bytes   = b""
-    ppk_private_blob:bytes   = b""         # encrypted private data
-    ppk_mac_data:    bytes   = b""         # expected MAC
+    ppk_algorithm: str = ""  # e.g. "ed25519"
+    ppk_encryption: str = ""  # "aes256-cbc" or "none"
+    ppk_kdf: str = ""  # "argon2id" / "md5" / "none"
+    ppk_comment: str = ""  # Comment header value (needed for MAC)
+    ppk_argon2_salt: bytes = b""
+    ppk_argon2_mem: int = 8192
+    ppk_argon2_ops: int = 13
+    ppk_argon2_par: int = 1
+    ppk_public_blob: bytes = b""
+    ppk_private_blob: bytes = b""  # encrypted private data
+    ppk_mac_data: bytes = b""  # expected MAC
 
     # Unified KDF property
     @property
@@ -160,6 +162,7 @@ class ParsedKey:
 
 # ── Low-level binary helpers ──────────────────────────────────────────────────
 
+
 def _u32(data: memoryview) -> tuple[int, memoryview]:
     if len(data) < 4:
         raise ValueError("Truncated u32 — key data is corrupt or incomplete")
@@ -175,11 +178,12 @@ def _sshstr(data: memoryview) -> tuple[memoryview, memoryview]:
 
 # ── OpenSSH new-format parser ─────────────────────────────────────────────────
 
+
 def _parse_openssh_new(raw: bytes) -> ParsedKey:
     """Parse -----BEGIN OPENSSH PRIVATE KEY----- format."""
 
     start = raw.find(b"-----BEGIN OPENSSH PRIVATE KEY-----")
-    end   = raw.find(b"-----END OPENSSH PRIVATE KEY-----")
+    end = raw.find(b"-----END OPENSSH PRIVATE KEY-----")
     if start == -1 or end == -1:
         raise ValueError("Missing OPENSSH PEM envelope markers")
 
@@ -194,14 +198,14 @@ def _parse_openssh_new(raw: bytes) -> ParsedKey:
     if not decoded.startswith(_SK_MAGIC):
         raise ValueError("Bad magic bytes — not an OpenSSH private key")
 
-    mv = memoryview(decoded)[len(_SK_MAGIC):]
+    mv = memoryview(decoded)[len(_SK_MAGIC) :]
 
     # ── Header fields ──
     try:
-        ciphername_mv, mv  = _sshstr(mv)
-        kdfname_mv,    mv  = _sshstr(mv)
-        kdfoptions_mv, mv  = _sshstr(mv)
-        nkeys, mv          = _u32(mv)
+        ciphername_mv, mv = _sshstr(mv)
+        kdfname_mv, mv = _sshstr(mv)
+        kdfoptions_mv, mv = _sshstr(mv)
+        nkeys, mv = _u32(mv)
     except ValueError as exc:
         raise ValueError(f"Corrupt key header: {exc}") from exc
 
@@ -212,7 +216,7 @@ def _parse_openssh_new(raw: bytes) -> ParsedKey:
 
     # ── Public key block (extract key_type) ──
     try:
-        pubdata_mv, mv     = _sshstr(mv)
+        pubdata_mv, mv = _sshstr(mv)
         pub_key_type_mv, _ = _sshstr(pubdata_mv)
     except ValueError as exc:
         raise ValueError(f"Corrupt public key block: {exc}") from exc
@@ -224,17 +228,17 @@ def _parse_openssh_new(raw: bytes) -> ParsedKey:
         raise ValueError(f"Corrupt private key blob: {exc}") from exc
 
     ciphername = bytes(ciphername_mv)
-    kdfname    = bytes(kdfname_mv)
-    key_type   = bytes(pub_key_type_mv).decode("utf-8", errors="replace")
+    kdfname = bytes(kdfname_mv)
+    key_type = bytes(pub_key_type_mv).decode("utf-8", errors="replace")
 
     pk = ParsedKey(
-        fmt       = KeyFormat.OPENSSH_NEW,
-        raw_bytes = raw,
-        ciphername= ciphername,
-        kdfname   = kdfname,
-        key_type  = key_type,
-        edata     = bytes(edata_mv),
-        tag       = b"",
+        fmt=KeyFormat.OPENSSH_NEW,
+        raw_bytes=raw,
+        ciphername=ciphername,
+        kdfname=kdfname,
+        key_type=key_type,
+        edata=bytes(edata_mv),
+        tag=b"",
     )
 
     # ── Unencrypted key ──
@@ -246,26 +250,24 @@ def _parse_openssh_new(raw: bytes) -> ParsedKey:
 
     if ciphername not in _CIPHER_PARAMS:
         raise ValueError(
-            f"Unsupported cipher: {ciphername!r}\n"
-            f"  Supported: {list(_CIPHER_PARAMS.keys())}"
+            f"Unsupported cipher: {ciphername!r}\n" f"  Supported: {list(_CIPHER_PARAMS.keys())}"
         )
     if kdfname != _BCRYPT:
         raise ValueError(
-            f"Unsupported KDF: {kdfname!r}\n"
-            f"  Only 'bcrypt' KDF is supported for OpenSSH keys"
+            f"Unsupported KDF: {kdfname!r}\n" f"  Only 'bcrypt' KDF is supported for OpenSSH keys"
         )
 
     pk.key_len, pk.iv_len, pk.block_len, pk.is_aead = _CIPHER_PARAMS[ciphername]
 
     # ── KDF options: salt (sshstr) + rounds (u32) ──
     try:
-        kdfopts        = memoryview(kdfoptions_mv)
+        kdfopts = memoryview(kdfoptions_mv)
         salt_mv, kdfopts = _sshstr(kdfopts)
-        rounds, _      = _u32(kdfopts)
+        rounds, _ = _u32(kdfopts)
     except ValueError as exc:
         raise ValueError(f"Corrupt KDF options: {exc}") from exc
 
-    pk.salt   = bytes(salt_mv)
+    pk.salt = bytes(salt_mv)
     pk.rounds = rounds
 
     # ── chacha20-poly1305 AEAD tag ──
@@ -276,6 +278,7 @@ def _parse_openssh_new(raw: bytes) -> ParsedKey:
 
 
 # ── Legacy PEM parser (RSA/EC/DSA pre-OpenSSH-format) ────────────────────────
+
 
 def _parse_openssh_legacy(raw: bytes, key_type_hint: str) -> ParsedKey:
     """
@@ -291,8 +294,8 @@ def _parse_openssh_legacy(raw: bytes, key_type_hint: str) -> ParsedKey:
 
     # Find encryption headers
     is_encrypted = False
-    cipher       = b"none"
-    iv_hex       = b""
+    cipher = b"none"
+    iv_hex = b""
 
     for line in lines:
         stripped = line.strip()
@@ -306,19 +309,17 @@ def _parse_openssh_legacy(raw: bytes, key_type_hint: str) -> ParsedKey:
                 iv_hex = parts[1].strip()
 
     # Extract base64 body (skip headers)
-    in_body   = False
+    in_body = False
     b64_lines = []
-    tag_start = next(
-        (h for h in _LEGACY_HEADERS if raw.find(h) != -1), None
-    )
+    tag_start = next((h for h in _LEGACY_HEADERS if raw.find(h) != -1), None)
     if tag_start is None:
         raise ValueError("No recognizable legacy PEM header found")
 
     begin_marker = tag_start
-    end_marker   = begin_marker.replace(b"BEGIN", b"END")
+    end_marker = begin_marker.replace(b"BEGIN", b"END")
 
     start = raw.find(begin_marker)
-    end   = raw.find(end_marker)
+    end = raw.find(end_marker)
     if start == -1 or end == -1:
         raise ValueError("Incomplete PEM envelope")
 
@@ -338,21 +339,22 @@ def _parse_openssh_legacy(raw: bytes, key_type_hint: str) -> ParsedKey:
     legacy_iv = bytes.fromhex(iv_hex.decode()) if iv_hex else b""
 
     return ParsedKey(
-        fmt         = KeyFormat.OPENSSH_LEGACY,
-        raw_bytes   = raw,
-        key_type    = key_type_hint,
-        is_encrypted= is_encrypted,
-        ciphername  = cipher,
-        kdfname     = b"md5" if is_encrypted else b"none",
-        edata       = edata,
-        legacy_iv   = legacy_iv,
-        key_len     = 16 if b"128" in cipher else 32,
-        iv_len      = 16,
-        block_len   = 16,
+        fmt=KeyFormat.OPENSSH_LEGACY,
+        raw_bytes=raw,
+        key_type=key_type_hint,
+        is_encrypted=is_encrypted,
+        ciphername=cipher,
+        kdfname=b"md5" if is_encrypted else b"none",
+        edata=edata,
+        legacy_iv=legacy_iv,
+        key_len=16 if b"128" in cipher else 32,
+        iv_len=16,
+        block_len=16,
     )
 
 
 # ── PPK v2 parser ─────────────────────────────────────────────────────────────
+
 
 def _parse_ppk_v2(raw: bytes) -> ParsedKey:
     """
@@ -381,38 +383,39 @@ def _parse_ppk_v2(raw: bytes) -> ParsedKey:
         for i, ln in enumerate(lines):
             if ln.startswith(start_marker + ":"):
                 count = int(ln.split(":", 1)[1].strip())
-                b64   = "".join(lines[i + 1 : i + 1 + count])
+                b64 = "".join(lines[i + 1 : i + 1 + count])
                 return base64.b64decode(b64)
         raise ValueError(f"PPK v2: missing section '{start_marker}'")
 
-    algorithm  = _field("PuTTY-User-Key-File-2")
+    algorithm = _field("PuTTY-User-Key-File-2")
     encryption = _field("Encryption")
-    comment    = _field("Comment")
-    public_b   = _blob("Public-Lines")
-    private_b  = _blob("Private-Lines")
-    mac_hex    = _field("Private-MAC")
+    comment = _field("Comment")
+    public_b = _blob("Public-Lines")
+    private_b = _blob("Private-Lines")
+    mac_hex = _field("Private-MAC")
 
     return ParsedKey(
-        fmt              = KeyFormat.PPK_V2,
-        raw_bytes        = raw,
-        key_type         = f"ppk-{algorithm}",
-        is_encrypted     = (encryption != "none"),
-        ppk_algorithm    = algorithm,
-        ppk_encryption   = encryption,
-        ppk_kdf          = "md5" if encryption != "none" else "none",
-        ppk_comment      = comment,
-        ppk_public_blob  = public_b,
-        ppk_private_blob = private_b,
-        ppk_mac_data     = bytes.fromhex(mac_hex),
+        fmt=KeyFormat.PPK_V2,
+        raw_bytes=raw,
+        key_type=f"ppk-{algorithm}",
+        is_encrypted=(encryption != "none"),
+        ppk_algorithm=algorithm,
+        ppk_encryption=encryption,
+        ppk_kdf="md5" if encryption != "none" else "none",
+        ppk_comment=comment,
+        ppk_public_blob=public_b,
+        ppk_private_blob=private_b,
+        ppk_mac_data=bytes.fromhex(mac_hex),
         # AES-256-CBC, key derived via MD5(passphrase+salt)
-        key_len   = 32,
-        iv_len    = 16,
-        block_len = 16,
-        ciphername= b"aes256-cbc",
+        key_len=32,
+        iv_len=16,
+        block_len=16,
+        ciphername=b"aes256-cbc",
     )
 
 
 # ── PPK v3 parser ─────────────────────────────────────────────────────────────
+
 
 def _parse_ppk_v3(raw: bytes) -> ParsedKey:
     """
@@ -435,7 +438,7 @@ def _parse_ppk_v3(raw: bytes) -> ParsedKey:
       <base64>
       Private-MAC: <hex>
     """
-    text  = raw.decode("utf-8", errors="replace")
+    text = raw.decode("utf-8", errors="replace")
     lines = text.splitlines()
 
     def _field(name: str, default: str = "") -> str:
@@ -450,23 +453,23 @@ def _parse_ppk_v3(raw: bytes) -> ParsedKey:
         for i, ln in enumerate(lines):
             if ln.startswith(start_marker + ":"):
                 count = int(ln.split(":", 1)[1].strip())
-                b64   = "".join(lines[i + 1 : i + 1 + count])
+                b64 = "".join(lines[i + 1 : i + 1 + count])
                 return base64.b64decode(b64)
         raise ValueError(f"PPK v3: missing section '{start_marker}'")
 
-    algorithm   = _field("PuTTY-User-Key-File-3")
-    encryption  = _field("Encryption")
-    comment     = _field("Comment", "")
-    public_b    = _blob("Public-Lines")
-    private_b   = _blob("Private-Lines")
-    mac_hex     = _field("Private-MAC")
+    algorithm = _field("PuTTY-User-Key-File-3")
+    encryption = _field("Encryption")
+    comment = _field("Comment", "")
+    public_b = _blob("Public-Lines")
+    private_b = _blob("Private-Lines")
+    mac_hex = _field("Private-MAC")
 
     # Argon2 parameters (only present when encrypted)
     argon2_salt = bytes.fromhex(_field("Argon2-Salt", ""))
-    argon2_mem  = int(_field("Argon2-Memory",      "8192"))
-    argon2_ops  = int(_field("Argon2-Passes",       "13"))
-    argon2_par  = int(_field("Argon2-Parallelism",  "1"))
-    kdf_name    = _field("Key-Derivation", "none")
+    argon2_mem = int(_field("Argon2-Memory", "8192"))
+    argon2_ops = int(_field("Argon2-Passes", "13"))
+    argon2_par = int(_field("Argon2-Parallelism", "1"))
+    kdf_name = _field("Key-Derivation", "none")
 
     # ARCH-1: Abort early if argon2-cffi not installed for PPK v3 encrypted keys
     if encryption != "none":
@@ -481,29 +484,30 @@ def _parse_ppk_v3(raw: bytes) -> ParsedKey:
             )
 
     return ParsedKey(
-        fmt              = KeyFormat.PPK_V3,
-        raw_bytes        = raw,
-        key_type         = f"ppk-{algorithm}",
-        is_encrypted     = (encryption != "none"),
-        ppk_algorithm    = algorithm,
-        ppk_encryption   = encryption,
-        ppk_kdf          = kdf_name.lower(),
-        ppk_comment      = comment,
-        ppk_argon2_salt  = argon2_salt,
-        ppk_argon2_mem   = argon2_mem,
-        ppk_argon2_ops   = argon2_ops,
-        ppk_argon2_par   = argon2_par,
-        ppk_public_blob  = public_b,
-        ppk_private_blob = private_b,
-        ppk_mac_data     = bytes.fromhex(mac_hex),
-        key_len  = 32,
-        iv_len   = 16,
-        block_len= 16,
-        ciphername= b"aes256-cbc",
+        fmt=KeyFormat.PPK_V3,
+        raw_bytes=raw,
+        key_type=f"ppk-{algorithm}",
+        is_encrypted=(encryption != "none"),
+        ppk_algorithm=algorithm,
+        ppk_encryption=encryption,
+        ppk_kdf=kdf_name.lower(),
+        ppk_comment=comment,
+        ppk_argon2_salt=argon2_salt,
+        ppk_argon2_mem=argon2_mem,
+        ppk_argon2_ops=argon2_ops,
+        ppk_argon2_par=argon2_par,
+        ppk_public_blob=public_b,
+        ppk_private_blob=private_b,
+        ppk_mac_data=bytes.fromhex(mac_hex),
+        key_len=32,
+        iv_len=16,
+        block_len=16,
+        ciphername=b"aes256-cbc",
     )
 
 
 # ── Public entry point ────────────────────────────────────────────────────────
+
 
 def parse_key_file(path: str) -> ParsedKey:
     """

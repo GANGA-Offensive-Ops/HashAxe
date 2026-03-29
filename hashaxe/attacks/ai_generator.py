@@ -50,7 +50,7 @@ class AIGeneratorAttack(BaseAttack):
     on the provided wordlist.
     """
 
-    attack_id   = "ai"
+    attack_id = "ai"
     attack_name = "AI Generator Attack"
     description = "GPT-2 neural candidate generation with Markov chain fallback."
 
@@ -62,6 +62,7 @@ class AIGeneratorAttack(BaseAttack):
         try:
             import torch  # type: ignore
             import transformers  # type: ignore
+
             return True
         except ImportError:
             return False
@@ -89,7 +90,7 @@ class AIGeneratorAttack(BaseAttack):
         # ── Phase 1: Wordlist entries (highest priority) ─────────────────
         if config.wordlist:
             try:
-                with open(config.wordlist, "r", encoding="utf-8", errors="replace") as wf:
+                with open(config.wordlist, encoding="utf-8", errors="replace") as wf:
                     for line in wf:
                         pw = line.rstrip("\n\r")
                         if not pw:
@@ -135,8 +136,9 @@ class AIGeneratorAttack(BaseAttack):
         On low-VRAM GPUs (<6GB), the ModelManager automatically routes to CPU.
         If CUDA OOM occurs during generation, we force a CPU reload and retry.
         """
-        from hashaxe.ai.model_manager import ModelManager
         import torch
+
+        from hashaxe.ai.model_manager import ModelManager
 
         # Password-appropriate generation length (not the config.max_length=64
         # which is meant for hash format max, not token generation depth).
@@ -174,7 +176,7 @@ class AIGeneratorAttack(BaseAttack):
         if config.wordlist:
             try:
                 # Read up to 50 seed words from the provided wordlist to use as AI prompts
-                with open(config.wordlist, "r", encoding="utf-8", errors="ignore") as wf:
+                with open(config.wordlist, encoding="utf-8", errors="ignore") as wf:
                     for line in wf:
                         pw = line.strip()
                         if pw and pw not in seeds:
@@ -186,9 +188,23 @@ class AIGeneratorAttack(BaseAttack):
 
         # Fallback roots if no wordlist provided or wordlist was empty
         if not seeds:
-            seeds = ["password", "admin", "secret", "letmein", "welcome",
-                     "master", "dragon", "monkey", "shadow", "qwerty",
-                     "123456", "iloveyou", "trustno1", "abc123", "sunshine"]
+            seeds = [
+                "password",
+                "admin",
+                "secret",
+                "letmein",
+                "welcome",
+                "master",
+                "dragon",
+                "monkey",
+                "shadow",
+                "qwerty",
+                "123456",
+                "iloveyou",
+                "trustno1",
+                "abc123",
+                "sunshine",
+            ]
 
         oom_recovered = False
 
@@ -237,8 +253,10 @@ class AIGeneratorAttack(BaseAttack):
     def _generate_markov_fallback(self, config: AttackConfig) -> Iterator[str]:
         """Fallback: use Markov chain generator from attacks/markov.py."""
         if not config.wordlist:
-            log.warning("No wordlist provided for Markov fallback. "
-                       "AI mode requires either transformers+torch or a wordlist.")
+            log.warning(
+                "No wordlist provided for Markov fallback. "
+                "AI mode requires either transformers+torch or a wordlist."
+            )
             return
 
         from hashaxe.attacks.markov import MarkovAttack
@@ -266,8 +284,10 @@ class AIGeneratorAttack(BaseAttack):
 
     def validate_config(self, config: AttackConfig) -> str | None:
         if not self._has_ai_deps() and not config.wordlist:
-            return ("AI attack requires either: (1) transformers+torch installed, "
-                    "or (2) --wordlist for Markov fallback")
+            return (
+                "AI attack requires either: (1) transformers+torch installed, "
+                "or (2) --wordlist for Markov fallback"
+            )
         return None
 
 

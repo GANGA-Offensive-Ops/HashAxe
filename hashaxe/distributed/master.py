@@ -72,8 +72,8 @@ from hashaxe.display import Display
 from hashaxe.session import Session, session_name_for
 from hashaxe.wordlist import WordlistStreamer, chunk_wordlist
 
-
 # ── Security utilities ────────────────────────────────────────────────────────
+
 
 def _validate_path(user_path: str, label: str = "path") -> str:
     """Validate a file path against directory traversal attacks.
@@ -83,25 +83,25 @@ def _validate_path(user_path: str, label: str = "path") -> str:
     """
     resolved = os.path.realpath(user_path)
     if ".." in os.path.normpath(user_path):
-        raise ValueError(
-            f"Path traversal detected in {label}: {user_path!r}"
-        )
+        raise ValueError(f"Path traversal detected in {label}: {user_path!r}")
     if not os.path.exists(resolved):
         raise ValueError(f"{label} not found: {resolved}")
     return resolved
 
+
 # ── ZMQ message types ─────────────────────────────────────────────────────────
 
-MSG_WORK    = "WORK"
-MSG_RESULT  = "RESULT"
-MSG_STOP    = "STOP"
-MSG_PAUSE   = "PAUSE"
-MSG_RESUME  = "RESUME"
-MSG_STATUS  = "STATUS"
-MSG_DONE    = "DONE"    # worker signals wordlist exhausted
+MSG_WORK = "WORK"
+MSG_RESULT = "RESULT"
+MSG_STOP = "STOP"
+MSG_PAUSE = "PAUSE"
+MSG_RESUME = "RESUME"
+MSG_STATUS = "STATUS"
+MSG_DONE = "DONE"  # worker signals wordlist exhausted
 
 
 # ── Work item ─────────────────────────────────────────────────────────────────
+
 
 @dataclass
 class WorkItem:
@@ -110,38 +110,42 @@ class WorkItem:
     Contains a byte-range slice of the wordlist — no password data transmitted.
     Workers must have access to the same key file and wordlist paths.
     """
-    job_id:      str
-    key_path:    str      # path to SSH private key (same on all workers)
-    wordlist:    str      # path to wordlist (same on all workers)
-    start_byte:  int
-    end_byte:    int
-    use_rules:   bool          = False
-    rule_file:   str | None = None
-    mask:        str | None = None
+
+    job_id: str
+    key_path: str  # path to SSH private key (same on all workers)
+    wordlist: str  # path to wordlist (same on all workers)
+    start_byte: int
+    end_byte: int
+    use_rules: bool = False
+    rule_file: str | None = None
+    mask: str | None = None
 
 
 @dataclass
 class WorkResult:
     """Result message from worker back to master."""
-    job_id:    str
-    found:     bool
+
+    job_id: str
+    found: bool
     passphrase: str | None
-    tried:     int
-    speed:     float   # pw/s this worker achieved
+    tried: int
+    speed: float  # pw/s this worker achieved
 
 
 @dataclass
 class WorkerStatus:
     """Aggregate stats per registered worker."""
+
     worker_id: str
-    host:      str
-    tried:     int   = 0
-    speed:     float = 0.0
+    host: str
+    tried: int = 0
+    speed: float = 0.0
     last_seen: float = field(default_factory=time.time)
-    gpu:       str   = "none"
+    gpu: str = "none"
 
 
 # ── Master node ───────────────────────────────────────────────────────────────
+
 
 class MasterNode:
     """
@@ -161,34 +165,34 @@ class MasterNode:
 
     def __init__(
         self,
-        key_path:    str,
-        wordlist:    str,
-        bind_host:   str  = "0.0.0.0",
-        work_port:   int  = 5555,
-        result_port: int  = 5556,
-        ctrl_port:   int  = 5557,
-        use_rules:   bool = False,
-        rule_file:   str | None = None,
-        mask:        str | None = None,
-        verbose:     bool = False,
+        key_path: str,
+        wordlist: str,
+        bind_host: str = "0.0.0.0",
+        work_port: int = 5555,
+        result_port: int = 5556,
+        ctrl_port: int = 5557,
+        use_rules: bool = False,
+        rule_file: str | None = None,
+        mask: str | None = None,
+        verbose: bool = False,
         heartbeat_timeout: float = 30.0,
     ):
         # Security: validate paths against traversal before storing
-        self.key_path    = _validate_path(key_path, "key_path")
-        self.wordlist    = _validate_path(wordlist, "wordlist")
-        self.bind_host   = bind_host
-        self.work_port   = work_port
+        self.key_path = _validate_path(key_path, "key_path")
+        self.wordlist = _validate_path(wordlist, "wordlist")
+        self.bind_host = bind_host
+        self.work_port = work_port
         self.result_port = result_port
-        self.ctrl_port   = ctrl_port
-        self.use_rules   = use_rules
-        self.rule_file   = rule_file
-        self.mask        = mask
-        self.verbose     = verbose
+        self.ctrl_port = ctrl_port
+        self.use_rules = use_rules
+        self.rule_file = rule_file
+        self.mask = mask
+        self.verbose = verbose
         self.heartbeat_timeout = heartbeat_timeout
 
-        self._display  = Display(verbose=verbose)
+        self._display = Display(verbose=verbose)
         self._workers: dict[str, WorkerStatus] = {}
-        self._result:  str | None = None
+        self._result: str | None = None
 
     def run(self) -> str | None:
         """
@@ -205,10 +209,10 @@ class MasterNode:
             )
             return None
 
-        ctx        = zmq.Context()
-        work_sock  = ctx.socket(zmq.PUSH)
-        result_sock= ctx.socket(zmq.PULL)
-        ctrl_sock  = ctx.socket(zmq.PUB)
+        ctx = zmq.Context()
+        work_sock = ctx.socket(zmq.PUSH)
+        result_sock = ctx.socket(zmq.PULL)
+        ctrl_sock = ctx.socket(zmq.PUB)
 
         # Set high-water mark so work items can queue before workers connect
         work_sock.setsockopt(zmq.SNDHWM, 10000)
@@ -225,8 +229,7 @@ class MasterNode:
             f"results:{self.result_port} ctrl:{self.ctrl_port}"
         )
         self._display.info(
-            f"Start workers:  hashaxe --distributed-worker "
-            f"--master {self.bind_host}"
+            f"Start workers:  hashaxe --distributed-worker " f"--master {self.bind_host}"
         )
 
         try:
@@ -245,6 +248,7 @@ class MasterNode:
     def _dispatch_loop(self, work_sock, result_sock, ctrl_sock) -> str | None:
         """Main dispatch loop — send chunks, receive results."""
         import zmq
+
         from hashaxe.formats import FormatRegistry
         from hashaxe.formats.base import CHUNK_SIZES
 
@@ -259,7 +263,7 @@ class MasterNode:
             self._display.error(f"Cannot identify format for {self.key_path}")
             return None
         target = match.handler.parse(data, self.key_path)
-        
+
         perf_chunk = CHUNK_SIZES.get(target.difficulty, 50_000)
 
         # Build work queue from wordlist chunks
@@ -267,26 +271,28 @@ class MasterNode:
 
         self._display.info(f"Wordlist: {total_lines:,} lines → {len(chunks)} chunks")
 
-        pending:    deque[WorkItem] = deque()
-        in_flight:  dict[str, WorkItem] = {}
+        pending: deque[WorkItem] = deque()
+        in_flight: dict[str, WorkItem] = {}
         total_tried = 0
-        t_start     = time.time()
+        t_start = time.time()
         job_counter = 0
 
         # Pre-populate work queue
         for start, end in chunks:
             job_id = f"job_{job_counter:08d}"
             job_counter += 1
-            pending.append(WorkItem(
-                job_id    = job_id,
-                key_path  = self.key_path,
-                wordlist  = self.wordlist,
-                start_byte= start,
-                end_byte  = end,
-                use_rules = self.use_rules,
-                rule_file = self.rule_file,
-                mask      = self.mask,
-            ))
+            pending.append(
+                WorkItem(
+                    job_id=job_id,
+                    key_path=self.key_path,
+                    wordlist=self.wordlist,
+                    start_byte=start,
+                    end_byte=end,
+                    use_rules=self.use_rules,
+                    rule_file=self.rule_file,
+                    mask=self.mask,
+                )
+            )
 
         # Track dispatch timestamps for heartbeat-based fault tolerance
         dispatch_times: dict[str, float] = {}
@@ -313,13 +319,13 @@ class MasterNode:
                 break
             if result_sock in events:
                 try:
-                    msg     = result_sock.recv_json()
-                    result  = WorkResult(**msg)
+                    msg = result_sock.recv_json()
+                    result = WorkResult(**msg)
                 except Exception as e:
                     if self.verbose:
                         self._display.warn(f"Ignored malformed message on result socket: {e}")
                     continue
-                
+
                 total_tried += result.tried
 
                 # Update worker stats
@@ -330,7 +336,7 @@ class MasterNode:
                 dispatch_times.pop(result.job_id, None)
 
                 elapsed = time.time() - t_start
-                speed   = total_tried / elapsed if elapsed > 0 else 0
+                speed = total_tried / elapsed if elapsed > 0 else 0
 
                 if self.verbose:
                     self._display.info(
@@ -342,16 +348,13 @@ class MasterNode:
             # Heartbeat: requeue jobs from workers that timed out
             now = time.time()
             timed_out = [
-                jid for jid, ts in dispatch_times.items()
-                if now - ts > self.heartbeat_timeout
+                jid for jid, ts in dispatch_times.items() if now - ts > self.heartbeat_timeout
             ]
             for jid in timed_out:
                 item = in_flight.pop(jid, None)
                 dispatch_times.pop(jid, None)
                 if item:
-                    self._display.warn(
-                        f"Job {jid} timed out — requeuing"
-                    )
+                    self._display.warn(f"Job {jid} timed out — requeuing")
                     pending.appendleft(item)
 
         return None
@@ -361,12 +364,11 @@ class MasterNode:
         total_speed = sum(w.speed for w in self._workers.values())
         total_tried = sum(w.tried for w in self._workers.values())
         return {
-            "workers":     len(self._workers),
+            "workers": len(self._workers),
             "total_speed": total_speed,
             "total_tried": total_tried,
             "worker_list": [
-                {"id": w.worker_id, "host": w.host,
-                 "speed": w.speed, "gpu": w.gpu}
+                {"id": w.worker_id, "host": w.host, "speed": w.speed, "gpu": w.gpu}
                 for w in self._workers.values()
             ],
         }

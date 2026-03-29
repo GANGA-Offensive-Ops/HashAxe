@@ -56,6 +56,7 @@ logger = logging.getLogger(__name__)
 
 # ── Attack configuration ──────────────────────────────────────────────────────
 
+
 @dataclass
 class AttackConfig:
     """Configuration passed to attack generators.
@@ -81,36 +82,38 @@ class AttackConfig:
         seed:               RNG seed for deterministic generation
         markov_smoothing_k: Laplace smoothing constant for Markov model
     """
-    wordlist:           str | None                   = None
-    wordlist2:          str | None                   = None
-    mask:               str | None                   = None
-    custom_charsets:    dict[str, str]                = field(default_factory=dict)
-    rules:              list | None                   = None
-    min_length:         int                           = 1
-    max_length:         int                           = 64
-    policy:             str | None                   = None
-    markov_order:       int                           = 3
-    prince_min_elems:   int                           = 1
-    prince_max_elems:   int                           = 8
-    ai_candidates:      int                           = 1000
+
+    wordlist: str | None = None
+    wordlist2: str | None = None
+    mask: str | None = None
+    custom_charsets: dict[str, str] = field(default_factory=dict)
+    rules: list | None = None
+    min_length: int = 1
+    max_length: int = 64
+    policy: str | None = None
+    markov_order: int = 3
+    prince_min_elems: int = 1
+    prince_max_elems: int = 8
+    ai_candidates: int = 1000
     # ── V4 Audit additions ────────────────────────────────────────────────
-    max_candidates:     int                           = 0
-    checkpoint_file:    str | None                   = None
-    progress_callback:  Callable[[int], None] | None = None
-    temperature:        float                         = 1.0
-    top_p:              float                         = 1.0
-    seed:               int | None                   = None
-    markov_smoothing_k: float                         = 0.0
+    max_candidates: int = 0
+    checkpoint_file: str | None = None
+    progress_callback: Callable[[int], None] | None = None
+    temperature: float = 1.0
+    top_p: float = 1.0
+    seed: int | None = None
+    markov_smoothing_k: float = 0.0
 
 
 # ── Base attack ABC ──────────────────────────────────────────────────────────
 
+
 class BaseAttack(ABC):
     """Abstract base class for all attack mode plugins."""
 
-    attack_id:    str = ""    # e.g. "wordlist", "combinator", "prince"
-    attack_name:  str = ""    # e.g. "Wordlist Attack"
-    description:  str = ""    # Brief description
+    attack_id: str = ""  # e.g. "wordlist", "combinator", "prince"
+    attack_name: str = ""  # e.g. "Wordlist Attack"
+    description: str = ""  # Brief description
 
     @abstractmethod
     def generate(self, config: AttackConfig) -> Iterator[str]:
@@ -136,6 +139,7 @@ class BaseAttack(ABC):
 
 
 # ── Attack registry ──────────────────────────────────────────────────────────
+
 
 class AttackRegistry:
     """Central registry of all available attack mode plugins."""
@@ -164,6 +168,7 @@ class AttackRegistry:
         self._discovered = True
 
         import hashaxe.attacks as pkg
+
         pkg_path = Path(pkg.__file__).parent
         for info in pkgutil.iter_modules([str(pkg_path)]):
             if info.name.startswith("_"):

@@ -56,7 +56,7 @@ def _parse_mask(mask: str, custom: dict[str, str] | None = None) -> list[str]:
     i = 0
     while i < len(mask):
         if i + 1 < len(mask) and mask[i] == "?":
-            token = mask[i:i + 2]
+            token = mask[i : i + 2]
             if token in _BUILTINS:
                 charsets.append(_BUILTINS[token])
             elif token in custom:
@@ -73,7 +73,7 @@ def _parse_mask(mask: str, custom: dict[str, str] | None = None) -> list[str]:
 class HybridAttack(BaseAttack):
     """Wordlist + mask hybrid: append mask-generated suffixes to each word."""
 
-    attack_id   = "hybrid"
+    attack_id = "hybrid"
     attack_name = "Hybrid Attack"
     description = "For each word in wordlist, append all mask-generated suffixes (word + ?d?d?d)."
 

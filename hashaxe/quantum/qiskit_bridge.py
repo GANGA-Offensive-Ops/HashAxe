@@ -61,8 +61,8 @@ from __future__ import annotations
 import logging
 import math
 import sys
-import warnings
 import time
+import warnings
 from dataclasses import dataclass, field
 from enum import Enum
 from typing import Any
@@ -72,8 +72,10 @@ logger = logging.getLogger(__name__)
 
 # ── Enums ─────────────────────────────────────────────────────────────────────
 
+
 class Feasibility(Enum):
     """Quantum hardware feasibility classification."""
+
     TOY_SIMULATABLE = "TOY_SIMULATABLE"
     NEAR_TERM_HARDWARE = "NEAR_TERM_HARDWARE"
     FAULT_TOLERANT_REQUIRED = "FAULT_TOLERANT_REQUIRED"
@@ -82,9 +84,11 @@ class Feasibility(Enum):
 
 # ── Output Models ─────────────────────────────────────────────────────────────
 
+
 @dataclass
 class QuantumBackendInfo:
     """Information about the available quantum simulation backend."""
+
     name: str = "none"
     gpu_available: bool = False
     max_qubits: int = 0
@@ -100,6 +104,7 @@ class QuantumResult:
     faithfully models quantum mechanical behavior. The ``mode`` field
     distinguishes between actual simulation and pure estimation.
     """
+
     counts: dict[str, int] = field(default_factory=dict)
     statevector: list[complex] | None = None
     execution_time: float = 0.0
@@ -109,9 +114,9 @@ class QuantumResult:
     success: bool = False
 
     # Provenance
-    mode: str = "SIMULATOR"          # SIMULATOR when Qiskit runs, ESTIMATOR for math-only
-    measured: bool = False           # True = from real hardware, False = from simulator
-    simulation: bool = True          # True when running on Aer (classical simulation of QM)
+    mode: str = "SIMULATOR"  # SIMULATOR when Qiskit runs, ESTIMATOR for math-only
+    measured: bool = False  # True = from real hardware, False = from simulator
+    simulation: bool = True  # True when running on Aer (classical simulation of QM)
     implementation_status: str = "PRODUCTION"
     result_origin: str = "qiskit_aer_simulation"
 
@@ -122,12 +127,13 @@ class GroverEstimate:
 
     All values are mathematically exact or literature-backed estimates.
     """
+
     keyspace: int = 0
     classical_ops: int = 0
-    quantum_query_complexity: int = 0   # O(√N) queries
-    grover_iterations: int = 0          # π/4 × √N optimal iterations
-    required_index_qubits: int = 0      # ceil(log2(N)) qubits for the index register
-    estimated_oracle_cost: str = ""     # Rough gate complexity for the oracle circuit
+    quantum_query_complexity: int = 0  # O(√N) queries
+    grover_iterations: int = 0  # π/4 × √N optimal iterations
+    required_index_qubits: int = 0  # ceil(log2(N)) qubits for the index register
+    estimated_oracle_cost: str = ""  # Rough gate complexity for the oracle circuit
     speedup_factor: float = 0.0
     feasibility: Feasibility = Feasibility.BEYOND_CURRENT_TECHNOLOGY
     feasibility_rationale: str = ""
@@ -153,6 +159,7 @@ class GroverEstimate:
 # ══════════════════════════════════════════════════════════════════════════════
 # QiskitBridge — Main Bridge Class
 # ══════════════════════════════════════════════════════════════════════════════
+
 
 class QiskitBridge:
     """Bridge between Hashaxe and IBM Qiskit quantum simulation.
@@ -195,20 +202,20 @@ class QiskitBridge:
     def _detect_backend(self) -> None:
         """Detect the best available Qiskit Aer backend."""
         try:
-            from qiskit_aer import AerSimulator  # type: ignore
             import psutil
+            from qiskit_aer import AerSimulator  # type: ignore
 
             self._qiskit_available = True
-            
+
             # Dynamic RAM Scaling for CPU Max Qubits
             # Statevector scales at 2^N * 16 bytes (complex128).
             try:
                 free_ram = psutil.virtual_memory().available
                 max_states = free_ram / 16.0
-                dynamic_cpu_qubits = int(math.floor(math.log2(max_states))) - 1 # Safety margin
+                dynamic_cpu_qubits = int(math.floor(math.log2(max_states))) - 1  # Safety margin
                 dynamic_cpu_qubits = min(30, max(10, dynamic_cpu_qubits))
             except Exception:
-                dynamic_cpu_qubits = 22 # Hard-capped safe fallback if psutil fails
+                dynamic_cpu_qubits = 22  # Hard-capped safe fallback if psutil fails
 
             # Try GPU backend first
             if self._prefer_gpu:
@@ -234,12 +241,16 @@ class QiskitBridge:
             cpu_sim = AerSimulator(method="statevector")
             self._backend = cpu_sim
             self._backend_info = QuantumBackendInfo(
-                        name="aer_simulator_cpu",
-                        gpu_available=False,
-                        max_qubits=min(self._max_qubits, dynamic_cpu_qubits),  # CPU limit scaled dynamically
-                        simulator_type="statevector_cpu",
+                name="aer_simulator_cpu",
+                gpu_available=False,
+                max_qubits=min(
+                    self._max_qubits, dynamic_cpu_qubits
+                ),  # CPU limit scaled dynamically
+                simulator_type="statevector_cpu",
             )
-            logger.info(f"Quantum backend: Aer CPU (statevector). Dynamic OOM Cap: {dynamic_cpu_qubits} qubits.")
+            logger.info(
+                f"Quantum backend: Aer CPU (statevector). Dynamic OOM Cap: {dynamic_cpu_qubits} qubits."
+            )
 
         except ImportError:
             self._qiskit_available = False
@@ -332,8 +343,8 @@ class QiskitBridge:
                 backend=self._backend_info.name,
                 success=True,
                 mode="SIMULATOR",
-                measured=False,       # Aer simulates, doesn't measure on real QPU
-                simulation=True,      # This is quantum simulation on classical hardware
+                measured=False,  # Aer simulates, doesn't measure on real QPU
+                simulation=True,  # This is quantum simulation on classical hardware
                 result_origin="qiskit_aer_simulation",
             )
         except Exception as e:
@@ -480,34 +491,34 @@ class QiskitBridge:
             return (
                 Feasibility.TOY_SIMULATABLE,
                 f"Can simulate on current hardware ({required_qubits} qubits ≤ "
-                f"{simulatable} max simulatable). Qiskit Aer can execute this circuit."
+                f"{simulatable} max simulatable). Qiskit Aer can execute this circuit.",
             )
         elif required_qubits <= 50:
             return (
                 Feasibility.NEAR_TERM_HARDWARE,
                 f"Requires {required_qubits} logical qubits. Current hardware (1,000+ physical "
                 f"qubits) may achieve this with sufficient error correction. "
-                f"IBM, Atom Computing, and Nord Quantique are approaching this range."
+                f"IBM, Atom Computing, and Nord Quantique are approaching this range.",
             )
         elif required_qubits <= 1000:
             return (
                 Feasibility.NEAR_TERM_HARDWARE,
                 f"Requires {required_qubits} logical qubits (~{required_qubits * 1000:,}-"
                 f"{required_qubits * 5000:,} physical qubits with error correction). "
-                f"Within reach of scaling roadmaps for 2028-2032 era hardware."
+                f"Within reach of scaling roadmaps for 2028-2032 era hardware.",
             )
         elif required_qubits <= 10000:
             return (
                 Feasibility.FAULT_TOLERANT_REQUIRED,
                 f"Requires {required_qubits} logical qubits (~{required_qubits * 1000:,}-"
                 f"{required_qubits * 5000:,} physical qubits). "
-                f"Requires full fault-tolerant quantum computing. Projected post-2032."
+                f"Requires full fault-tolerant quantum computing. Projected post-2032.",
             )
         else:
             return (
                 Feasibility.BEYOND_CURRENT_TECHNOLOGY,
                 f"Requires {required_qubits} logical qubits (~{required_qubits * 1000:,}+ "
-                f"physical qubits). Beyond all currently projected hardware timelines."
+                f"physical qubits). Beyond all currently projected hardware timelines.",
             )
 
     def info(self) -> dict:

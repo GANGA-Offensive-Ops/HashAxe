@@ -54,20 +54,37 @@ log = logging.getLogger(__name__)
 # ── Character class tokens ───────────────────────────────────────────────────
 
 # Keyboard walk sequences (adjacent key patterns commonly seen in passwords)
-_KEYBOARD_WALKS = frozenset([
-    # Alpha-only rows / diagonals (must contain ≥1 letter to avoid
-    # reclassifying pure-digit runs away from D-class).
-    "qwerty", "qwert", "asdf", "asdfg", "zxcv", "zxcvb",
-    "qazwsx", "wsxedc", "edcrfv", "qaz", "wsx", "edc", "rfv",
-    "1qaz", "2wsx", "3edc",
-    "poiuy", "lkjhg", "mnbvc",
-])
+_KEYBOARD_WALKS = frozenset(
+    [
+        # Alpha-only rows / diagonals (must contain ≥1 letter to avoid
+        # reclassifying pure-digit runs away from D-class).
+        "qwerty",
+        "qwert",
+        "asdf",
+        "asdfg",
+        "zxcv",
+        "zxcvb",
+        "qazwsx",
+        "wsxedc",
+        "edcrfv",
+        "qaz",
+        "wsx",
+        "edc",
+        "rfv",
+        "1qaz",
+        "2wsx",
+        "3edc",
+        "poiuy",
+        "lkjhg",
+        "mnbvc",
+    ]
+)
 
 _CHAR_CLASSES = [
-    ("D", re.compile(r"\d+")),         # Digit runs
-    ("S", re.compile(r"[^\w\s]+")),    # Symbol runs
-    ("U", re.compile(r"[A-Z]+")),      # Uppercase runs
-    ("L", re.compile(r"[a-z]+")),      # Lowercase runs
+    ("D", re.compile(r"\d+")),  # Digit runs
+    ("S", re.compile(r"[^\w\s]+")),  # Symbol runs
+    ("U", re.compile(r"[A-Z]+")),  # Uppercase runs
+    ("L", re.compile(r"[a-z]+")),  # Lowercase runs
 ]
 
 
@@ -84,11 +101,11 @@ def _tokenize(word: str) -> list[tuple[str, str]]:
         # Check for keyboard-walk pattern first (longest match wins)
         kw_match = None
         for kw in sorted(_KEYBOARD_WALKS, key=len, reverse=True):
-            if lower[i:i + len(kw)] == kw:
+            if lower[i : i + len(kw)] == kw:
                 kw_match = kw
                 break
         if kw_match:
-            tokens.append(("K", word[i:i + len(kw_match)]))
+            tokens.append(("K", word[i : i + len(kw_match)]))
             i += len(kw_match)
             continue
 
@@ -161,7 +178,9 @@ class PCFGModel:
         self._total_words = count
         log.info(
             "PCFG trained: %d words → %d unique structures, %d terminal groups",
-            count, len(self.structure_counts), len(self.terminal_counts),
+            count,
+            len(self.structure_counts),
+            len(self.terminal_counts),
         )
         return count
 

@@ -56,6 +56,7 @@ log = logging.getLogger(__name__)
 # ── Optional dependency ───────────────────────────────────────────────────────
 try:
     import msoffcrypto  # type: ignore
+
     _HAS_MSOFFCRYPTO = True
 except ImportError:
     _HAS_MSOFFCRYPTO = False
@@ -83,6 +84,7 @@ def _detect_office_encryption(data: bytes, path: Path | None = None) -> dict[str
 
     if _HAS_MSOFFCRYPTO and data[:8] == _OLE2_MAGIC:
         from io import BytesIO
+
         try:
             msoff = msoffcrypto.OfficeFile(BytesIO(data))
             result["is_office"] = True
@@ -91,14 +93,20 @@ def _detect_office_encryption(data: bytes, path: Path | None = None) -> dict[str
                 result["version"] = "2007+"
                 result["encryption_type"] = "aes"
                 # Refine version and type if possible by scanning raw data
-                if b"s\x00p\x00i\x00n\x00C\x00o\x00u\x00n\x00t\x00=\x00\"\x001\x000\x000\x000\x000\x000" in data:
+                if (
+                    b's\x00p\x00i\x00n\x00C\x00o\x00u\x00n\x00t\x00=\x00"\x001\x000\x000\x000\x000\x000'
+                    in data
+                ):
                     if b"S\x00H\x00A\x005\x001\x002" in data:
                         result["version"] = "2013+"
                         result["encryption_type"] = "aes-256-sha512"
                     else:
                         result["version"] = "2010"
                         result["encryption_type"] = "aes-128-sha1"
-                elif b"s\x00p\x00i\x00n\x00C\x00o\x00u\x00n\x00t\x00=\x00\"\x005\x000\x000\x000\x00" in data:
+                elif (
+                    b's\x00p\x00i\x00n\x00C\x00o\x00u\x00n\x00t\x00=\x00"\x005\x000\x000\x000\x00'
+                    in data
+                ):
                     result["version"] = "2007"
                     result["encryption_type"] = "aes-128-sha1"
             elif msoff.format == "office97":
@@ -115,11 +123,17 @@ def _detect_office_encryption(data: bytes, path: Path | None = None) -> dict[str
         result["version"] = "97-2003"
         result["version"] = "97-2003"
         # Check for encryption markers in OLE2
-        if b"E\x00n\x00c\x00r\x00y\x00p\x00t\x00e\x00d\x00P\x00a\x00c\x00k\x00a\x00g\x00e" in data or b"EncryptedPackage" in data:
+        if (
+            b"E\x00n\x00c\x00r\x00y\x00p\x00t\x00e\x00d\x00P\x00a\x00c\x00k\x00a\x00g\x00e" in data
+            or b"EncryptedPackage" in data
+        ):
             result["encrypted"] = True
             result["version"] = "2007+"
             result["encryption_type"] = "aes"
-        elif b"E\x00n\x00c\x00r\x00y\x00p\x00t\x00i\x00o\x00n\x00I\x00n\x00f\x00o" in data or b"EncryptionInfo" in data:
+        elif (
+            b"E\x00n\x00c\x00r\x00y\x00p\x00t\x00i\x00o\x00n\x00I\x00n\x00f\x00o" in data
+            or b"EncryptionInfo" in data
+        ):
             result["encrypted"] = True
             result["encryption_type"] = "rc4-md5"
         elif b"\x13\x00\x00\x00" in data[:256]:  # Office encryption flag
@@ -197,8 +211,7 @@ class OfficeFormat(BaseFormat):
             confidence=0.95,
             metadata={
                 "description": (
-                    f"Encrypted Office {meta['version']} "
-                    f"({meta['encryption_type']})"
+                    f"Encrypted Office {meta['version']} " f"({meta['encryption_type']})"
                 ),
             },
         )
@@ -248,6 +261,7 @@ class OfficeFormat(BaseFormat):
 
     def _verify_msoffcrypto(self, target: FormatTarget, password: bytes) -> bool:
         from io import BytesIO
+
         data = target.format_data.get("raw_data")
         if not data:
             return False

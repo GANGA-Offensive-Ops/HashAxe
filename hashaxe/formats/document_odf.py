@@ -89,7 +89,9 @@ def _detect_odf_encryption(data: bytes, path: Path | None = None) -> dict[str, A
         try:
             with zipfile.ZipFile(BytesIO(data)) as zf:
                 namelist = zf.namelist()
-                odf_score = sum(1 for m in [m.decode('utf-8') for m in _ODF_MARKERS] if m in namelist)
+                odf_score = sum(
+                    1 for m in [m.decode("utf-8") for m in _ODF_MARKERS] if m in namelist
+                )
                 if odf_score >= 2 or ext in (".odt", ".ods", ".odp", ".odg"):
                     result["is_odf"] = True
         except zipfile.BadZipFile as e:
@@ -204,104 +206,110 @@ class ODFFormat(BaseFormat):
 
     def verify(self, target: FormatTarget, password: bytes) -> bool:
         """ODF verification requires full decryption — library-based only."""
-        
+
         # Preserve the original password before any KDF pre-hashing mutations.
-        # The start-key-generation SHA256 block below mutates `password` for the 
+        # The start-key-generation SHA256 block below mutates `password` for the
         # pure-python crypto path, but the UNO bridge needs the original plaintext.
         original_password = password
-        
+
         # CPU Fallback Execution Block
-        # We process AES-256 and Argon2id directly via cryptography and argon2-cffi 
+        # We process AES-256 and Argon2id directly via cryptography and argon2-cffi
         # to ensure CPU-only nodes do not crash with NotImplementedExceptions.
         try:
+            import argon2
+            from cryptography.hazmat.primitives import hashes
             from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
             from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
-            from cryptography.hazmat.primitives import hashes
-            import argon2
 
             # Extract algorithmic hints from the target
             algo = target.format_data.get("algorithm", "unknown")
             iters = target.format_data.get("kdf_iterations", 100000)
-            
+
             # --- START CPU NATIVE DECRYPTION ---
             # Extract encryption metadata from the archive manifest to configure the KDF
             data = target.format_data.get("raw_data")
-            if not data: return False
-            
+            if not data:
+                return False
+
             manifest_data = b""
             with zipfile.ZipFile(BytesIO(data)) as zf:
                 if "META-INF/manifest.xml" in zf.namelist():
                     manifest_data = zf.read("META-INF/manifest.xml")
-            
+
             if not manifest_data:
                 return False
-                
-            class UnsupportedAlgorithmError(Exception): pass
-            
-            import xml.etree.ElementTree as ET
+
+            class UnsupportedAlgorithmError(Exception):
+                pass
+
             import base64
+            import xml.etree.ElementTree as ET
+
             from cryptography.hazmat.backends import default_backend
-            
+
             root = ET.fromstring(manifest_data)
             # Find the first encrypted file entry
-            ns = {'manifest': 'urn:oasis:names:tc:opendocument:xmlns:manifest:1.0'}
+            ns = {"manifest": "urn:oasis:names:tc:opendocument:xmlns:manifest:1.0"}
             file_entry = None
-            for entry in root.findall('.//manifest:file-entry', ns):
-                if entry.find('./manifest:encryption-data', ns) is not None:
+            for entry in root.findall(".//manifest:file-entry", ns):
+                if entry.find("./manifest:encryption-data", ns) is not None:
                     file_entry = entry
                     break
-            
+
             if file_entry is None:
                 return False
-            
+
             # Parse namespaces
-            enc_data = file_entry.find('./manifest:encryption-data', ns)
-            algo_node = enc_data.find('./manifest:algorithm', ns)
-            key_der_node = enc_data.find('./manifest:key-derivation', ns)
-            
+            enc_data = file_entry.find("./manifest:encryption-data", ns)
+            algo_node = enc_data.find("./manifest:algorithm", ns)
+            key_der_node = enc_data.find("./manifest:key-derivation", ns)
+
             if algo_node is None or key_der_node is None:
                 return False
-            
+
             # Helper to bypass ElementTree expanded namespace attributes
-            def get_attr(node, name, default=''):
-                if node is None: return default
+            def get_attr(node, name, default=""):
+                if node is None:
+                    return default
                 for k, v in node.attrib.items():
-                    if k.endswith('}' + name) or k == name or k.endswith(':' + name):
+                    if k.endswith("}" + name) or k == name or k.endswith(":" + name):
                         return v
                 return default
 
-            algo_name = get_attr(algo_node, 'algorithm-name')
-            iv_b64 = get_attr(algo_node, 'initialization-vector')
+            algo_name = get_attr(algo_node, "algorithm-name")
+            iv_b64 = get_attr(algo_node, "initialization-vector")
             if not iv_b64:
-                iv_b64 = get_attr(algo_node, 'initialisation-vector')
-            salt_b64 = get_attr(key_der_node, 'salt')
-            iters_str = get_attr(key_der_node, 'iteration-count')
-            checksum_b64 = get_attr(enc_data, 'checksum')
-            
+                iv_b64 = get_attr(algo_node, "initialisation-vector")
+            salt_b64 = get_attr(key_der_node, "salt")
+            iters_str = get_attr(key_der_node, "iteration-count")
+            checksum_b64 = get_attr(enc_data, "checksum")
+
             iv = base64.b64decode(iv_b64)
             salt = base64.b64decode(salt_b64)
             iters = int(iters_str) if iters_str else 1024
             checksum = base64.b64decode(checksum_b64) if checksum_b64 else b""
-            
-            kdf_name = get_attr(key_der_node, 'key-derivation-name')
-            key_len_str = get_attr(key_der_node, 'key-size', '32')
+
+            kdf_name = get_attr(key_der_node, "key-derivation-name")
+            key_len_str = get_attr(key_der_node, "key-size", "32")
             key_len = int(key_len_str)
-            
+
             # Support ODF 1.3 start-key-generation SHA256 hashing
-            start_key_gen_node = enc_data.find('./manifest:start-key-generation', ns)
+            start_key_gen_node = enc_data.find("./manifest:start-key-generation", ns)
             if start_key_gen_node is not None:
-                start_algo = get_attr(start_key_gen_node, 'start-key-generation-name')
-                if 'sha256' in start_algo.lower():
+                start_algo = get_attr(start_key_gen_node, "start-key-generation-name")
+                if "sha256" in start_algo.lower():
                     import hashlib
+
                     password = hashlib.sha256(password).digest()
-            
+
             # Key deriving
             if "argon2id" in kdf_name.lower():
                 import argon2.low_level
-                a_iters = int(get_attr(key_der_node, 'argon2-iterations', '3'))
-                a_mem = int(get_attr(key_der_node, 'argon2-memory', '65536'))
-                a_lanes = int(get_attr(key_der_node, 'argon2-lanes', '4'))
-                
+
+                a_iters = int(get_attr(key_der_node, "argon2-iterations", "3"))
+                a_mem = int(get_attr(key_der_node, "argon2-memory", "65536"))
+                a_lanes = int(get_attr(key_der_node, "argon2-lanes", "4"))
+
                 key = argon2.low_level.hash_secret_raw(
                     secret=password,
                     salt=salt,
@@ -309,9 +317,9 @@ class ODFFormat(BaseFormat):
                     memory_cost=a_mem,
                     parallelism=a_lanes,
                     hash_len=key_len,
-                    type=argon2.low_level.Type.ID
+                    type=argon2.low_level.Type.ID,
                 )
-            
+
             # Algorithm detection and configuration
             if "Blowfish" in algo_name or algo == "Blowfish-CFB":
                 hash_alg = hashes.SHA1()
@@ -321,7 +329,7 @@ class ODFFormat(BaseFormat):
             elif "aes256-gcm" in algo_name.lower() or algo == "AES-256-GCM":
                 hash_alg = hashes.SHA256()
                 cipher_cls = algorithms.AES
-                mode_cls = None # Will instantiate later when we have the stream to extract the tag
+                mode_cls = None  # Will instantiate later when we have the stream to extract the tag
                 is_gcm = True
             elif "aes256" in algo_name.lower() or algo == "AES-256-CBC":
                 hash_alg = hashes.SHA256()
@@ -329,32 +337,36 @@ class ODFFormat(BaseFormat):
                 mode_cls = modes.CBC(iv)
                 is_gcm = False
             else:
-                raise UnsupportedAlgorithmError(f"Algorithm not supported for CPU fallback: {algo_name}")
-            
+                raise UnsupportedAlgorithmError(
+                    f"Algorithm not supported for CPU fallback: {algo_name}"
+                )
+
             if "argon2id" not in kdf_name.lower():
                 kdf = PBKDF2HMAC(
                     algorithm=hash_alg,
                     length=key_len,
                     salt=salt,
                     iterations=iters,
-                    backend=default_backend()
+                    backend=default_backend(),
                 )
                 key = kdf.derive(password)
-                
+
             # We verify the password by attempting to decrypt the first block of the file
             # and checking if the padding/structure evaluates or checking the checksum
-            file_path = get_attr(file_entry, 'full-path')
+            file_path = get_attr(file_entry, "full-path")
             with zipfile.ZipFile(BytesIO(data)) as zf:
                 if file_path in zf.namelist():
                     encrypted_content = zf.read(file_path)
-                    
+
                     if is_gcm:
                         tag = checksum if checksum else encrypted_content[-16:]
-                        encrypted_content = encrypted_content if checksum else encrypted_content[:-16]
+                        encrypted_content = (
+                            encrypted_content if checksum else encrypted_content[:-16]
+                        )
                         mode_cls = modes.GCM(iv, tag=tag)
-                        
+
                     cipher = Cipher(cipher_cls(key), mode_cls, backend=default_backend())
-                    
+
                     try:
                         decryptor = cipher.decryptor()
                         decrypted = decryptor.update(encrypted_content) + decryptor.finalize()
@@ -370,7 +382,7 @@ class ODFFormat(BaseFormat):
             if "argon2id" not in kdf_name.lower():
                 return False
             # --- END CPU NATIVE DECRYPTION ---
-            
+
         except ImportError:
             log.warning("CPU Fallback for ODF pure-python failed due to missing modules.")
         except Exception as e:
@@ -378,55 +390,64 @@ class ODFFormat(BaseFormat):
             err_name = type(e).__name__
             if err_name not in ("InvalidTag", "UnsupportedAlgorithmError"):
                 log.debug("ODF CPU fallback evaluation failed: %s", e, exc_info=True)
-            
+
         # --- START UNO HEADLESS DAEMON FALLBACK ---
         # If pure-python decryption failed (e.g., Argon2id undocumented proprietary LibreOffice AAD parameters),
         # we weaponize LibreOffice itself as an oracle via the UNO bridge.
         if target.format_data.get("kdf") == "argon2id":
             return self._verify_via_uno(target, original_password)
-            
+
         return False
 
     def _verify_via_uno(self, target: FormatTarget, password: bytes) -> bool:
         """Weaponizes a persistent headless LibreOffice daemon to decrypt ODF Argon2id cryptography.
-        
+
         Maintains a cached UNO desktop object across calls to avoid reconnection overhead.
         Automatically spawns and respawns the soffice daemon as needed.
         """
+        import atexit
         import os
+        import socket
         import subprocess
         import time
-        import socket
-        import atexit
-        
+
         global _LO_PROC, _LO_PORT
-        
+
         file_path = target.format_data.get("file_path")
         if not file_path:
             import tempfile
+
             fd, tmp_path = tempfile.mkstemp(suffix=".odt")
             with open(fd, "wb") as f:
                 f.write(target.format_data["raw_data"])
             file_path = tmp_path
-            
+
         if _LO_PORT is None:
             _LO_PORT = 20000 + (os.getpid() % 10000)
-            
+
         def _ensure_daemon():
             """Spawn soffice daemon if not running, wait for socket readiness."""
             global _LO_PROC
             if _LO_PROC is not None and _LO_PROC.poll() is not None:
                 # Process died — clear it so we respawn
                 _LO_PROC = None
-                
+
             if _LO_PROC is None:
                 cmd = [
-                    "soffice", "--headless", "--invisible", "--nocrashreport", 
-                    "--nodefault", "--nologo", "--nofirststartwizard", "--norestore",
-                    f"--accept=socket,host=127.0.0.1,port={_LO_PORT};urp;StarOffice.ServiceManager"
+                    "soffice",
+                    "--headless",
+                    "--invisible",
+                    "--nocrashreport",
+                    "--nodefault",
+                    "--nologo",
+                    "--nofirststartwizard",
+                    "--norestore",
+                    f"--accept=socket,host=127.0.0.1,port={_LO_PORT};urp;StarOffice.ServiceManager",
                 ]
-                _LO_PROC = subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-                
+                _LO_PROC = subprocess.Popen(
+                    cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
+                )
+
                 def _cleanup_lo():
                     global _LO_PROC
                     if _LO_PROC:
@@ -436,12 +457,13 @@ class ODFFormat(BaseFormat):
                         except Exception:
                             pass
                         _LO_PROC = None
+
                 atexit.register(_cleanup_lo)
-                
+
                 # Wait for socket readiness
                 for _ in range(20):
                     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-                        if s.connect_ex(('127.0.0.1', _LO_PORT)) == 0:
+                        if s.connect_ex(("127.0.0.1", _LO_PORT)) == 0:
                             return True
                     time.sleep(0.3)
                 log.warning("LibreOffice daemon failed to start on port %d", _LO_PORT)
@@ -449,11 +471,12 @@ class ODFFormat(BaseFormat):
             return True
 
         # Cache the desktop object as an instance attribute
-        if not hasattr(self, '_uno_desktop') or self._uno_desktop is None:
+        if not hasattr(self, "_uno_desktop") or self._uno_desktop is None:
             if not _ensure_daemon():
                 return False
             try:
                 import uno
+
                 local_context = uno.getComponentContext()
                 resolver = local_context.ServiceManager.createInstanceWithContext(
                     "com.sun.star.bridge.UnoUrlResolver", local_context
@@ -469,11 +492,11 @@ class ODFFormat(BaseFormat):
                 log.debug("UNO connection failed: %s", conn_err)
                 self._uno_desktop = None
                 return False
-                
+
         try:
             import uno
             from com.sun.star.beans import PropertyValue
-            
+
             file_url = uno.systemPathToFileUrl(os.path.abspath(file_path))
             p = PropertyValue()
             p.Name = "Password"
@@ -481,7 +504,7 @@ class ODFFormat(BaseFormat):
             h = PropertyValue()
             h.Name = "Hidden"
             h.Value = True
-            
+
             doc = self._uno_desktop.loadComponentFromURL(file_url, "_blank", 0, (p, h))
             if doc:
                 doc.close(True)

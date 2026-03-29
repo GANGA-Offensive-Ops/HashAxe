@@ -78,8 +78,10 @@ logger = logging.getLogger(__name__)
 
 # ── Enums ─────────────────────────────────────────────────────────────────────
 
+
 class QuantumRisk(Enum):
     """Quantum vulnerability risk level."""
+
     SAFE = "QUANTUM_SAFE"
     VULNERABLE = "QUANTUM_VULNERABLE"
     PARTIAL = "QUANTUM_PARTIAL"
@@ -88,6 +90,7 @@ class QuantumRisk(Enum):
 
 class RiskTimeline(Enum):
     """Estimated timeline until quantum break becomes practical."""
+
     IMMEDIATE = "2025-2028"
     NEAR_TERM = "2028-2032"
     MEDIUM_TERM = "2032-2040"
@@ -97,19 +100,21 @@ class RiskTimeline(Enum):
 
 class CryptoFamily(Enum):
     """Cryptographic algorithm family classification."""
+
     RSA = "rsa"
-    ECC = "ecc"           # ECDSA, ECDH, EdDSA
-    DH = "dh"             # Diffie-Hellman, DSA
-    AES = "aes"           # Symmetric block cipher
+    ECC = "ecc"  # ECDSA, ECDH, EdDSA
+    DH = "dh"  # Diffie-Hellman, DSA
+    AES = "aes"  # Symmetric block cipher
     SYMMETRIC = "symmetric"  # Other symmetric (ChaCha20, etc.)
-    SHA = "sha"           # Hash functions
-    KDF = "kdf"           # Password-hashing / key-derivation
-    PQC = "pqc"           # Post-quantum algorithms
+    SHA = "sha"  # Hash functions
+    KDF = "kdf"  # Password-hashing / key-derivation
+    PQC = "pqc"  # Post-quantum algorithms
     UNKNOWN = "unknown"
 
 
 class AttackVector(Enum):
     """Quantum attack classification."""
+
     SHORS_FACTORING = "Shor's Algorithm (Integer Factorization)"
     SHORS_ECDLP = "Shor's Algorithm (Elliptic Curve Discrete Log)"
     SHORS_DLP = "Shor's Algorithm (Discrete Logarithm)"
@@ -123,18 +128,20 @@ class AttackVector(Enum):
 
 # ── Output Models ─────────────────────────────────────────────────────────────
 
+
 @dataclass
 class ScanResult:
     """Result of scanning a single cryptographic asset.
 
     Every field is explicitly documented for provenance clarity.
     """
+
     # ── Identity ──
-    asset_type: str = ""            # "ssh_key", "hash", "certificate", "algorithm"
-    algorithm: str = ""             # Raw input algorithm name
+    asset_type: str = ""  # "ssh_key", "hash", "certificate", "algorithm"
+    algorithm: str = ""  # Raw input algorithm name
     normalized_algorithm: str = ""  # Parsed/normalized canonical form
     family: CryptoFamily = CryptoFamily.UNKNOWN
-    key_size: int = 0               # Key/hash size in bits (0 if N/A)
+    key_size: int = 0  # Key/hash size in bits (0 if N/A)
 
     # ── Risk Assessment ──
     risk: QuantumRisk = QuantumRisk.UNKNOWN
@@ -142,17 +149,17 @@ class ScanResult:
     timeline: RiskTimeline = RiskTimeline.SAFE
 
     # ── Qubit Estimates ──
-    logical_qubits_estimate: int = 0    # Ideal error-free qubits needed
+    logical_qubits_estimate: int = 0  # Ideal error-free qubits needed
     physical_qubits_estimate: str = ""  # Estimated range with error correction overhead
 
     # ── Provenance ──
     mode: str = "CLASSIFIER"
-    measured: bool = False              # This is classification, never measured
-    simulation: bool = False            # This is classification, never simulated
+    measured: bool = False  # This is classification, never measured
+    simulation: bool = False  # This is classification, never simulated
     implementation_status: str = "PRODUCTION"
     result_origin: str = "literature_heuristic"
-    confidence: str = "HIGH"            # HIGH / MEDIUM / LOW
-    rationale: str = ""                 # Why this risk level
+    confidence: str = "HIGH"  # HIGH / MEDIUM / LOW
+    rationale: str = ""  # Why this risk level
     recommendation: str = ""
     references_basis: list[str] = field(default_factory=list)
     assumptions: list[str] = field(default_factory=list)
@@ -192,9 +199,11 @@ class ScanResult:
 # ── Algorithm Knowledge Base ─────────────────────────────────────────────────
 # Each entry is a structured record with full provenance, not a flat dict.
 
+
 @dataclass
 class _AlgoRecord:
     """Internal structured record for a known algorithm."""
+
     canonical: str
     family: CryptoFamily
     risk: QuantumRisk
@@ -225,9 +234,9 @@ def _build_algo_db() -> dict[str, _AlgoRecord]:
 
     # ── RSA Family (Shor's Algorithm — Integer Factoring) ────────────────
     for bits, tl, logical_q, phys_range in [
-        (1024, RiskTimeline.IMMEDIATE, 2048,   "~4M noisy qubits"),
-        (2048, RiskTimeline.NEAR_TERM, 4096,   "~20M noisy qubits (Gidney & Ekerå 2021)"),
-        (3072, RiskTimeline.NEAR_TERM, 6144,   "~30M noisy qubits (extrapolated)"),
+        (1024, RiskTimeline.IMMEDIATE, 2048, "~4M noisy qubits"),
+        (2048, RiskTimeline.NEAR_TERM, 4096, "~20M noisy qubits (Gidney & Ekerå 2021)"),
+        (3072, RiskTimeline.NEAR_TERM, 6144, "~30M noisy qubits (extrapolated)"),
         (4096, RiskTimeline.MEDIUM_TERM, 8192, "~40M noisy qubits (extrapolated)"),
         (8192, RiskTimeline.MEDIUM_TERM, 16384, "~80M noisy qubits (extrapolated)"),
     ]:
@@ -320,12 +329,30 @@ def _build_algo_db() -> dict[str, _AlgoRecord]:
 
     # ── Symmetric Ciphers (Grover's — Key Search) ────────────────────────
     for bits, risk, tl, lq, pq, rec in [
-        (128, QuantumRisk.PARTIAL, RiskTimeline.LONG_TERM, 2953,
-         "~6K noisy qubits (Grassl 2016)", "Upgrade to AES-256 for post-quantum margin"),
-        (192, QuantumRisk.SAFE, RiskTimeline.SAFE, 4449,
-         "~9K noisy qubits", "Already provides 96-bit post-quantum security"),
-        (256, QuantumRisk.SAFE, RiskTimeline.SAFE, 6681,
-         "~13K noisy qubits (Grassl 2016)", "Already quantum-safe (128-bit post-quantum margin)"),
+        (
+            128,
+            QuantumRisk.PARTIAL,
+            RiskTimeline.LONG_TERM,
+            2953,
+            "~6K noisy qubits (Grassl 2016)",
+            "Upgrade to AES-256 for post-quantum margin",
+        ),
+        (
+            192,
+            QuantumRisk.SAFE,
+            RiskTimeline.SAFE,
+            4449,
+            "~9K noisy qubits",
+            "Already provides 96-bit post-quantum security",
+        ),
+        (
+            256,
+            QuantumRisk.SAFE,
+            RiskTimeline.SAFE,
+            6681,
+            "~13K noisy qubits (Grassl 2016)",
+            "Already quantum-safe (128-bit post-quantum margin)",
+        ),
     ]:
         db[f"aes-{bits}"] = _AlgoRecord(
             canonical=f"aes-{bits}",
@@ -344,7 +371,9 @@ def _build_algo_db() -> dict[str, _AlgoRecord]:
             ),
             recommendation=rec,
             references=["Grassl et al. (2016)", "NIST SP 800-131A Rev.2"],
-            limitations=["Grover's requires sequential oracle queries — parallelization is limited"],
+            limitations=[
+                "Grover's requires sequential oracle queries — parallelization is limited"
+            ],
         )
 
     # ChaCha20 / Salsa20
@@ -366,56 +395,116 @@ def _build_algo_db() -> dict[str, _AlgoRecord]:
 
     # ── Hash Functions (Grover's — Pre-image & Collision) ────────────────
     hash_entries = [
-        ("md5", 128, QuantumRisk.VULNERABLE, RiskTimeline.IMMEDIATE, 640,
-         "~1.3K noisy qubits",
-         AttackVector.CLASSICAL_PLUS_GROVER,
-         "MD5 is already classically broken (collisions). Grover's accelerates pre-image.",
-         "Migrate to SHA-3-256 or SHAKE256"),
-        ("sha1", 160, QuantumRisk.VULNERABLE, RiskTimeline.IMMEDIATE, 800,
-         "~1.6K noisy qubits",
-         AttackVector.CLASSICAL_PLUS_GROVER,
-         "SHA-1 is classically broken (SHAttered 2017). Grover's accelerates pre-image.",
-         "Migrate to SHA-3-256"),
-        ("sha224", 224, QuantumRisk.PARTIAL, RiskTimeline.LONG_TERM, 1500,
-         "~3K noisy qubits",
-         AttackVector.GROVERS_PREIMAGE,
-         "SHA-224: 112-bit post-quantum pre-image security via Grover's.",
-         "Consider SHA-3-256 for long-term safety"),
-        ("sha256", 256, QuantumRisk.PARTIAL, RiskTimeline.LONG_TERM, 2500,
-         "~5K noisy qubits (Amy 2016)",
-         AttackVector.GROVERS_PREIMAGE,
-         "SHA-256: Grover's reduces pre-image to 128-bit — still computationally infeasible.",
-         "Consider SHA-3-256 for long-term safety"),
-        ("sha384", 384, QuantumRisk.SAFE, RiskTimeline.SAFE, 3500,
-         "~7K noisy qubits",
-         AttackVector.GROVERS_PREIMAGE,
-         "SHA-384: 192-bit post-quantum pre-image security. Quantum-safe.",
-         "Already quantum-safe"),
-        ("sha512", 512, QuantumRisk.SAFE, RiskTimeline.SAFE, 4500,
-         "~9K noisy qubits",
-         AttackVector.GROVERS_PREIMAGE,
-         "SHA-512: 256-bit post-quantum pre-image security. Quantum-safe.",
-         "Already quantum-safe"),
-        ("sha3-256", 256, QuantumRisk.SAFE, RiskTimeline.SAFE, 2500,
-         "~5K noisy qubits",
-         AttackVector.GROVERS_PREIMAGE,
-         "SHA-3-256: 128-bit post-quantum security. Sponge construction resists quantum well.",
-         "Already quantum-safe"),
-        ("sha3-512", 512, QuantumRisk.SAFE, RiskTimeline.SAFE, 4500,
-         "~9K noisy qubits",
-         AttackVector.GROVERS_PREIMAGE,
-         "SHA-3-512: 256-bit post-quantum security. Quantum-safe by design.",
-         "Already quantum-safe"),
-        ("blake2b", 512, QuantumRisk.SAFE, RiskTimeline.SAFE, 4500,
-         "~9K noisy qubits",
-         AttackVector.GROVERS_PREIMAGE,
-         "BLAKE2b-512: 256-bit post-quantum security.",
-         "Already quantum-safe"),
-        ("blake2s", 256, QuantumRisk.PARTIAL, RiskTimeline.LONG_TERM, 2500,
-         "~5K noisy qubits",
-         AttackVector.GROVERS_PREIMAGE,
-         "BLAKE2s-256: 128-bit post-quantum pre-image security.",
-         "Consider longer output for safety margin"),
+        (
+            "md5",
+            128,
+            QuantumRisk.VULNERABLE,
+            RiskTimeline.IMMEDIATE,
+            640,
+            "~1.3K noisy qubits",
+            AttackVector.CLASSICAL_PLUS_GROVER,
+            "MD5 is already classically broken (collisions). Grover's accelerates pre-image.",
+            "Migrate to SHA-3-256 or SHAKE256",
+        ),
+        (
+            "sha1",
+            160,
+            QuantumRisk.VULNERABLE,
+            RiskTimeline.IMMEDIATE,
+            800,
+            "~1.6K noisy qubits",
+            AttackVector.CLASSICAL_PLUS_GROVER,
+            "SHA-1 is classically broken (SHAttered 2017). Grover's accelerates pre-image.",
+            "Migrate to SHA-3-256",
+        ),
+        (
+            "sha224",
+            224,
+            QuantumRisk.PARTIAL,
+            RiskTimeline.LONG_TERM,
+            1500,
+            "~3K noisy qubits",
+            AttackVector.GROVERS_PREIMAGE,
+            "SHA-224: 112-bit post-quantum pre-image security via Grover's.",
+            "Consider SHA-3-256 for long-term safety",
+        ),
+        (
+            "sha256",
+            256,
+            QuantumRisk.PARTIAL,
+            RiskTimeline.LONG_TERM,
+            2500,
+            "~5K noisy qubits (Amy 2016)",
+            AttackVector.GROVERS_PREIMAGE,
+            "SHA-256: Grover's reduces pre-image to 128-bit — still computationally infeasible.",
+            "Consider SHA-3-256 for long-term safety",
+        ),
+        (
+            "sha384",
+            384,
+            QuantumRisk.SAFE,
+            RiskTimeline.SAFE,
+            3500,
+            "~7K noisy qubits",
+            AttackVector.GROVERS_PREIMAGE,
+            "SHA-384: 192-bit post-quantum pre-image security. Quantum-safe.",
+            "Already quantum-safe",
+        ),
+        (
+            "sha512",
+            512,
+            QuantumRisk.SAFE,
+            RiskTimeline.SAFE,
+            4500,
+            "~9K noisy qubits",
+            AttackVector.GROVERS_PREIMAGE,
+            "SHA-512: 256-bit post-quantum pre-image security. Quantum-safe.",
+            "Already quantum-safe",
+        ),
+        (
+            "sha3-256",
+            256,
+            QuantumRisk.SAFE,
+            RiskTimeline.SAFE,
+            2500,
+            "~5K noisy qubits",
+            AttackVector.GROVERS_PREIMAGE,
+            "SHA-3-256: 128-bit post-quantum security. Sponge construction resists quantum well.",
+            "Already quantum-safe",
+        ),
+        (
+            "sha3-512",
+            512,
+            QuantumRisk.SAFE,
+            RiskTimeline.SAFE,
+            4500,
+            "~9K noisy qubits",
+            AttackVector.GROVERS_PREIMAGE,
+            "SHA-3-512: 256-bit post-quantum security. Quantum-safe by design.",
+            "Already quantum-safe",
+        ),
+        (
+            "blake2b",
+            512,
+            QuantumRisk.SAFE,
+            RiskTimeline.SAFE,
+            4500,
+            "~9K noisy qubits",
+            AttackVector.GROVERS_PREIMAGE,
+            "BLAKE2b-512: 256-bit post-quantum security.",
+            "Already quantum-safe",
+        ),
+        (
+            "blake2s",
+            256,
+            QuantumRisk.PARTIAL,
+            RiskTimeline.LONG_TERM,
+            2500,
+            "~5K noisy qubits",
+            AttackVector.GROVERS_PREIMAGE,
+            "BLAKE2s-256: 128-bit post-quantum pre-image security.",
+            "Consider longer output for safety margin",
+        ),
     ]
     for name, bits, risk, tl, lq, pq, atk, rat, rec in hash_entries:
         db[name] = _AlgoRecord(
@@ -435,26 +524,51 @@ def _build_algo_db() -> dict[str, _AlgoRecord]:
 
     # ── KDF / Password Hashing (Memory-hard resistance) ──────────────────
     kdf_entries = [
-        ("bcrypt", QuantumRisk.PARTIAL, RiskTimeline.LONG_TERM, 5000,
-         "~10K+ noisy qubits",
-         "bcrypt: Memory-hard design limits Grover's parallelization advantage.",
-         "Increase cost factor; consider Argon2id for new deployments"),
-        ("scrypt", QuantumRisk.PARTIAL, RiskTimeline.LONG_TERM, 5000,
-         "~10K+ noisy qubits",
-         "scrypt: Memory-hard. Quantum speedup limited by sequential memory access.",
-         "Consider Argon2id for new deployments"),
-        ("argon2", QuantumRisk.SAFE, RiskTimeline.SAFE, 10000,
-         "~20K+ noisy qubits",
-         "Argon2id: Memory-hard, time-hard. Quantum advantage minimal by design.",
-         "Already quantum-resistant. Use Argon2id variant."),
-        ("argon2id", QuantumRisk.SAFE, RiskTimeline.SAFE, 10000,
-         "~20K+ noisy qubits",
-         "Argon2id: Maximum resistance to both GPU and quantum attacks.",
-         "Already quantum-resistant — recommended for all new password hashing"),
-        ("pbkdf2", QuantumRisk.PARTIAL, RiskTimeline.LONG_TERM, 3000,
-         "~6K noisy qubits",
-         "PBKDF2: Not memory-hard. Grover's provides √N speedup on iteration count.",
-         "Migrate to Argon2id. Minimum 600,000 iterations (OWASP 2024)."),
+        (
+            "bcrypt",
+            QuantumRisk.PARTIAL,
+            RiskTimeline.LONG_TERM,
+            5000,
+            "~10K+ noisy qubits",
+            "bcrypt: Memory-hard design limits Grover's parallelization advantage.",
+            "Increase cost factor; consider Argon2id for new deployments",
+        ),
+        (
+            "scrypt",
+            QuantumRisk.PARTIAL,
+            RiskTimeline.LONG_TERM,
+            5000,
+            "~10K+ noisy qubits",
+            "scrypt: Memory-hard. Quantum speedup limited by sequential memory access.",
+            "Consider Argon2id for new deployments",
+        ),
+        (
+            "argon2",
+            QuantumRisk.SAFE,
+            RiskTimeline.SAFE,
+            10000,
+            "~20K+ noisy qubits",
+            "Argon2id: Memory-hard, time-hard. Quantum advantage minimal by design.",
+            "Already quantum-resistant. Use Argon2id variant.",
+        ),
+        (
+            "argon2id",
+            QuantumRisk.SAFE,
+            RiskTimeline.SAFE,
+            10000,
+            "~20K+ noisy qubits",
+            "Argon2id: Maximum resistance to both GPU and quantum attacks.",
+            "Already quantum-resistant — recommended for all new password hashing",
+        ),
+        (
+            "pbkdf2",
+            QuantumRisk.PARTIAL,
+            RiskTimeline.LONG_TERM,
+            3000,
+            "~6K noisy qubits",
+            "PBKDF2: Not memory-hard. Grover's provides √N speedup on iteration count.",
+            "Migrate to Argon2id. Minimum 600,000 iterations (OWASP 2024).",
+        ),
     ]
     for name, risk, tl, lq, pq, rat, rec in kdf_entries:
         db[name] = _AlgoRecord(
@@ -462,7 +576,11 @@ def _build_algo_db() -> dict[str, _AlgoRecord]:
             family=CryptoFamily.KDF,
             risk=risk,
             timeline=tl,
-            attack=AttackVector.MEMORY_HARD_RESISTANT if "argon" in name else AttackVector.GROVERS_KEY_SEARCH,
+            attack=(
+                AttackVector.MEMORY_HARD_RESISTANT
+                if "argon" in name
+                else AttackVector.GROVERS_KEY_SEARCH
+            ),
             logical_qubits=lq,
             physical_qubits_range=pq,
             key_size=0,
@@ -470,78 +588,108 @@ def _build_algo_db() -> dict[str, _AlgoRecord]:
             rationale=rat,
             recommendation=rec,
             references=["NIST SP 800-63B", "OWASP Password Storage Cheat Sheet (2024)"],
-            limitations=["KDF quantum resistance depends on parameter tuning (cost factor, memory)"],
+            limitations=[
+                "KDF quantum resistance depends on parameter tuning (cost factor, memory)"
+            ],
         )
 
     # ── Unix crypt variants ──────────────────────────────────────────────
     db["descrypt"] = _AlgoRecord(
-        canonical="descrypt", family=CryptoFamily.KDF,
-        risk=QuantumRisk.VULNERABLE, timeline=RiskTimeline.IMMEDIATE,
+        canonical="descrypt",
+        family=CryptoFamily.KDF,
+        risk=QuantumRisk.VULNERABLE,
+        timeline=RiskTimeline.IMMEDIATE,
         attack=AttackVector.CLASSICAL_PLUS_GROVER,
-        logical_qubits=500, physical_qubits_range="~1K noisy qubits",
-        key_size=56, confidence="HIGH",
+        logical_qubits=500,
+        physical_qubits_range="~1K noisy qubits",
+        key_size=56,
+        confidence="HIGH",
         rationale="DES-based crypt: 56-bit effective key. Classically broken, trivially quantum-breakable.",
         recommendation="Migrate to yescrypt or Argon2id immediately",
         references=["NIST SP 800-131A"],
     )
     db["md5crypt"] = _AlgoRecord(
-        canonical="md5crypt", family=CryptoFamily.KDF,
-        risk=QuantumRisk.VULNERABLE, timeline=RiskTimeline.IMMEDIATE,
+        canonical="md5crypt",
+        family=CryptoFamily.KDF,
+        risk=QuantumRisk.VULNERABLE,
+        timeline=RiskTimeline.IMMEDIATE,
         attack=AttackVector.CLASSICAL_PLUS_GROVER,
-        logical_qubits=640, physical_qubits_range="~1.3K noisy qubits",
-        key_size=128, confidence="HIGH",
+        logical_qubits=640,
+        physical_qubits_range="~1.3K noisy qubits",
+        key_size=128,
+        confidence="HIGH",
         rationale="MD5-based crypt ($1$): Only 1000 iterations. Classically weak, quantum-trivial.",
         recommendation="Migrate to yescrypt ($y$) or Argon2id",
         references=["NIST SP 800-63B"],
     )
     db["sha256crypt"] = _AlgoRecord(
-        canonical="sha256crypt", family=CryptoFamily.KDF,
-        risk=QuantumRisk.PARTIAL, timeline=RiskTimeline.LONG_TERM,
+        canonical="sha256crypt",
+        family=CryptoFamily.KDF,
+        risk=QuantumRisk.PARTIAL,
+        timeline=RiskTimeline.LONG_TERM,
         attack=AttackVector.GROVERS_KEY_SEARCH,
-        logical_qubits=2500, physical_qubits_range="~5K noisy qubits",
-        key_size=256, confidence="MEDIUM",
+        logical_qubits=2500,
+        physical_qubits_range="~5K noisy qubits",
+        key_size=256,
+        confidence="MEDIUM",
         rationale="SHA-256 based crypt ($5$): Configurable rounds. Adequate if rounds >= 500,000.",
         recommendation="Consider migration to yescrypt or Argon2id",
         references=["NIST SP 800-63B"],
     )
     db["sha512crypt"] = _AlgoRecord(
-        canonical="sha512crypt", family=CryptoFamily.KDF,
-        risk=QuantumRisk.PARTIAL, timeline=RiskTimeline.LONG_TERM,
+        canonical="sha512crypt",
+        family=CryptoFamily.KDF,
+        risk=QuantumRisk.PARTIAL,
+        timeline=RiskTimeline.LONG_TERM,
         attack=AttackVector.GROVERS_KEY_SEARCH,
-        logical_qubits=4500, physical_qubits_range="~9K noisy qubits",
-        key_size=512, confidence="MEDIUM",
+        logical_qubits=4500,
+        physical_qubits_range="~9K noisy qubits",
+        key_size=512,
+        confidence="MEDIUM",
         rationale="SHA-512 based crypt ($6$): Configurable rounds. Strong with high round count.",
         recommendation="Adequate with >= 500,000 rounds. Consider Argon2id for new systems.",
         references=["NIST SP 800-63B"],
     )
     db["yescrypt"] = _AlgoRecord(
-        canonical="yescrypt", family=CryptoFamily.KDF,
-        risk=QuantumRisk.SAFE, timeline=RiskTimeline.SAFE,
+        canonical="yescrypt",
+        family=CryptoFamily.KDF,
+        risk=QuantumRisk.SAFE,
+        timeline=RiskTimeline.SAFE,
         attack=AttackVector.MEMORY_HARD_RESISTANT,
-        logical_qubits=10000, physical_qubits_range="~20K+ noisy qubits",
-        key_size=256, confidence="MEDIUM",
+        logical_qubits=10000,
+        physical_qubits_range="~20K+ noisy qubits",
+        key_size=256,
+        confidence="MEDIUM",
         rationale="yescrypt: Memory-hard, NIST-recommended for Linux shadow passwords.",
         recommendation="Quantum-resistant. Default on modern Linux systems.",
         references=["NIST SP 800-63B", "Linux-PAM documentation"],
     )
     # NTLM
     db["ntlm"] = _AlgoRecord(
-        canonical="ntlm", family=CryptoFamily.SHA,
-        risk=QuantumRisk.VULNERABLE, timeline=RiskTimeline.IMMEDIATE,
+        canonical="ntlm",
+        family=CryptoFamily.SHA,
+        risk=QuantumRisk.VULNERABLE,
+        timeline=RiskTimeline.IMMEDIATE,
         attack=AttackVector.CLASSICAL_PLUS_GROVER,
-        logical_qubits=640, physical_qubits_range="~1.3K noisy qubits",
-        key_size=128, confidence="HIGH",
+        logical_qubits=640,
+        physical_qubits_range="~1.3K noisy qubits",
+        key_size=128,
+        confidence="HIGH",
         rationale="NTLM: Unsalted MD4 hash. Classically trivial, quantum-trivial.",
         recommendation="Migrate to Kerberos AES + Credential Guard",
         references=["Microsoft Security Baseline"],
     )
     # LM Hash
     db["lm"] = _AlgoRecord(
-        canonical="lm", family=CryptoFamily.SHA,
-        risk=QuantumRisk.VULNERABLE, timeline=RiskTimeline.IMMEDIATE,
+        canonical="lm",
+        family=CryptoFamily.SHA,
+        risk=QuantumRisk.VULNERABLE,
+        timeline=RiskTimeline.IMMEDIATE,
         attack=AttackVector.CLASSICAL_PLUS_GROVER,
-        logical_qubits=300, physical_qubits_range="~600 noisy qubits",
-        key_size=56, confidence="HIGH",
+        logical_qubits=300,
+        physical_qubits_range="~600 noisy qubits",
+        key_size=56,
+        confidence="HIGH",
         rationale="LM Hash: DES-based, case-insensitive, split into 7-byte halves. Trivially broken.",
         recommendation="Disable LM hash storage via Group Policy immediately",
         references=["Microsoft KB299656"],
@@ -549,18 +697,27 @@ def _build_algo_db() -> dict[str, _AlgoRecord]:
 
     # ── Post-Quantum Algorithms (QUANTUM SAFE) ───────────────────────────
     pqc_entries = [
-        ("ml-kem", "ML-KEM (CRYSTALS-Kyber): NIST-standardized lattice-based KEM.",
-         "NIST FIPS 203"),
+        (
+            "ml-kem",
+            "ML-KEM (CRYSTALS-Kyber): NIST-standardized lattice-based KEM.",
+            "NIST FIPS 203",
+        ),
         ("ml-kem-512", "ML-KEM-512: 128-bit post-quantum security.", "NIST FIPS 203"),
         ("ml-kem-768", "ML-KEM-768: 192-bit post-quantum security.", "NIST FIPS 203"),
         ("ml-kem-1024", "ML-KEM-1024: 256-bit post-quantum security.", "NIST FIPS 203"),
-        ("ml-dsa", "ML-DSA (CRYSTALS-Dilithium): NIST-standardized lattice-based signature.",
-         "NIST FIPS 204"),
+        (
+            "ml-dsa",
+            "ML-DSA (CRYSTALS-Dilithium): NIST-standardized lattice-based signature.",
+            "NIST FIPS 204",
+        ),
         ("ml-dsa-44", "ML-DSA-44: 128-bit post-quantum security.", "NIST FIPS 204"),
         ("ml-dsa-65", "ML-DSA-65: 192-bit post-quantum security.", "NIST FIPS 204"),
         ("ml-dsa-87", "ML-DSA-87: 256-bit post-quantum security.", "NIST FIPS 204"),
-        ("slh-dsa", "SLH-DSA (SPHINCS+): NIST-standardized hash-based stateless signature.",
-         "NIST FIPS 205"),
+        (
+            "slh-dsa",
+            "SLH-DSA (SPHINCS+): NIST-standardized hash-based stateless signature.",
+            "NIST FIPS 205",
+        ),
     ]
     for name, rat, ref in pqc_entries:
         db[name] = _AlgoRecord(
@@ -585,38 +742,66 @@ def _build_algo_db() -> dict[str, _AlgoRecord]:
 
 _ALIASES: dict[str, str] = {
     # RSA aliases
-    "rsa": "rsa-2048", "rsa2048": "rsa-2048", "rsa4096": "rsa-4096",
-    "rsa1024": "rsa-1024", "rsa3072": "rsa-3072", "rsa8192": "rsa-8192",
+    "rsa": "rsa-2048",
+    "rsa2048": "rsa-2048",
+    "rsa4096": "rsa-4096",
+    "rsa1024": "rsa-1024",
+    "rsa3072": "rsa-3072",
+    "rsa8192": "rsa-8192",
     # ECC aliases
-    "ecdsa": "ecdsa-p256", "p256": "ecdsa-p256", "p-256": "ecdsa-p256",
-    "secp256r1": "ecdsa-p256", "prime256v1": "ecdsa-p256",
-    "p384": "ecdsa-p384", "p-384": "ecdsa-p384", "secp384r1": "ecdsa-p384",
-    "p521": "ecdsa-p521", "p-521": "ecdsa-p521", "secp521r1": "ecdsa-p521",
-    "curve25519": "ed25519", "edwards25519": "ed25519",
+    "ecdsa": "ecdsa-p256",
+    "p256": "ecdsa-p256",
+    "p-256": "ecdsa-p256",
+    "secp256r1": "ecdsa-p256",
+    "prime256v1": "ecdsa-p256",
+    "p384": "ecdsa-p384",
+    "p-384": "ecdsa-p384",
+    "secp384r1": "ecdsa-p384",
+    "p521": "ecdsa-p521",
+    "p-521": "ecdsa-p521",
+    "secp521r1": "ecdsa-p521",
+    "curve25519": "ed25519",
+    "edwards25519": "ed25519",
     "ecdh": "ecdh-p256",
     # DH aliases
-    "diffie-hellman": "dh-2048", "dsa": "dsa-1024",
+    "diffie-hellman": "dh-2048",
+    "dsa": "dsa-1024",
     # Hash aliases
-    "sha-1": "sha1", "sha-256": "sha256", "sha-384": "sha384",
-    "sha-512": "sha512", "sha-3": "sha3-256", "sha-3-256": "sha3-256",
-    "sha-3-512": "sha3-512", "sha2": "sha256", "sha2-256": "sha256",
+    "sha-1": "sha1",
+    "sha-256": "sha256",
+    "sha-384": "sha384",
+    "sha-512": "sha512",
+    "sha-3": "sha3-256",
+    "sha-3-256": "sha3-256",
+    "sha-3-512": "sha3-512",
+    "sha2": "sha256",
+    "sha2-256": "sha256",
     "blake2": "blake2b",
     # KDF aliases
-    "argon2i": "argon2", "argon2d": "argon2",
+    "argon2i": "argon2",
+    "argon2d": "argon2",
     "bcrypt-sha256": "bcrypt",
     # PQC aliases
-    "kyber": "ml-kem", "kyber512": "ml-kem-512", "kyber768": "ml-kem-768",
+    "kyber": "ml-kem",
+    "kyber512": "ml-kem-512",
+    "kyber768": "ml-kem-768",
     "kyber1024": "ml-kem-1024",
-    "dilithium": "ml-dsa", "dilithium2": "ml-dsa-44",
-    "dilithium3": "ml-dsa-65", "dilithium5": "ml-dsa-87",
-    "sphincs": "slh-dsa", "sphincs+": "slh-dsa",
+    "dilithium": "ml-dsa",
+    "dilithium2": "ml-dsa-44",
+    "dilithium3": "ml-dsa-65",
+    "dilithium5": "ml-dsa-87",
+    "sphincs": "slh-dsa",
+    "sphincs+": "slh-dsa",
     # Windows
-    "net-ntlmv1": "ntlm", "net-ntlmv2": "ntlm",
-    "lm-hash": "lm", "lanman": "lm",
+    "net-ntlmv1": "ntlm",
+    "net-ntlmv2": "ntlm",
+    "lm-hash": "lm",
+    "lanman": "lm",
 }
 
 
 # ── Algorithm Parsing Engine ─────────────────────────────────────────────────
+
 
 def _normalize_algorithm(raw: str) -> str:
     """Normalize an algorithm name to its canonical form.
@@ -700,6 +885,7 @@ def _infer_from_pattern(raw: str) -> ScanResult | None:
 # PQCScanner — Main Scanner Class
 # ══════════════════════════════════════════════════════════════════════════════
 
+
 class PQCScanner:
     """Post-Quantum Cryptography vulnerability scanner.
 
@@ -758,7 +944,9 @@ class PQCScanner:
         inferred = _infer_from_pattern(algo)
         if inferred:
             inferred.result_origin = "pattern_inference"
-            inferred.assumptions.append("Algorithm inferred from naming pattern, not exact database match")
+            inferred.assumptions.append(
+                "Algorithm inferred from naming pattern, not exact database match"
+            )
             return inferred
 
         # Unknown algorithm
@@ -791,8 +979,10 @@ class PQCScanner:
             content = p.read_text(errors="replace")
         except Exception as e:
             return ScanResult(
-                asset_type="ssh_key", details=f"Read error: {e}",
-                risk=QuantumRisk.UNKNOWN, confidence="LOW",
+                asset_type="ssh_key",
+                details=f"Read error: {e}",
+                risk=QuantumRisk.UNKNOWN,
+                confidence="LOW",
             )
 
         # Detect key type from header
@@ -827,7 +1017,8 @@ class PQCScanner:
             return ScanResult(
                 asset_type="certificate",
                 details=f"Certificate not found: {cert_path}",
-                risk=QuantumRisk.UNKNOWN, confidence="LOW",
+                risk=QuantumRisk.UNKNOWN,
+                confidence="LOW",
             )
 
         # Try cryptography package first
@@ -867,8 +1058,7 @@ class PQCScanner:
             "quantum_unknown": len(unknown),
             "avg_risk_score": round(avg_risk, 1),
             "highest_risk": (
-                max(results, key=lambda r: r.risk_score).algorithm
-                if results else "N/A"
+                max(results, key=lambda r: r.risk_score).algorithm if results else "N/A"
             ),
             "immediate_actions": [
                 {
@@ -880,14 +1070,16 @@ class PQCScanner:
                 for r in critical
             ],
             "migration_timeline": {
-                "immediate": [r.algorithm for r in results
-                              if r.timeline == RiskTimeline.IMMEDIATE],
-                "near_term": [r.algorithm for r in results
-                              if r.timeline == RiskTimeline.NEAR_TERM],
-                "medium_term": [r.algorithm for r in results
-                                if r.timeline == RiskTimeline.MEDIUM_TERM],
-                "long_term_or_safe": [r.algorithm for r in results
-                                      if r.timeline in (RiskTimeline.LONG_TERM, RiskTimeline.SAFE)],
+                "immediate": [r.algorithm for r in results if r.timeline == RiskTimeline.IMMEDIATE],
+                "near_term": [r.algorithm for r in results if r.timeline == RiskTimeline.NEAR_TERM],
+                "medium_term": [
+                    r.algorithm for r in results if r.timeline == RiskTimeline.MEDIUM_TERM
+                ],
+                "long_term_or_safe": [
+                    r.algorithm
+                    for r in results
+                    if r.timeline in (RiskTimeline.LONG_TERM, RiskTimeline.SAFE)
+                ],
             },
         }
 
@@ -944,8 +1136,11 @@ class PQCScanner:
     def _estimate_rsa_size(self, content: str) -> int:
         """Heuristic RSA key size estimation from PEM content length."""
         lines = [
-            ln for ln in content.split("\n")
-            if ln and not ln.startswith("-----") and not ln.startswith("Proc")
+            ln
+            for ln in content.split("\n")
+            if ln
+            and not ln.startswith("-----")
+            and not ln.startswith("Proc")
             and not ln.startswith("DEK-Info")
         ]
         total_b64 = sum(len(ln.strip()) for ln in lines)
@@ -985,8 +1180,12 @@ class PQCScanner:
         if all(c in "0123456789abcdef" for c in hex_lower):
             hex_len = len(hex_lower)
             hash_sizes = {
-                32: "md5", 40: "sha1", 56: "sha224",
-                64: "sha256", 96: "sha384", 128: "sha512",
+                32: "md5",
+                40: "sha1",
+                56: "sha224",
+                64: "sha256",
+                96: "sha384",
+                128: "sha512",
             }
             if hex_len in hash_sizes:
                 return hash_sizes[hex_len]
@@ -1001,7 +1200,11 @@ class PQCScanner:
         """Scan X.509 cert using the ``cryptography`` package."""
         from cryptography import x509
         from cryptography.hazmat.primitives.asymmetric import (
-            ec, rsa, ed25519, ed448, dsa,
+            dsa,
+            ec,
+            ed448,
+            ed25519,
+            rsa,
         )
 
         raw = path.read_bytes()
@@ -1049,7 +1252,8 @@ class PQCScanner:
             return ScanResult(
                 asset_type="certificate",
                 details=f"Read error: {e}",
-                risk=QuantumRisk.UNKNOWN, confidence="LOW",
+                risk=QuantumRisk.UNKNOWN,
+                confidence="LOW",
             )
 
         # Very basic header detection
@@ -1057,7 +1261,8 @@ class PQCScanner:
             return ScanResult(
                 asset_type="certificate",
                 details="File does not appear to be a PEM certificate",
-                risk=QuantumRisk.UNKNOWN, confidence="LOW",
+                risk=QuantumRisk.UNKNOWN,
+                confidence="LOW",
             )
 
         # Check for algorithm hints in the PEM metadata
@@ -1075,7 +1280,11 @@ class PQCScanner:
 
         result = self.scan_algorithm(algo)
         result.asset_type = "certificate"
-        result.details = f"Source: {path} (PEM header fallback — install 'cryptography' for full parsing)"
+        result.details = (
+            f"Source: {path} (PEM header fallback — install 'cryptography' for full parsing)"
+        )
         result.confidence = "LOW"
-        result.assumptions.append("Algorithm inferred from PEM text content, not cryptographic parsing")
+        result.assumptions.append(
+            "Algorithm inferred from PEM text content, not cryptographic parsing"
+        )
         return result

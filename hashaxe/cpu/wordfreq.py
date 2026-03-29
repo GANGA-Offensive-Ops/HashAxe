@@ -68,27 +68,36 @@ import numpy as np
 
 # Compiled patterns in priority order (lower score = try first)
 _PATTERNS: list[tuple[float, re.Pattern]] = [
-    (1.0,  re.compile(r'^[a-z]{4,10}$')),                # lowercase word
-    (1.2,  re.compile(r'^[A-Z][a-z]{3,9}$')),            # Capitalised
-    (1.5,  re.compile(r'^[a-z]{3,8}\d{1,4}$')),          # word + digits
-    (1.6,  re.compile(r'^[A-Z][a-z]{3,7}\d{1,4}$')),     # Cap + digits
-    (1.8,  re.compile(r'^[a-z]{3,8}[!@#$%]$')),          # word + symbol
-    (2.0,  re.compile(r'^[A-Z][a-z]{3,7}[!@#$%]$')),     # Cap + symbol
-    (2.2,  re.compile(r'^[a-z]{3,8}\d{1,3}[!@#$%]$')),   # word + digits + symbol
-    (2.5,  re.compile(r'^[A-Z]{4,10}$')),                 # ALL CAPS
-    (2.8,  re.compile(r'^\d{4,8}$')),                     # pure digits (PINs)
-    (3.0,  re.compile(r'^[a-zA-Z0-9]{8,12}$')),           # alphanumeric
-    (3.5,  re.compile(r'^.{8,10}$')),                     # 8-10 chars (any)
-    (4.0,  re.compile(r'^.{11,14}$')),                    # 11-14 chars
-    (5.0,  re.compile(r'^.{1,7}$')),                      # very short
-    (6.0,  re.compile(r'^.{15,}$')),                      # long (rare)
+    (1.0, re.compile(r"^[a-z]{4,10}$")),  # lowercase word
+    (1.2, re.compile(r"^[A-Z][a-z]{3,9}$")),  # Capitalised
+    (1.5, re.compile(r"^[a-z]{3,8}\d{1,4}$")),  # word + digits
+    (1.6, re.compile(r"^[A-Z][a-z]{3,7}\d{1,4}$")),  # Cap + digits
+    (1.8, re.compile(r"^[a-z]{3,8}[!@#$%]$")),  # word + symbol
+    (2.0, re.compile(r"^[A-Z][a-z]{3,7}[!@#$%]$")),  # Cap + symbol
+    (2.2, re.compile(r"^[a-z]{3,8}\d{1,3}[!@#$%]$")),  # word + digits + symbol
+    (2.5, re.compile(r"^[A-Z]{4,10}$")),  # ALL CAPS
+    (2.8, re.compile(r"^\d{4,8}$")),  # pure digits (PINs)
+    (3.0, re.compile(r"^[a-zA-Z0-9]{8,12}$")),  # alphanumeric
+    (3.5, re.compile(r"^.{8,10}$")),  # 8-10 chars (any)
+    (4.0, re.compile(r"^.{11,14}$")),  # 11-14 chars
+    (5.0, re.compile(r"^.{1,7}$")),  # very short
+    (6.0, re.compile(r"^.{15,}$")),  # long (rare)
 ]
 
 # Optimal SSH passphrase length distribution (from red-team experience)
 _LENGTH_SCORES: dict[int, float] = {
-    8:  0.85, 9:  0.90, 10: 0.88, 7:  0.87,
-    11: 0.80, 12: 0.78, 6:  0.75, 13: 0.70,
-    14: 0.65, 15: 0.60, 5:  0.55, 16: 0.50,
+    8: 0.85,
+    9: 0.90,
+    10: 0.88,
+    7: 0.87,
+    11: 0.80,
+    12: 0.78,
+    6: 0.75,
+    13: 0.70,
+    14: 0.65,
+    15: 0.60,
+    5: 0.55,
+    16: 0.50,
 }
 _DEFAULT_LENGTH_SCORE = 0.40
 
@@ -113,13 +122,13 @@ def smart_sort(candidates: list[str]) -> list[str]:
         return candidates
 
     scores = np.array([_pattern_score(c) for c in candidates], dtype=np.float32)
-    order  = np.argsort(scores, kind="stable")
+    order = np.argsort(scores, kind="stable")
     return [candidates[i] for i in order]
 
 
 def top_k_first(
-    stream:    Iterable[str],
-    k:         int = 10_000,
+    stream: Iterable[str],
+    k: int = 10_000,
     rest_prob: float = 0.3,
 ) -> Generator[str, None, None]:
     """
@@ -150,6 +159,7 @@ def top_k_first(
 
 
 # ── Frequency index ───────────────────────────────────────────────────────────
+
 
 class FrequencyIndex:
     """
@@ -219,10 +229,11 @@ _KEYBOARD_WALKS = set()
 for row in _KEYBOARD_ROWS:
     for i in range(len(row) - 2):
         for l in range(3, min(8, len(row) - i + 1)):
-            _KEYBOARD_WALKS.add(row[i:i+l])
-            _KEYBOARD_WALKS.add(row[i:i+l][::-1])
-_KEYBOARD_WALKS.update(["qwerty", "qwerty1", "qwerty123", "1qaz2wsx",
-                         "password", "p@ssword", "admin", "letmein"])
+            _KEYBOARD_WALKS.add(row[i : i + l])
+            _KEYBOARD_WALKS.add(row[i : i + l][::-1])
+_KEYBOARD_WALKS.update(
+    ["qwerty", "qwerty1", "qwerty123", "1qaz2wsx", "password", "p@ssword", "admin", "letmein"]
+)
 
 
 def is_keyboard_walk(word: str) -> bool:
@@ -255,13 +266,20 @@ def priority_candidates(base_word: str) -> Generator[str, None, None]:
 
     priority = [
         base_word,
-        base_word + "2024", base_word + "2025", base_word + "2023",
+        base_word + "2024",
+        base_word + "2025",
+        base_word + "2023",
         base_word.capitalize(),
-        base_word + "!", base_word + "123", base_word + "1",
-        base_word.capitalize() + "2024", base_word.capitalize() + "!",
-        base_word.capitalize() + "123", base_word.capitalize() + "1",
+        base_word + "!",
+        base_word + "123",
+        base_word + "1",
+        base_word.capitalize() + "2024",
+        base_word.capitalize() + "!",
+        base_word.capitalize() + "123",
+        base_word.capitalize() + "1",
         base_word.upper(),
-        base_word + "1234", base_word + "12345",
+        base_word + "1234",
+        base_word + "12345",
         base_word.capitalize() + "1234",
     ]
 

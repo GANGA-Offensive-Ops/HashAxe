@@ -34,19 +34,20 @@ from typing import NamedTuple
 
 class EntropyResult(NamedTuple):
     """Result of entropy + charset analysis on an input string."""
-    entropy: float          # Shannon entropy in bits-per-char
-    charset: str            # 'hex_lower', 'hex_mixed', 'base64', 'printable', 'binary'
-    char_count: int         # Unique characters observed
-    is_likely_hash: bool    # True if characteristics match a raw hash digest
-    confidence: float       # 0.0–1.0 confidence that this is a hash
+
+    entropy: float  # Shannon entropy in bits-per-char
+    charset: str  # 'hex_lower', 'hex_mixed', 'base64', 'printable', 'binary'
+    char_count: int  # Unique characters observed
+    is_likely_hash: bool  # True if characteristics match a raw hash digest
+    confidence: float  # 0.0–1.0 confidence that this is a hash
 
 
 # Charset sets
-_HEX_LOWER  = set(string.hexdigits[:16])   # 0-9a-f
-_HEX_UPPER  = set(string.hexdigits[16:])   # A-F (without 0-9)
-_HEX_ALL    = set(string.hexdigits)
-_BASE64     = set(string.ascii_letters + string.digits + "+/=")
-_PRINTABLE  = set(string.printable)
+_HEX_LOWER = set(string.hexdigits[:16])  # 0-9a-f
+_HEX_UPPER = set(string.hexdigits[16:])  # A-F (without 0-9)
+_HEX_ALL = set(string.hexdigits)
+_BASE64 = set(string.ascii_letters + string.digits + "+/=")
+_PRINTABLE = set(string.printable)
 
 
 def shannon_entropy(data: str) -> float:
@@ -109,11 +110,11 @@ def classify_charset(data: str) -> str:
 
 # Known hash digest lengths in hex characters
 _HASH_LENGTHS: dict[int, list[str]] = {
-    32:  ["MD5", "NTLM", "MD4"],
-    40:  ["SHA-1", "MySQL native"],
-    56:  ["SHA-224", "SHA3-224"],
-    64:  ["SHA-256", "SHA3-256"],
-    96:  ["SHA-384", "SHA3-384"],
+    32: ["MD5", "NTLM", "MD4"],
+    40: ["SHA-1", "MySQL native"],
+    56: ["SHA-224", "SHA3-224"],
+    64: ["SHA-256", "SHA3-256"],
+    96: ["SHA-384", "SHA3-384"],
     128: ["SHA-512", "SHA3-512", "Whirlpool"],
 }
 
@@ -131,8 +132,11 @@ def analyze(data: str) -> EntropyResult:
     data = data.strip()
     if not data:
         return EntropyResult(
-            entropy=0.0, charset="binary", char_count=0,
-            is_likely_hash=False, confidence=0.0,
+            entropy=0.0,
+            charset="binary",
+            char_count=0,
+            is_likely_hash=False,
+            confidence=0.0,
         )
 
     entropy = shannon_entropy(data)

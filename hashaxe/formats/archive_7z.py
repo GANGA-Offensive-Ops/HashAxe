@@ -44,6 +44,7 @@ log = logging.getLogger(__name__)
 # ── Optional dependency ───────────────────────────────────────────────────────
 try:
     import py7zr  # type: ignore
+
     _HAS_PY7ZR = True
 except ImportError:
     _HAS_PY7ZR = False
@@ -101,7 +102,7 @@ class SevenZipFormat(BaseFormat):
     7z uses AES-256 + SHA-256 key stretching (2^19 iterations default).
     """
 
-    format_id   = "archive.7z"
+    format_id = "archive.7z"
     format_name = "7-Zip Archive (AES-256)"
 
     # ── Identification ────────────────────────────────────────────────────────
@@ -150,10 +151,10 @@ class SevenZipFormat(BaseFormat):
         target_hash = ""
         if path:
             import subprocess
+
             try:
                 res = subprocess.run(
-                    ["/usr/bin/7z2john", str(path)],
-                    capture_output=True, text=True, timeout=5
+                    ["/usr/bin/7z2john", str(path)], capture_output=True, text=True, timeout=5
                 )
                 if res.returncode == 0:
                     for line in res.stdout.splitlines():

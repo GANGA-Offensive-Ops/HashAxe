@@ -12,17 +12,19 @@ Validates:
   - Web3 Solana keypair detection
   - Auto-pwn hardware profiling
 """
+
 from __future__ import annotations
 
 import json
 import os
+
+# ── PATH SETUP ────────────────────────────────────────────────────────────────
+import sys
 import tempfile
 import unittest
 from pathlib import Path
 from unittest.mock import MagicMock, patch
 
-# ── PATH SETUP ────────────────────────────────────────────────────────────────
-import sys
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 
@@ -30,11 +32,13 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 # 1. AttackConfig new fields
 # ===========================================================================
 
+
 class TestAttackConfigAuditFields(unittest.TestCase):
     """Validate new AttackConfig fields from audit remediation."""
 
     def test_default_values(self):
         from hashaxe.attacks import AttackConfig
+
         cfg = AttackConfig()
         self.assertEqual(cfg.max_candidates, 0)
         self.assertIsNone(cfg.checkpoint_file)
@@ -46,6 +50,7 @@ class TestAttackConfigAuditFields(unittest.TestCase):
 
     def test_custom_values(self):
         from hashaxe.attacks import AttackConfig
+
         cb = lambda n: None
         cfg = AttackConfig(
             max_candidates=500,
@@ -67,6 +72,7 @@ class TestAttackConfigAuditFields(unittest.TestCase):
     def test_backward_compatibility(self):
         """Old-style construction still works."""
         from hashaxe.attacks import AttackConfig
+
         cfg = AttackConfig(wordlist="/tmp/test.txt", max_length=20)
         self.assertEqual(cfg.wordlist, "/tmp/test.txt")
         self.assertEqual(cfg.max_length, 20)
@@ -78,12 +84,13 @@ class TestAttackConfigAuditFields(unittest.TestCase):
 # 2. AI Generator rate limiting
 # ===========================================================================
 
+
 class TestAIGeneratorRateLimit(unittest.TestCase):
     """AI generator respects max_candidates."""
 
     def test_markov_fallback_rate_limit(self):
-        from hashaxe.attacks.ai_generator import AIGeneratorAttack
         from hashaxe.attacks import AttackConfig
+        from hashaxe.attacks.ai_generator import AIGeneratorAttack
 
         # Create a small wordlist
         with tempfile.NamedTemporaryFile(mode="w", suffix=".txt", delete=False) as f:
@@ -104,8 +111,8 @@ class TestAIGeneratorRateLimit(unittest.TestCase):
             os.unlink(wl)
 
     def test_progress_callback(self):
-        from hashaxe.attacks.ai_generator import AIGeneratorAttack
         from hashaxe.attacks import AttackConfig
+        from hashaxe.attacks.ai_generator import AIGeneratorAttack
 
         counts = []
         with tempfile.NamedTemporaryFile(mode="w", suffix=".txt", delete=False) as f:
@@ -131,6 +138,7 @@ class TestAIGeneratorRateLimit(unittest.TestCase):
 # 3. Markov Add-k Smoothing
 # ===========================================================================
 
+
 class TestMarkovSmoothing(unittest.TestCase):
     """Markov chain attack with Add-k smoothing."""
 
@@ -142,15 +150,17 @@ class TestMarkovSmoothing(unittest.TestCase):
         return f.name
 
     def test_no_smoothing(self):
-        from hashaxe.attacks.markov import MarkovAttack
         from hashaxe.attacks import AttackConfig
+        from hashaxe.attacks.markov import MarkovAttack
 
         wl = self._make_wordlist(["abc", "abd", "abe"])
         try:
             attack = MarkovAttack()
             cfg = AttackConfig(
-                wordlist=wl, max_candidates=10,
-                max_length=5, markov_smoothing_k=0.0,
+                wordlist=wl,
+                max_candidates=10,
+                max_length=5,
+                markov_smoothing_k=0.0,
             )
             results = list(attack.generate(cfg))
             self.assertGreater(len(results), 0)
@@ -158,15 +168,17 @@ class TestMarkovSmoothing(unittest.TestCase):
             os.unlink(wl)
 
     def test_with_smoothing(self):
-        from hashaxe.attacks.markov import MarkovAttack
         from hashaxe.attacks import AttackConfig
+        from hashaxe.attacks.markov import MarkovAttack
 
         wl = self._make_wordlist(["abc", "abd", "abe"])
         try:
             attack = MarkovAttack()
             cfg = AttackConfig(
-                wordlist=wl, max_candidates=10,
-                max_length=5, markov_smoothing_k=1.0,
+                wordlist=wl,
+                max_candidates=10,
+                max_length=5,
+                markov_smoothing_k=1.0,
             )
             results = list(attack.generate(cfg))
             self.assertGreater(len(results), 0)
@@ -174,8 +186,8 @@ class TestMarkovSmoothing(unittest.TestCase):
             os.unlink(wl)
 
     def test_rate_limiting(self):
-        from hashaxe.attacks.markov import MarkovAttack
         from hashaxe.attacks import AttackConfig
+        from hashaxe.attacks.markov import MarkovAttack
 
         wl = self._make_wordlist(["test", "pass", "word"])
         try:
@@ -191,12 +203,13 @@ class TestMarkovSmoothing(unittest.TestCase):
 # 4. PRINCE Deduplication
 # ===========================================================================
 
+
 class TestPrinceDedup(unittest.TestCase):
     """PRINCE attack de-duplicates candidates."""
 
     def test_no_duplicates(self):
-        from hashaxe.attacks.prince import PrinceAttack
         from hashaxe.attacks import AttackConfig
+        from hashaxe.attacks.prince import PrinceAttack
 
         with tempfile.NamedTemporaryFile(mode="w", suffix=".txt", delete=False) as f:
             # Deliberately repeat words
@@ -207,8 +220,11 @@ class TestPrinceDedup(unittest.TestCase):
         try:
             attack = PrinceAttack()
             cfg = AttackConfig(
-                wordlist=wl, prince_min_elems=1, prince_max_elems=1,
-                max_candidates=100, max_length=10,
+                wordlist=wl,
+                prince_min_elems=1,
+                prince_max_elems=1,
+                max_candidates=100,
+                max_length=10,
             )
             results = list(attack.generate(cfg))
             self.assertEqual(len(results), len(set(results)))
@@ -216,8 +232,8 @@ class TestPrinceDedup(unittest.TestCase):
             os.unlink(wl)
 
     def test_rate_limiting(self):
-        from hashaxe.attacks.prince import PrinceAttack
         from hashaxe.attacks import AttackConfig
+        from hashaxe.attacks.prince import PrinceAttack
 
         with tempfile.NamedTemporaryFile(mode="w", suffix=".txt", delete=False) as f:
             for w in ["a", "b", "c", "d", "e"]:
@@ -227,8 +243,11 @@ class TestPrinceDedup(unittest.TestCase):
         try:
             attack = PrinceAttack()
             cfg = AttackConfig(
-                wordlist=wl, prince_min_elems=1, prince_max_elems=2,
-                max_candidates=3, max_length=10,
+                wordlist=wl,
+                prince_min_elems=1,
+                prince_max_elems=2,
+                max_candidates=3,
+                max_length=10,
             )
             results = list(attack.generate(cfg))
             self.assertLessEqual(len(results), 3)
@@ -240,29 +259,34 @@ class TestPrinceDedup(unittest.TestCase):
 # 5. PCFG Keyboard-Walk Tokenization
 # ===========================================================================
 
+
 class TestPCFGKeyboardWalk(unittest.TestCase):
     """PCFG tokenizer detects keyboard-walk patterns."""
 
     def test_qwerty_detected(self):
         from hashaxe.attacks.pcfg import _tokenize
+
         tokens = _tokenize("qwerty123")
         classes = [cls for cls, _ in tokens]
         self.assertIn("K", classes, "Expected keyboard-walk 'K' class for 'qwerty'")
 
     def test_asdf_detected(self):
         from hashaxe.attacks.pcfg import _tokenize
+
         tokens = _tokenize("asdf!!")
         classes = [cls for cls, _ in tokens]
         self.assertIn("K", classes)
 
     def test_normal_word_no_keyboard_walk(self):
         from hashaxe.attacks.pcfg import _tokenize
+
         tokens = _tokenize("hello")
         classes = [cls for cls, _ in tokens]
         self.assertNotIn("K", classes)
 
     def test_structure_key_includes_k(self):
-        from hashaxe.attacks.pcfg import _tokenize, _structure_key
+        from hashaxe.attacks.pcfg import _structure_key, _tokenize
+
         tokens = _tokenize("qwerty123")
         key = _structure_key(tokens)
         self.assertIn("K", key)
@@ -272,22 +296,26 @@ class TestPCFGKeyboardWalk(unittest.TestCase):
 # 6. Distributed Master Path Traversal Validation
 # ===========================================================================
 
+
 class TestDistributedPathValidation(unittest.TestCase):
     """Distributed master rejects path traversal."""
 
     def test_traversal_rejected(self):
         from hashaxe.distributed.master import _validate_path
+
         with self.assertRaises(ValueError):
             _validate_path("../../etc/passwd", "test_path")
 
     def test_valid_path_accepted(self):
         from hashaxe.distributed.master import _validate_path
+
         # Use a path that exists
         result = _validate_path(__file__, "test_path")
         self.assertTrue(os.path.isabs(result))
 
     def test_nonexistent_rejected(self):
         from hashaxe.distributed.master import _validate_path
+
         with self.assertRaises(ValueError):
             _validate_path("/nonexistent/path/file.txt", "test_path")
 
@@ -296,16 +324,19 @@ class TestDistributedPathValidation(unittest.TestCase):
 # 7. PQC Scanner — X.509 Method Existence
 # ===========================================================================
 
+
 class TestPQCScannerX509(unittest.TestCase):
     """PQC scanner has X.509 cert scanning capability."""
 
     def test_scan_x509_method_exists(self):
         from hashaxe.pqc.scanner import PQCScanner
+
         scanner = PQCScanner()
         self.assertTrue(hasattr(scanner, "scan_x509_cert"))
 
     def test_scan_x509_missing_file(self):
         from hashaxe.pqc.scanner import PQCScanner
+
         scanner = PQCScanner()
         result = scanner.scan_x509_cert("/nonexistent/cert.pem")
         self.assertEqual(result.asset_type, "certificate")
@@ -313,6 +344,7 @@ class TestPQCScannerX509(unittest.TestCase):
 
     def test_scan_algorithm_rsa(self):
         from hashaxe.pqc.scanner import PQCScanner, QuantumRisk
+
         scanner = PQCScanner()
         result = scanner.scan_algorithm("rsa-2048")
         self.assertEqual(result.risk, QuantumRisk.VULNERABLE)
@@ -322,18 +354,17 @@ class TestPQCScannerX509(unittest.TestCase):
 # 8. Web3 Auditor — Solana Keypair Detection
 # ===========================================================================
 
+
 class TestWeb3SolanaKeypair(unittest.TestCase):
     """Web3 auditor detects Solana ed25519 keypairs."""
 
     def test_solana_keypair_detected(self):
-        from hashaxe.web3.zk_auditor import ZKAuditor, WalletType
+        from hashaxe.web3.zk_auditor import WalletType, ZKAuditor
 
         # Create fake Solana id.json (64-byte array)
         fake_keypair = list(range(64))
 
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".json", delete=False
-        ) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
             json.dump(fake_keypair, f)
             wallet_path = f.name
 
@@ -351,7 +382,7 @@ class TestWeb3SolanaKeypair(unittest.TestCase):
             os.unlink(wallet_path)
 
     def test_ethereum_not_affected(self):
-        from hashaxe.web3.zk_auditor import ZKAuditor, WalletType
+        from hashaxe.web3.zk_auditor import WalletType, ZKAuditor
 
         eth_data = {
             "crypto": {
@@ -362,9 +393,7 @@ class TestWeb3SolanaKeypair(unittest.TestCase):
             "address": "0xdeadbeef",
         }
 
-        with tempfile.NamedTemporaryFile(
-            mode="w", suffix=".json", delete=False
-        ) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".json", delete=False) as f:
             json.dump(eth_data, f)
             wallet_path = f.name
 
@@ -379,6 +408,7 @@ class TestWeb3SolanaKeypair(unittest.TestCase):
 # ===========================================================================
 # 9. Auto-Pwn Hardware Profiling
 # ===========================================================================
+
 
 class TestAutoPwnHardwareProfiling(unittest.TestCase):
     """Auto-pwn runs hardware profiling at pipeline start."""
@@ -403,14 +433,16 @@ class TestAutoPwnHardwareProfiling(unittest.TestCase):
 # 10. Distributed Master Heartbeat Requeue
 # ===========================================================================
 
+
 class TestDistributedHeartbeat(unittest.TestCase):
     """Distributed master requeues timed-out work items."""
 
     def test_master_has_heartbeat_param(self):
         """MasterNode accepts heartbeat_timeout parameter."""
+        import inspect
+
         from hashaxe.distributed.master import MasterNode
 
-        import inspect
         sig = inspect.signature(MasterNode.__init__)
         self.assertIn("heartbeat_timeout", sig.parameters)
 

@@ -77,6 +77,7 @@ KEYS_DIR = Path(__file__).parent.parent / "test_files"
 # 1. GPU DETECTION
 # ═══════════════════════════════════════════════════════════════
 
+
 class TestGPUDetection(unittest.TestCase):
 
     def test_no_gpu_returns_none_string(self):
@@ -87,12 +88,12 @@ class TestGPUDetection(unittest.TestCase):
     def test_gpu_device_dataclass_cuda(self):
         """GPUDevice can be constructed with CUDA backend."""
         d = GPUDevice(
-            backend       = GPUBackend.CUDA,
-            name          = "NVIDIA RTX 4090",
-            vendor        = "NVIDIA",
-            global_mem_mb = 24564,
-            driver_version= "560.28.03",
-            est_speed_pw_s= 200_000,
+            backend=GPUBackend.CUDA,
+            name="NVIDIA RTX 4090",
+            vendor="NVIDIA",
+            global_mem_mb=24564,
+            driver_version="560.28.03",
+            est_speed_pw_s=200_000,
         )
         self.assertEqual(d.backend, GPUBackend.CUDA)
         self.assertAlmostEqual(d.est_speed_pw_s, 200_000)
@@ -100,12 +101,12 @@ class TestGPUDetection(unittest.TestCase):
     def test_gpu_device_dataclass_opencl(self):
         """GPUDevice can be constructed with OpenCL backend."""
         d = GPUDevice(
-            backend        = GPUBackend.OPENCL,
-            name           = "AMD Radeon RX 7900 XTX",
-            vendor         = "AMD",
-            compute_units  = 96,
-            global_mem_mb  = 24576,
-            est_speed_pw_s = 130_000,
+            backend=GPUBackend.OPENCL,
+            name="AMD Radeon RX 7900 XTX",
+            vendor="AMD",
+            compute_units=96,
+            global_mem_mb=24576,
+            est_speed_pw_s=130_000,
         )
         self.assertEqual(d.backend, GPUBackend.OPENCL)
         self.assertEqual(d.vendor, "AMD")
@@ -113,8 +114,10 @@ class TestGPUDetection(unittest.TestCase):
     def test_gpu_info_string_cuda(self):
         """gpu_info_string formats CUDA device correctly."""
         d = GPUDevice(
-            backend=GPUBackend.CUDA, name="RTX 4090",
-            global_mem_mb=24564, est_speed_pw_s=200_000,
+            backend=GPUBackend.CUDA,
+            name="RTX 4090",
+            global_mem_mb=24564,
+            est_speed_pw_s=200_000,
         )
         s = gpu_info_string(d)
         self.assertIn("CUDA", s)
@@ -135,6 +138,7 @@ class TestGPUDetection(unittest.TestCase):
     def test_detect_gpu_no_crash_no_hardware(self):
         """detect_gpu() returns None gracefully when no GPU present."""
         from hashaxe.gpu.accelerator import detect_gpu
+
         # In CI/this environment there is no GPU — should return None
         result = detect_gpu()
         # Either None or a GPUDevice — never raises
@@ -144,6 +148,7 @@ class TestGPUDetection(unittest.TestCase):
 # ═══════════════════════════════════════════════════════════════
 # 2. CPU SIMD BATCH
 # ═══════════════════════════════════════════════════════════════
+
 
 class TestSIMDBatch(unittest.TestCase):
 
@@ -163,7 +168,7 @@ class TestSIMDBatch(unittest.TestCase):
 
     def test_prefilter_very_long(self):
         """Pre-filter rejects strings over 128 bytes."""
-        long_pw  = "a" * 200
+        long_pw = "a" * 200
         short_pw = "puppet"
         mask = _prefilter([long_pw, short_pw])
         self.assertFalse(mask[0])
@@ -194,10 +199,10 @@ class TestSIMDBatch(unittest.TestCase):
     def test_aes_ctr_python_decrypt_known(self):
         """AES-CTR python fallback decrypts to known plaintext."""
         key = bytes(range(32))
-        iv  = bytes(range(16))
+        iv = bytes(range(16))
         # Encrypt then decrypt should round-trip
-        ct  = _aes_ctr_python(key, iv, b"Hello, Shadow Team!")
-        pt  = _aes_ctr_python(key, iv, ct)
+        ct = _aes_ctr_python(key, iv, b"Hello, Shadow Team!")
+        pt = _aes_ctr_python(key, iv, ct)
         self.assertEqual(pt, b"Hello, Shadow Team!")
 
 
@@ -205,11 +210,12 @@ class TestSIMDBatch(unittest.TestCase):
 # 3. WORD FREQUENCY & SMART ORDERING
 # ═══════════════════════════════════════════════════════════════
 
+
 class TestWordFreq(unittest.TestCase):
 
     def test_smart_sort_prefers_common_patterns(self):
         """smart_sort puts lowercase words before uppercase-heavy ones."""
-        cands  = ["ZZZZZZZZZ", "puppet", "X1X2X3X4"]
+        cands = ["ZZZZZZZZZ", "puppet", "X1X2X3X4"]
         sorted_c = smart_sort(cands)
         self.assertEqual(sorted_c[0], "puppet")
 
@@ -234,13 +240,13 @@ class TestWordFreq(unittest.TestCase):
 
     def test_pattern_score_decreases_with_length_optimum(self):
         """8-char passwords score better than 2-char passwords."""
-        score_8 = _pattern_score("password")   # 8 chars
-        score_2 = _pattern_score("ab")          # 2 chars
+        score_8 = _pattern_score("password")  # 8 chars
+        score_2 = _pattern_score("ab")  # 2 chars
         self.assertLess(score_8, score_2)
 
     def test_frequency_index_load_and_score(self):
         """FrequencyIndex loads wordlist and returns correct rank-based score."""
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.txt', delete=False) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".txt", delete=False) as f:
             f.write("puppet\nhunter2\npassword\n")
             fname = f.name
         try:
@@ -257,7 +263,7 @@ class TestWordFreq(unittest.TestCase):
 
     def test_frequency_index_sort(self):
         """FrequencyIndex.sort() puts rank-1 word first."""
-        with tempfile.NamedTemporaryFile(mode='w', suffix='.txt', delete=False) as f:
+        with tempfile.NamedTemporaryFile(mode="w", suffix=".txt", delete=False) as f:
             f.write("puppet\nhunter2\npassword\n")
             fname = f.name
         try:
@@ -288,13 +294,13 @@ class TestWordFreq(unittest.TestCase):
 
     def test_top_k_first_yields_all(self):
         """top_k_first yields same count as input."""
-        words  = [f"word{i}" for i in range(100)]
+        words = [f"word{i}" for i in range(100)]
         result = list(top_k_first(iter(words), k=20))
         self.assertEqual(len(result), 100)
 
     def test_top_k_first_yields_no_duplicates(self):
         """top_k_first yields no duplicates."""
-        words  = [f"word{i}" for i in range(50)]
+        words = [f"word{i}" for i in range(50)]
         result = list(top_k_first(iter(words), k=20))
         self.assertEqual(len(result), len(set(result)))
 
@@ -303,18 +309,19 @@ class TestWordFreq(unittest.TestCase):
 # 4. DISTRIBUTED MESSAGE SERIALISATION
 # ═══════════════════════════════════════════════════════════════
 
+
 class TestDistributedMsgs(unittest.TestCase):
 
     def _make_work_item(self):
         return WorkItem(
-            job_id     = "job_00000001",
-            key_path   = "/work/id_ed25519",
-            wordlist   = "/wordlists/rockyou.txt",
-            start_byte = 0,
-            end_byte   = 1_000_000,
-            use_rules  = True,
-            rule_file  = None,
-            mask       = None,
+            job_id="job_00000001",
+            key_path="/work/id_ed25519",
+            wordlist="/wordlists/rockyou.txt",
+            start_byte=0,
+            end_byte=1_000_000,
+            use_rules=True,
+            rule_file=None,
+            mask=None,
         )
 
     def test_work_item_creation(self):
@@ -325,19 +332,23 @@ class TestDistributedMsgs(unittest.TestCase):
     def test_work_item_json_roundtrip(self):
         """WorkItem serialises to JSON and deserialises correctly."""
         from dataclasses import asdict
+
         item = self._make_work_item()
-        d    = asdict(item)
-        rt   = WorkItem(**d)
-        self.assertEqual(rt.job_id,     item.job_id)
+        d = asdict(item)
+        rt = WorkItem(**d)
+        self.assertEqual(rt.job_id, item.job_id)
         self.assertEqual(rt.start_byte, item.start_byte)
-        self.assertEqual(rt.end_byte,   item.end_byte)
-        self.assertEqual(rt.use_rules,  item.use_rules)
+        self.assertEqual(rt.end_byte, item.end_byte)
+        self.assertEqual(rt.use_rules, item.use_rules)
 
     def test_work_result_found(self):
         """WorkResult with found=True stores passphrase."""
         r = WorkResult(
-            job_id="job_00000001", found=True,
-            passphrase="puppet", tried=1500, speed=4700.0,
+            job_id="job_00000001",
+            found=True,
+            passphrase="puppet",
+            tried=1500,
+            speed=4700.0,
         )
         self.assertTrue(r.found)
         self.assertEqual(r.passphrase, "puppet")
@@ -345,8 +356,11 @@ class TestDistributedMsgs(unittest.TestCase):
     def test_work_result_not_found(self):
         """WorkResult with found=False stores None passphrase."""
         r = WorkResult(
-            job_id="job_00000001", found=False,
-            passphrase=None, tried=50000, speed=4800.0,
+            job_id="job_00000001",
+            found=False,
+            passphrase=None,
+            tried=50000,
+            speed=4800.0,
         )
         self.assertFalse(r.found)
         self.assertIsNone(r.passphrase)
@@ -354,11 +368,19 @@ class TestDistributedMsgs(unittest.TestCase):
     def test_work_result_json_roundtrip(self):
         """WorkResult JSON round-trip preserves all fields."""
         r = WorkResult(
-            job_id="j1", found=True, passphrase="hunter2",
-            tried=999, speed=5000.1,
+            job_id="j1",
+            found=True,
+            passphrase="hunter2",
+            tried=999,
+            speed=5000.1,
         )
-        d  = {"job_id": r.job_id, "found": r.found,
-              "passphrase": r.passphrase, "tried": r.tried, "speed": r.speed}
+        d = {
+            "job_id": r.job_id,
+            "found": r.found,
+            "passphrase": r.passphrase,
+            "tried": r.tried,
+            "speed": r.speed,
+        }
         rt = WorkResult(**d)
         self.assertEqual(rt.passphrase, "hunter2")
         self.assertAlmostEqual(rt.speed, 5000.1)
@@ -366,10 +388,14 @@ class TestDistributedMsgs(unittest.TestCase):
     def test_work_item_hybrid_mode(self):
         """WorkItem with mask set represents hybrid mode."""
         item = WorkItem(
-            job_id="j2", key_path="/work/id_ed25519",
+            job_id="j2",
+            key_path="/work/id_ed25519",
             wordlist="/wl/rockyou.txt",
-            start_byte=0, end_byte=500, use_rules=False,
-            rule_file=None, mask="?d?d?d?d",
+            start_byte=0,
+            end_byte=500,
+            use_rules=False,
+            rule_file=None,
+            mask="?d?d?d?d",
         )
         self.assertEqual(item.mask, "?d?d?d?d")
         self.assertFalse(item.use_rules)
@@ -391,10 +417,12 @@ class TestDistributedMsgs(unittest.TestCase):
 # 5. CLI NEW FLAGS
 # ═══════════════════════════════════════════════════════════════
 
+
 class TestCLINewFlags(unittest.TestCase):
 
     def _parse(self, args):
         from hashaxe.cli import _build_parser
+
         return _build_parser().parse_args(args)
 
     def test_no_gpu_flag(self):
@@ -414,8 +442,7 @@ class TestCLINewFlags(unittest.TestCase):
 
     def test_distributed_worker_flag(self):
         """--distributed-worker with --master parsed."""
-        args = self._parse(["-k", "k", "-w", "w",
-                            "--distributed-worker", "--master", "10.0.0.1"])
+        args = self._parse(["-k", "k", "-w", "w", "--distributed-worker", "--master", "10.0.0.1"])
         self.assertTrue(args.distributed_worker)
         self.assertEqual(args.master_host, "10.0.0.1")
 
@@ -439,10 +466,11 @@ class TestCLINewFlags(unittest.TestCase):
 # 6. CRACKER BATCH 2 INTEGRATION (mocked GPU / distributed)
 # ═══════════════════════════════════════════════════════════════
 
+
 class TestCrackerBatch2(unittest.TestCase):
 
-    RSA_KEY  = str(KEYS_DIR / "rsa_legacy_puppet.key")
-    NOPASS   = str(KEYS_DIR / "rsa_legacy_nopass.key")
+    RSA_KEY = str(KEYS_DIR / "rsa_legacy_puppet.key")
+    NOPASS = str(KEYS_DIR / "rsa_legacy_nopass.key")
 
     def _mini_wordlist(self, words):
         with tempfile.NamedTemporaryFile(mode="w", suffix=".txt", delete=False) as tf:
@@ -453,11 +481,15 @@ class TestCrackerBatch2(unittest.TestCase):
     def test_hashaxe_with_no_gpu_flag(self):
         """hashaxe() with use_gpu=False runs CPU path and finds passphrase."""
         from hashaxe.hashaxeer import hashaxe
+
         wl = self._mini_wordlist(["wrong1", "puppet", "wrong2"])
         try:
             result = hashaxe(
-                key_path=self.RSA_KEY, wordlist=wl,
-                threads=1, use_gpu=False, use_smart_order=False,
+                key_path=self.RSA_KEY,
+                wordlist=wl,
+                threads=1,
+                use_gpu=False,
+                use_smart_order=False,
                 quiet=True,
             )
             self.assertEqual(result, "puppet")
@@ -467,11 +499,15 @@ class TestCrackerBatch2(unittest.TestCase):
     def test_hashaxe_with_smart_order_enabled(self):
         """hashaxe() with use_smart_order=True finds passphrase."""
         from hashaxe.hashaxeer import hashaxe
+
         wl = self._mini_wordlist(["PUPPET", "Puppet1", "puppet"])
         try:
             result = hashaxe(
-                key_path=self.RSA_KEY, wordlist=wl,
-                threads=1, use_gpu=False, use_smart_order=True,
+                key_path=self.RSA_KEY,
+                wordlist=wl,
+                threads=1,
+                use_gpu=False,
+                use_smart_order=True,
                 quiet=True,
             )
             self.assertEqual(result, "puppet")
@@ -481,11 +517,15 @@ class TestCrackerBatch2(unittest.TestCase):
     def test_hashaxe_with_smart_order_disabled(self):
         """hashaxe() with use_smart_order=False still finds passphrase."""
         from hashaxe.hashaxeer import hashaxe
+
         wl = self._mini_wordlist(["wrong1", "puppet"])
         try:
             result = hashaxe(
-                key_path=self.RSA_KEY, wordlist=wl,
-                threads=1, use_gpu=False, use_smart_order=False,
+                key_path=self.RSA_KEY,
+                wordlist=wl,
+                threads=1,
+                use_gpu=False,
+                use_smart_order=False,
                 quiet=True,
             )
             self.assertEqual(result, "puppet")
@@ -495,9 +535,12 @@ class TestCrackerBatch2(unittest.TestCase):
     def test_hashaxe_unencrypted_returns_empty_string(self):
         """hashaxe() on unencrypted key returns '' with gpu flags."""
         from hashaxe.hashaxeer import hashaxe
+
         result = hashaxe(
-            key_path=self.NOPASS, wordlist="",
-            use_gpu=False, quiet=True,
+            key_path=self.NOPASS,
+            wordlist="",
+            use_gpu=False,
+            quiet=True,
         )
         self.assertEqual(result, "")
 
@@ -505,9 +548,10 @@ class TestCrackerBatch2(unittest.TestCase):
         """benchmark() runs without GPU and returns positive speed."""
         import pathlib
 
-        from hashaxe.hashaxeer import benchmark
         from hashaxe.display import Display
         from hashaxe.formats import FormatRegistry
+        from hashaxe.hashaxeer import benchmark
+
         registry = FormatRegistry()
         data = pathlib.Path(self.RSA_KEY).read_bytes()
         match = registry.identify(data, pathlib.Path(self.RSA_KEY))
@@ -519,6 +563,7 @@ class TestCrackerBatch2(unittest.TestCase):
     def test_gpu_hashaxeer_falls_back_to_cpu(self):
         """GPUCracker in no-GPU environment uses CPU fallback path."""
         from hashaxe.gpu.accelerator import GPUCracker
+
         with patch("hashaxe.gpu.accelerator.detect_gpu", return_value=None):
             g = GPUCracker(device=None)
             self.assertFalse(g.is_available())
@@ -526,6 +571,7 @@ class TestCrackerBatch2(unittest.TestCase):
     def test_simd_path_finds_passphrase(self):
         """simd_batch_hashaxe finds 'puppet' in candidate list."""
         from hashaxe.cpu.simd import simd_batch_hashaxe
+
         pk = parse_key_file(self.RSA_KEY)
         ev = multiprocessing.Manager().Event()
         result = simd_batch_hashaxe(pk, ["wrong1", "puppet", "wrong2"], ev)
@@ -534,6 +580,7 @@ class TestCrackerBatch2(unittest.TestCase):
     def test_simd_path_returns_none_on_miss(self):
         """simd_batch_hashaxe returns None when passphrase absent."""
         from hashaxe.cpu.simd import simd_batch_hashaxe
+
         pk = parse_key_file(self.RSA_KEY)
         ev = multiprocessing.Manager().Event()
         result = simd_batch_hashaxe(pk, ["nope1", "nope2", "nope3"], ev)
@@ -542,9 +589,10 @@ class TestCrackerBatch2(unittest.TestCase):
     def test_simd_stops_when_event_set(self):
         """simd_batch_hashaxe respects found_event cancellation."""
         from hashaxe.cpu.simd import simd_batch_hashaxe
+
         pk = parse_key_file(self.RSA_KEY)
         ev = multiprocessing.Manager().Event()
-        ev.set()   # pre-cancel
+        ev.set()  # pre-cancel
         result = simd_batch_hashaxe(pk, ["puppet"], ev)
         self.assertIsNone(result)  # should bail immediately
 
@@ -565,11 +613,12 @@ class TestCrackerBatch2(unittest.TestCase):
 # 7. END-TO-END INTEGRATION (Batch 2 paths)
 # ═══════════════════════════════════════════════════════════════
 
+
 class TestIntegrationB2(unittest.TestCase):
 
-    RSA_KEY   = str(KEYS_DIR / "rsa_legacy_puppet.key")
+    RSA_KEY = str(KEYS_DIR / "rsa_legacy_puppet.key")
     ECDSA_KEY = str(KEYS_DIR / "ecdsa_legacy_abc123.key")
-    NOPASS    = str(KEYS_DIR / "rsa_legacy_nopass.key")
+    NOPASS = str(KEYS_DIR / "rsa_legacy_nopass.key")
 
     def _wl(self, words):
         with tempfile.NamedTemporaryFile(mode="w", suffix=".txt", delete=False) as tf:
@@ -580,10 +629,10 @@ class TestIntegrationB2(unittest.TestCase):
     def test_e2e_wordlist_no_gpu_rsa(self):
         """End-to-end: RSA key hashaxeed via wordlist, use_gpu=False."""
         from hashaxe.hashaxeer import hashaxe
+
         wl = self._wl(["wrong", "puppet"])
         try:
-            r = hashaxe(key_path=self.RSA_KEY, wordlist=wl,
-                      threads=1, use_gpu=False, quiet=True)
+            r = hashaxe(key_path=self.RSA_KEY, wordlist=wl, threads=1, use_gpu=False, quiet=True)
             self.assertEqual(r, "puppet")
         finally:
             os.unlink(wl)
@@ -591,10 +640,10 @@ class TestIntegrationB2(unittest.TestCase):
     def test_e2e_wordlist_no_gpu_ecdsa(self):
         """End-to-end: ECDSA key hashaxeed via wordlist, use_gpu=False."""
         from hashaxe.hashaxeer import hashaxe
+
         wl = self._wl(["nope", "abc123", "wrong"])
         try:
-            r = hashaxe(key_path=self.ECDSA_KEY, wordlist=wl,
-                      threads=1, use_gpu=False, quiet=True)
+            r = hashaxe(key_path=self.ECDSA_KEY, wordlist=wl, threads=1, use_gpu=False, quiet=True)
             self.assertEqual(r, "abc123")
         finally:
             os.unlink(wl)
@@ -602,11 +651,18 @@ class TestIntegrationB2(unittest.TestCase):
     def test_e2e_smart_order_rsa(self):
         """End-to-end: smart ordering brings 'puppet' to front and finds it."""
         from hashaxe.hashaxeer import hashaxe
+
         # Put puppet last — smart order should elevate it
         wl = self._wl(["ZZZZZ9999", "AAAAA!!!!!", "puppet"])
         try:
-            r = hashaxe(key_path=self.RSA_KEY, wordlist=wl,
-                      threads=1, use_gpu=False, use_smart_order=True, quiet=True)
+            r = hashaxe(
+                key_path=self.RSA_KEY,
+                wordlist=wl,
+                threads=1,
+                use_gpu=False,
+                use_smart_order=True,
+                quiet=True,
+            )
             self.assertEqual(r, "puppet")
         finally:
             os.unlink(wl)
@@ -614,11 +670,18 @@ class TestIntegrationB2(unittest.TestCase):
     def test_e2e_rules_and_no_gpu(self):
         """End-to-end: rules mode + no GPU finds 'puppet' via mutations."""
         from hashaxe.hashaxeer import hashaxe
-        wl = self._wl(["Puppet", "PUPPET"])   # mutations of capitalised forms
+
+        wl = self._wl(["Puppet", "PUPPET"])  # mutations of capitalised forms
         try:
-            r = hashaxe(key_path=self.RSA_KEY, wordlist=wl,
-                      threads=1, use_gpu=False, use_rules=True,
-                      use_smart_order=False, quiet=True)
+            r = hashaxe(
+                key_path=self.RSA_KEY,
+                wordlist=wl,
+                threads=1,
+                use_gpu=False,
+                use_rules=True,
+                use_smart_order=False,
+                quiet=True,
+            )
             # Rules should generate lowercase 'puppet' from 'Puppet'
             self.assertEqual(r, "puppet")
         finally:
@@ -627,10 +690,10 @@ class TestIntegrationB2(unittest.TestCase):
     def test_e2e_not_found_no_gpu(self):
         """End-to-end: wordlist without correct pw returns None."""
         from hashaxe.hashaxeer import hashaxe
+
         wl = self._wl(["nope1", "nope2", "nope3"])
         try:
-            r = hashaxe(key_path=self.RSA_KEY, wordlist=wl,
-                      threads=1, use_gpu=False, quiet=True)
+            r = hashaxe(key_path=self.RSA_KEY, wordlist=wl, threads=1, use_gpu=False, quiet=True)
             self.assertIsNone(r)
         finally:
             os.unlink(wl)
@@ -638,20 +701,25 @@ class TestIntegrationB2(unittest.TestCase):
     def test_e2e_simd_batch_rsa(self):
         """End-to-end simd_batch_hashaxe finds passphrase for RSA key."""
         from hashaxe.cpu.simd import simd_batch_hashaxe
+
         pk = parse_key_file(self.RSA_KEY)
         ev = multiprocessing.Manager().Event()
-        r  = simd_batch_hashaxe(pk, ["miss1", "miss2", "puppet", "miss3"], ev)
+        r = simd_batch_hashaxe(pk, ["miss1", "miss2", "puppet", "miss3"], ev)
         self.assertEqual(r, "puppet")
 
 
 # ── Entry point ───────────────────────────────────────────────────────────────
 
 if __name__ == "__main__":
-    loader  = unittest.TestLoader()
-    suite   = unittest.TestSuite()
+    loader = unittest.TestLoader()
+    suite = unittest.TestSuite()
     for cls in [
-        TestGPUDetection, TestSIMDBatch, TestWordFreq,
-        TestDistributedMsgs, TestCLINewFlags, TestCrackerBatch2,
+        TestGPUDetection,
+        TestSIMDBatch,
+        TestWordFreq,
+        TestDistributedMsgs,
+        TestCLINewFlags,
+        TestCrackerBatch2,
         TestIntegrationB2,
     ]:
         suite.addTests(loader.loadTestsFromTestCase(cls))

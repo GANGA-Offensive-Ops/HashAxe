@@ -55,7 +55,7 @@ class MySQLFormat(BaseFormat):
     Format: *UPPERCASE_HEX_40
     """
 
-    format_id   = "database.mysql"
+    format_id = "database.mysql"
     format_name = "MySQL native_password"
 
     def can_handle(self, data: bytes, path: Path | None = None) -> FormatMatch | None:
