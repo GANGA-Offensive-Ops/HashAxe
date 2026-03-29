@@ -54,7 +54,7 @@ jobs:
         with:
           fetch-depth: 0   # full history for changelog generation
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: ${{ env.PYTHON_VERSION }}
           cache: pip
@@ -139,7 +139,7 @@ jobs:
           name: dist-signed-${{ needs.build.outputs.version }}
           path: dist/
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v6
         with:
           python-version: ${{ env.PYTHON_VERSION }}
 
