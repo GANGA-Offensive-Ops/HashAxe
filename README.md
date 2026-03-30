@@ -76,7 +76,7 @@ hashaxe -k test_files/test_key.ppk -w test_files/password.txt
 > **From Source**
 ```bash
 # Identify hash type and show encryption details
-python3 -m hashaxe --hash "a8dd1a70bd4598e612bb25a000367da5 --info
+python3 -m hashaxe --hash a8dd1a70bd4598e612bb25a000367da5 --info
 python3 -m hashaxe -k test_files/test_key.ppk -w test_files/password.txt
 
 # Benchmark speed against a target format
