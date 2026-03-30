@@ -290,6 +290,9 @@ Examples:
         help="Verbose output: per-worker stats instead of progress bar",
     )
     p.add_argument(
+        "--version", action="version", version="%(prog)s 2.0.0"
+    )
+    p.add_argument(
         "-q",
         "--quiet",
         action="store_true",

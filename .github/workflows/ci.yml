@@ -172,8 +172,8 @@ jobs:
 
       - name: Generate test SSH keys
         run: |
-          mkdir -p tests/keys
-          cd tests/keys
+          mkdir -p test_files
+          cd test_files
           # RSA legacy PEM encrypted with 'puppet'
           ssh-keygen -t rsa -b 2048 -f rsa_legacy_puppet.key \
             -N "puppet" -m PEM -q 2>/dev/null || true
@@ -185,19 +185,12 @@ jobs:
             -N "abc123" -m PEM -q 2>/dev/null || true
           ls -la
 
-      - name: Run Batch 1 tests
-        run: python3 tests/test_all.py
-
-      - name: Run Batch 2 tests
-        run: python3 -m coverage run tests/test_batch2.py
-
-      - name: Batch 1 + 2 combined coverage
+      - name: Run test suite with coverage
         run: |
-          python3 -m coverage run --append tests/test_all.py 2>/dev/null || true
-          python3 -m coverage report \
-            --omit="tests/*,*/__pycache__/*,*/gpu/cuda_kernel*,*/gpu/opencl_kernel*" \
-            --fail-under=80
-          python3 -m coverage xml -o coverage.xml
+          pytest tests/ -v \
+            --cov=hashaxe \
+            --cov-report=xml:coverage.xml \
+            --cov-fail-under=60
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v4

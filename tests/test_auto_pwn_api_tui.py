@@ -159,7 +159,7 @@ class TestTUIDashboard:
     def test_dashboard_init(self):
         monitor_mock = MagicMock()
         dash = Dashboard(monitor_mock)
-        assert dash.title == "Crack V1 Dashboard"
+        assert dash.title == "Hashaxe V1 Dashboard"
         assert dash.layout is not None
         assert dash.layout.name == "root"
 
