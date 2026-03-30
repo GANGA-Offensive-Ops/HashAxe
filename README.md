@@ -253,26 +253,8 @@ hashaxe -k id_rsa -w rockyou.txt --tui
 
 ## Screenshots
 
-<p align="center">
-  <img src="images/wordlist_attack.png" alt="Wordlist Attack" width="700"/><br/>
-  <em>Wordlist attack — PPK v3 key cracked in 62s</em>
-</p>
 
-<p align="center">
-  <img src="images/mask_attack.png" alt="Mask Attack" width="700"/><br/>
-  <em>Mask attack — Shadow@HTB?d?d?d?d</em>
-</p>
-
-<p align="center">
-  <img src="images/openssh_attack.png" alt="OpenSSH Attack" width="700"/><br/>
-  <em>OpenSSH bcrypt key with mutation rules</em>
-</p>
-
-<p align="center">
-  <img src="images/rockyou_attack.png" alt="Rockyou Attack" width="700"/><br/>
-  <em>Full rockyou.txt wordlist attack</em>
-</p>
-
+👉 [View all screenshots](images/)
 ---
 
 ## Supported Formats (43+)
