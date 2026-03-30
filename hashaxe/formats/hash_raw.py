@@ -245,6 +245,19 @@ class NTLMFormat(BaseFormat):
         }
 
 
+def _des_key_exp_7_to_8(key_7bytes: bytes) -> bytes:
+    k = bytearray(8)
+    k[0] = key_7bytes[0]
+    k[1] = ((key_7bytes[0] << 7) & 0xFF) | (key_7bytes[1] >> 1)
+    k[2] = ((key_7bytes[1] << 6) & 0xFF) | (key_7bytes[2] >> 2)
+    k[3] = ((key_7bytes[2] << 5) & 0xFF) | (key_7bytes[3] >> 3)
+    k[4] = ((key_7bytes[3] << 4) & 0xFF) | (key_7bytes[4] >> 4)
+    k[5] = ((key_7bytes[4] << 3) & 0xFF) | (key_7bytes[5] >> 5)
+    k[6] = ((key_7bytes[5] << 2) & 0xFF) | (key_7bytes[6] >> 6)
+    k[7] = ((key_7bytes[6] << 1) & 0xFF)
+    return bytes(k)
+
+
 class LMFormat(BaseFormat):
     """Handler for LM hashes.
 
@@ -293,12 +306,21 @@ class LMFormat(BaseFormat):
         )
 
     def verify(self, target: FormatTarget, password: bytes) -> bool:
-        # Python verification is unsupported for LM. Returns False to prevent false-positives.
-        # Hashcat mode 3000 natively handles actual evaluation when delegated.
-        return False
+        """LM = DES(KGS!@#$%, K1) + DES(KGS!@#$%, K2)"""
+        try:
+            from passlib.hash import lmhash
+            try:
+                pw_str = password.decode("utf-8", "replace")
+            except Exception:
+                return False
+
+            evaluated_hash = lmhash.hash(pw_str)
+            return evaluated_hash.lower() == target.format_data["target_hash"]
+        except ImportError:
+            return False
 
     def verify_full(self, target: FormatTarget, password: bytes) -> bool:
-        return False
+        return self.verify(target, password)
 
     def difficulty(self) -> FormatDifficulty:
         return FormatDifficulty.TRIVIAL

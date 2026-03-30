@@ -2,7 +2,7 @@
 
 ### python3 -m hashaxe -k /home/bhanu/htb/HashAxe/manual_test_run/test.jwt -w /home/bhanu/htb/HashAxe/manual_test_run/test_words3.txt
 **Status:** FAIL
-**Execution Time:** 0.81s
+**Execution Time:** 0.70s
 **Root Cause / Error:** Non-zero exit
 ```text
 
@@ -21,7 +21,7 @@
 
 ### python3 -m hashaxe --hash admin::DOMAIN:1122334455667788:0101000000000000000000000000000000000000000000000000000000000000:0000000000000000 -w /home/bhanu/htb/HashAxe/manual_test_run/test_words3.txt
 **Status:** FAIL
-**Execution Time:** 1.27s
+**Execution Time:** 1.34s
 **Root Cause / Error:** Non-zero exit
 ```text
 
@@ -40,7 +40,7 @@
 
 ### python3 -m hashaxe --hash e12f0afbf1d2c10f1d0280fc283c526e -w /home/bhanu/htb/HashAxe/manual_test_run/test_words3.txt
 **Status:** FAIL
-**Execution Time:** 4.70s
+**Execution Time:** 5.59s
 **Root Cause / Error:** Non-zero exit
 ```text
 
@@ -59,7 +59,7 @@
 
 ### python3 -m hashaxe --hash $2b$04$2gU2kXJ1H.X0NpwJw7i6U.l2lD1qR1H9v3/s.u5eB0Yt5c9F3W2W6 -w /home/bhanu/htb/HashAxe/manual_test_run/test_words3.txt
 **Status:** FAIL
-**Execution Time:** 5.46s
+**Execution Time:** 8.61s
 **Root Cause / Error:** Non-zero exit
 ```text
 

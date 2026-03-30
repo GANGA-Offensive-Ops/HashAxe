@@ -444,9 +444,13 @@ class ODFFormat(BaseFormat):
                     "--norestore",
                     f"--accept=socket,host=127.0.0.1,port={_LO_PORT};urp;StarOffice.ServiceManager",
                 ]
-                _LO_PROC = subprocess.Popen(
-                    cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
-                )
+                try:
+                    _LO_PROC = subprocess.Popen(
+                        cmd, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL
+                    )
+                except FileNotFoundError:
+                    log.warning("LibreOffice ('soffice') not found. ODF Argon2id verification will fail.")
+                    return False
 
                 def _cleanup_lo():
                     global _LO_PROC
