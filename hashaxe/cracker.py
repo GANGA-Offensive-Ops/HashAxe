@@ -337,7 +337,8 @@ def hashaxe(
             handler = registry.get(format_override)
             if handler is None:
                 display.error(f"Unknown format ID: {format_override}")
-                display.info(f"Available: {', '.join(registry.list_ids())}")
+                valid_ids = sorted([h.format_id for h in registry.all_handlers() if h.format_id])
+                display.info(f"Available: {', '.join(valid_ids)}")
                 sys.exit(1)
             target = handler.parse(data, src_path)
         else:
