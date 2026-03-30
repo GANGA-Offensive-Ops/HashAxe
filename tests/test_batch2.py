@@ -548,9 +548,9 @@ class TestCrackerBatch2(unittest.TestCase):
         """benchmark() runs without GPU and returns positive speed."""
         import pathlib
 
+        from hashaxe.cracker import benchmark
         from hashaxe.display import Display
         from hashaxe.formats import FormatRegistry
-        from hashaxe.cracker import benchmark
 
         registry = FormatRegistry()
         data = pathlib.Path(self.RSA_KEY).read_bytes()
