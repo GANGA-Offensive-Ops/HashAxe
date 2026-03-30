@@ -3,7 +3,7 @@
 # Platform: kali linux / Python 3.12.x
 #
 # Core (required)
-cryptography==42.0.5          # OpenSSH key parsing + AES/ChaCha20 decryption
+cryptography==46.0.6          # OpenSSH key parsing + AES/ChaCha20 decryption
 
 # Optional — install as needed:
 # GPU — NVIDIA CUDA
