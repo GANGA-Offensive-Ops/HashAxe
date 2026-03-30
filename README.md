@@ -65,16 +65,24 @@ cd HashAxe
 ## 🚀 Usage Examples
 
 ### 🔍 Identify & Benchmark
+
+> **Already installed via `install.sh`?** Run directly with:
+```bash
+hashaxe --help
+hashaxe --hash 'a8dd1a70bd4598e612bb25a000367da5' --info
+hashaxe --hash "a8dd1a70bd4598e612bb25a000367da5" -w test_files/password.txt
+hashaxe -k test_files/test_key.ppk -w test_files/password.txt
+```
+> **From Source**
 ```bash
 # Identify hash type and show encryption details
-python3 -m hashaxe --hash a8dd1a70bd4598e612bb25a000367da5 --info
-python3 -m hashaxe --hash 'a8dd1a70bd4598e612bb25a000367da5' --info
-python3 -m hashaxe --hash "a8dd1a70bd4598e612bb25a000367da5" --info
-python3 -m hashaxe -k test_files/test_key.ppk --info
+python3 -m hashaxe --hash "a8dd1a70bd4598e612bb25a000367da5 --info
+python3 -m hashaxe -k test_files/test_key.ppk -w test_files/password.txt
 
 # Benchmark speed against a target format
 python3 -m hashaxe -k test_files/md5hash.txt --benchmark
 ```
+> 💡 The `--hash` value accepts no quotes, single quotes, or double quotes.
 
 ### 📖 Wordlist Attacks
 ```bash
