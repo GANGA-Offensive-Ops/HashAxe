@@ -22,6 +22,8 @@
 """
 scripts/deploy_aws.py — Auto-deploy hashaxe workers on AWS G5 spot instances.
 
+** Note This File is not tested test and run as needed **
+
 Usage:
     # Deploy 4 G5.xlarge workers (4 vCPU, 1× NVIDIA A10G each)
     python3 scripts/deploy_aws.py \\
