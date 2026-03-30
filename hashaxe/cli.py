@@ -331,6 +331,9 @@ Examples:
         "--info", action="store_true", help="Display key metadata and exit (no cracking)"
     )
     p.add_argument(
+        "--identify", action="store_true", help="Identify hash format and show confidence-weighted ranking"
+    )
+    p.add_argument(
         "--benchmark",
         action="store_true",
         help="Benchmark passphrase testing speed for this key and exit",
@@ -340,6 +343,11 @@ Examples:
         metavar="WORDS",
         type=int,
         help="Estimate hashaxe time for N wordlist entries and exit",
+    )
+    p.add_argument(
+        "--diagnose",
+        action="store_true",
+        help="Run strict HashAxe parser sequence to diagnose format validation failures",
     )
     p.add_argument(
         "--api-server",
@@ -505,20 +513,52 @@ def main() -> None:
         sys.exit(0)
 
     # ── --info ─────────────────────────────────────────────────────────────────
-    if args.info:
+    if args.info or getattr(args, "diagnose", False):
         if not args.key and not args.hash:
-            parser.error("--info requires --key / -k or --hash")
+            parser.error("--info / --diagnose requires --key / -k or --hash")
         disp.banner()
         try:
             from pathlib import Path
 
             from hashaxe.formats import FormatRegistry
+            from hashaxe.core.normalization import normalize_hash_string
 
             registry = FormatRegistry()
-            data = Path(args.key).read_bytes() if args.key else args.hash.encode("utf-8")
+            
+            # Normalize hash strictly before info or diagnose 
+            if args.hash:
+                normalized = normalize_hash_string(args.hash)
+                data = normalized.clean_hash.encode("utf-8")
+                disp.info(f"Target Normalized: {normalized.is_modified} (Context: {normalized.context})")
+            else:
+                data = Path(args.key).read_bytes()
+
             p = Path(args.key) if args.key else None
 
             match = registry.identify(data, p)
+            if getattr(args, "diagnose", False):
+                 disp.info("🕵️  DIAGNOSTIC MODE ACTIVATED")
+                 
+                 if not match:
+                     disp.error("❌ Identification Stage: FAILED - Format Unrecognised by heuristics/regex.")
+                     sys.exit(1)
+                 else:
+                     disp.ok(f"✅ Identification Stage: PASSED -> {match.handler.format_id}")
+
+                 try:
+                     disp.info("Testing format parsing capability...")
+                     target = match.handler.parse(data, p)
+                     disp.ok("✅ Parsing Stage: PASSED - Successfully loaded cryptographic payload.")
+                 except NotImplementedError as e:
+                     disp.error(f"❌ Dependency Missing Error: {e}")
+                     sys.exit(1)
+                 except Exception as e:
+                     disp.error(f"❌ Parse Error (Malformed File/Hash?): {e}")
+                     sys.exit(1)
+                     
+                 sys.exit(0)
+
+            # Normal --info routing
             if not match:
                 raise ValueError("Unrecognised format")
             target = match.handler.parse(data, p)
@@ -609,6 +649,34 @@ def main() -> None:
             print(f"    ~{secs/3600:.1f} hours")
         else:
             print(f"    ~{secs/86400:.1f} days")
+        sys.exit(0)
+
+    # ── --identify ─────────────────────────────────────────────────────────────
+    if args.identify:
+        if not args.hash:
+            parser.error("--identify requires an inline hash via --hash")
+        disp.banner()
+        from hashaxe.identify.classifier import classify, _HASHCAT_MODES
+        from hashaxe.core.normalization import normalize_hash_string
+
+        normalized = normalize_hash_string(args.hash)
+        classified = classify(normalized.clean_hash)
+
+        candidates = []
+        for match in classified.all_candidates:
+            hc_mode = _HASHCAT_MODES.get(match.format_id, "N/A")
+            if hc_mode == "N/A" and match.format_id == "hash.ntlm":
+                hc_mode = 1000
+            
+            candidates.append({
+                "name": match.algorithm,
+                "hashcat_id": hc_mode,
+                "john_format": match.format_id,
+                "confidence": match.confidence,
+                "mitre_id": "T1110",
+            })
+            
+        disp.hash_id_result(candidates, raw=normalized.clean_hash)
         sys.exit(0)
 
     # ── Require --key or --hash for all other modes ───────────────────────────

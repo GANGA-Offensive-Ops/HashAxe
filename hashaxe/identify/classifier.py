@@ -198,6 +198,22 @@ def classify(text: str) -> ClassifiedHash:
     matches = identify_hash(text)
     ctx = _detect_context(text)
 
+    # Deterministic Ambiguity Ranking:
+    # Handle pure 32-character hex hashes which are heavily ambiguous (MD5 vs NTLM)
+    if len(text) == 32 and all(c in "0123456789abcdefABCDEF" for c in text):
+        has_ntlm = any(m.format_id == "hash.ntlm" for m in matches)
+        if not has_ntlm:
+            matches.append(
+                HashMatch(
+                    format_id="hash.ntlm",
+                    algorithm="NTLM",
+                    confidence=0.85 if ctx.get("source") == "windows_hashdump" else 0.60,
+                    details={"raw": text, "groups": ()}
+                )
+            )
+            # Re-sort after injecting ambiguity
+            matches.sort(key=lambda m: m.confidence, reverse=True)
+
     if not matches:
         # Entropy-based fallback for unrecognized formats
         ent = _entropy(text)
@@ -214,6 +230,9 @@ def classify(text: str) -> ClassifiedHash:
     difficulty = _DIFFICULTY_MAP.get(best.format_id, "unknown")
     speed = _SPEED_MAP.get(difficulty, "unknown")
     hashcat = _HASHCAT_MODES.get(best.format_id)
+    if not hashcat and best.format_id == "hash.ntlm":
+        hashcat = 1000
+
     john = _JOHN_FORMATS.get(best.format_id)
 
     # Build attack recommendation

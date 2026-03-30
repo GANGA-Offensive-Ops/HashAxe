@@ -59,12 +59,17 @@ class AutoPwnOrchestrator:
         raw_hash: str | None = None,
     ):
         self.key_path = key_path
-        self.raw_hash = raw_hash
         self.wordlist_path = wordlist_path
         self.osint_path = osint_path
         self.max_duration = max_duration_sec
         self.threads = threads
         self.start_time = 0.0
+        
+        if raw_hash:
+            from hashaxe.core.normalization import normalize_hash_string
+            self.raw_hash = normalize_hash_string(raw_hash).clean_hash
+        else:
+            self.raw_hash = None
 
     def _time_remaining(self) -> float:
         return max(0.0, self.max_duration - (time.time() - self.start_time))

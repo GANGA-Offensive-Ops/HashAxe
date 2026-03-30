@@ -315,13 +315,18 @@ def hashaxe(
         return None
 
     if raw_hash:
+        from hashaxe.core.normalization import normalize_hash_string
+        normalized = normalize_hash_string(raw_hash)
+        raw_hash = normalized.clean_hash
         display.info(f"Loading raw hash: {raw_hash[:16]}...")
         data = raw_hash.encode("utf-8")
         src_path = None
     elif key_path:
         display.info(f"Loading target: {key_path}")
         try:
+            from hashaxe.core.normalization import normalize_bytes_payload
             data = Path(key_path).read_bytes()
+            data = normalize_bytes_payload(data)
         except FileNotFoundError:
             display.error(f"Target file not found: {key_path}")
             sys.exit(1)
