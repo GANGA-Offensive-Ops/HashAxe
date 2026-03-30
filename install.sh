@@ -55,7 +55,7 @@ fi
 # ==========================================
 echo -e "\n${BLUE}[3/5] Cloning HashAxe Core...${NC}"
 if [ ! -d "$INSTALL_DIR" ]; then
-    git clone https://github.com/GANGAOps/HashAxe.git "$INSTALL_DIR"
+    git clone https://github.com/GANGA-Offensive-Ops/HashAxe.git "$INSTALL_DIR"
 else
     echo -e "Directory $INSTALL_DIR already exists. Pulling latest updates..."
     cd "$INSTALL_DIR" && git pull origin main

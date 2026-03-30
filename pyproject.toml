@@ -92,9 +92,9 @@ dev           = [
 hashaxe = "hashaxe.cli:main"
 
 [project.urls]
-Homepage   = "https://github.com/GANGAOps/HashAxe"
-Repository = "https://github.com/GANGAOps/HashAxe"
-Issues     = "https://github.com/GANGAOps/HashAxe/issues"
+Homepage   = "https://github.com/GANGA-Offensive-Ops/HashAxe"
+Repository = "https://github.com/GANGA-Offensive-Ops/HashAxe"
+Issues     = "https://github.com/GANGA-Offensive-Ops/HashAxe/issues"
 
 # ── setuptools config ──────────────────────────────────────────────────────────
 

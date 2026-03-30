@@ -8,7 +8,7 @@ Thank you for contributing to the world's fastest open-source HashAxe.
 
 ```bash
 # Clone
-git clone https://github.com/GANGAOps/HashAxe
+git clone https://github.com/GANGA-Offensive-Ops/HashAxe
 cd hashaxe
 
 # Virtual environment

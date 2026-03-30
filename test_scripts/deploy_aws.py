@@ -83,7 +83,7 @@ fi
 
 # Install hashaxe
 pip3 install pyzmq numpy cryptography --quiet
-git clone --depth 1 https://github.com/GANGAOps/HashAxe /opt/hashaxe
+git clone --depth 1 https://github.com/GANGA-Offensive-Ops/HashAxe /opt/hashaxe
 cd /opt/hashaxe && pip3 install -e . --quiet
 
 # Download wordlist from S3 if path starts with s3://

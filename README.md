@@ -11,7 +11,7 @@
 </p>
 
 <p align="center">
-  <a href="https://github.com/GANGAOps/HashAxe/actions"><img src="https://img.shields.io/github/actions/workflow/status/GANGA-Offensive-Ops/Hashaxe/ci.yml?branch=main&label=CI" alt="CI"></a>
+  <a href="https://github.com/GANGA-Offensive-Ops/HashAxe/actions"><img src="https://img.shields.io/github/actions/workflow/status/GANGA-Offensive-Ops/Hashaxe/ci.yml?branch=main&label=CI" alt="CI"></a>
   <a href="docs/MANUAL.md#test-suite--coverage"><img src="https://img.shields.io/badge/tests-578%20passing-brightgreen" alt="Tests"></a>
   <a href="docs/MANUAL.md#test-suite--coverage"><img src="https://img.shields.io/badge/coverage-100%25-brightgreen" alt="Coverage"></a>
   <a href="docs/MANUAL.md#gpu-acceleration"><img src="https://img.shields.io/badge/GPU-CUDA%20%7C%20OpenCL-76b900" alt="GPU"></a>
@@ -319,8 +319,8 @@ python3 -m hashaxe -k id_rsa -w rockyou.txt --tui
 
 Contributions are welcome from the community.
 
-- 🐛 **Bug reports** → [GitHub Issues](https://github.com/GANGAOps/HashAxe/issues)
-- 💡 **Feature requests** → [GitHub Issues](https://github.com/GANGAOps/HashAxe/issues)
+- 🐛 **Bug reports** → [GitHub Issues](https://github.com/GANGA-Offensive-Ops/HashAxe/issues)
+- 💡 **Feature requests** → [GitHub Issues](https://github.com/GANGA-Offensive-Ops/HashAxe/issues)
 - 🔧 **Pull requests** → [CONTRIBUTING.md](CONTRIBUTING.md) for dev setup, code style, and PR guidelines
 
 ---
