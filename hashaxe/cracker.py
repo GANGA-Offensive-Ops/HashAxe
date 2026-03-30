@@ -351,6 +351,12 @@ def hashaxe(
             target = handler.parse(data, src_path)
             # Store alternative candidates for fallback if primary fails
             alt_candidates = [m for m in all_matches[1:] if m.format_id != match.format_id]
+    except NotImplementedError as exc:
+        if "Missing dependency" in str(exc):
+            display.warn(f"SKIPPING: {exc}")
+            sys.exit(0)
+        display.error(f"Format parse error: {exc}")
+        sys.exit(1)
     except (ValueError, FileNotFoundError) as exc:
         display.error(f"Format parse error: {exc}")
         sys.exit(1)

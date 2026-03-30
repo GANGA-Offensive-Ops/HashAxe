@@ -134,6 +134,8 @@ class KeePassFormat(BaseFormat):
         return None
 
     def parse(self, data: bytes, path: Path | None = None) -> FormatTarget:
+        if not _HAS_PYKEEPASS:
+            raise NotImplementedError("Missing dependency: pykeepass is required to crack KeePass databases.")
         meta = _detect_kdbx_version(data)
 
         if not meta["is_kdbx"]:

@@ -181,6 +181,11 @@ class ODFFormat(BaseFormat):
         if not meta["is_odf"]:
             raise ValueError("Not a valid ODF document")
 
+        if meta.get("kdf") == "argon2id":
+            import shutil
+            if shutil.which("soffice") is None:
+                raise NotImplementedError("Missing dependency: 'soffice' (LibreOffice) is required to crack ODF Argon2id targets because of proprietary AAD.")
+
         if not meta["encrypted"]:
             return FormatTarget(
                 format_id=self.format_id,

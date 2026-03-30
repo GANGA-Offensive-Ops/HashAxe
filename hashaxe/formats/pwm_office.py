@@ -217,6 +217,8 @@ class OfficeFormat(BaseFormat):
         )
 
     def parse(self, data: bytes, path: Path | None = None) -> FormatTarget:
+        if not _HAS_MSOFFCRYPTO:
+            raise NotImplementedError("Missing dependency: msoffcrypto-tool is required to crack Microsoft Office documents.")
         meta = _detect_office_encryption(data, path)
 
         if not meta["is_office"]:
