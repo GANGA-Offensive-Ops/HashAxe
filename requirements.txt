@@ -46,7 +46,7 @@ pykeepass>=4.0.0           # KeePass database support
 # Document Support
 msoffcrypto-tool>=6.0.0    # MS Office document encryption support
 odfpy==1.4.1
-odfdo==3.22.1
+odfdo==3.22.2
 
 # Rust Data Engine (Phase 1)
 maturin>=1.5.0             # PyO3 Rust extension builder
