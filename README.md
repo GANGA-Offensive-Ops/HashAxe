@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="images/banner.png" alt="HashAxe Banner" width="700"/>
+  <img src="images/HashAxe_Banner.png" alt="HashAxe Banner" width="700"/>
 </p>
 
 <h1 align="center">HashAxe V1 — Advanced Password Cracker</h1>
