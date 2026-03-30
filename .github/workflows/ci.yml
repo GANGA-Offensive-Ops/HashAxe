@@ -167,8 +167,8 @@ jobs:
       - name: Install dependencies
         run: |
           pip install -r requirements.txt
-          pip install -e .
-          pip install coverage==7.5.3
+          pip install -e ".[dev]"
+          pip install pytest pytest-cov coverage==7.5.3
 
       - name: Generate test SSH keys
         run: |
