@@ -173,7 +173,15 @@ def _try_openssh_legacy(pk: ParsedKey, password: bytes, key_mat: bytes, iv_mat: 
         if not (1 <= pad <= 16):
             return False
         # Validate full PKCS7: all `pad` trailing bytes must equal `pad`
-        return all(b == pad for b in plaintext[-pad:])
+        if not all(b == pad for b in plaintext[-pad:]):
+            return False
+            
+        # Legacy PEM format plaintext is always a DER ASN.1 SEQUENCE (0x30)
+        # Checking this eliminates the 1/256 false positive rate when pad=1
+        if plaintext[0] != 0x30:
+            return False
+            
+        return True
     except Exception:
         pass
     return False

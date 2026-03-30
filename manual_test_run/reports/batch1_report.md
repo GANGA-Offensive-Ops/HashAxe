@@ -2,7 +2,7 @@
 
 ### python3 -m hashaxe --hash 4762aaa5e83ec22af033c810ef30bf29 -w /home/bhanu/htb/HashAxe/manual_test_run/test_words.txt
 **Status:** PASS
-**Execution Time:** 2.22s
+**Execution Time:** 2.01s
 **Root Cause / Error:** 
 ```text
 
@@ -21,7 +21,7 @@
 
 ### python3 -m hashaxe -k /home/bhanu/htb/HashAxe/manual_test_run/md5_hash.txt -w /home/bhanu/htb/HashAxe/manual_test_run/test_words.txt
 **Status:** PASS
-**Execution Time:** 1.17s
+**Execution Time:** 0.64s
 **Root Cause / Error:** 
 ```text
 
@@ -40,7 +40,7 @@
 
 ### python3 -m hashaxe --hash 4762aaa5e83ec22af033c810ef30bf29 --mask xr7kQ?d?d?d
 **Status:** FAIL
-**Execution Time:** 7.60s
+**Execution Time:** 6.62s
 **Root Cause / Error:** Non-zero exit
 ```text
 
@@ -59,7 +59,7 @@
 
 ### python3 -m hashaxe -k /home/bhanu/htb/HashAxe/manual_test_run/md5_hash.txt -w /home/bhanu/htb/HashAxe/manual_test_run/test_words.txt --mask ?d?d?d
 **Status:** FAIL
-**Execution Time:** 10.77s
+**Execution Time:** 6.66s
 **Root Cause / Error:** Non-zero exit
 ```text
 
@@ -78,7 +78,7 @@
 
 ### python3 -m hashaxe --list-sessions
 **Status:** PASS
-**Execution Time:** 0.25s
+**Execution Time:** 0.13s
 **Root Cause / Error:** 
 ```text
 
