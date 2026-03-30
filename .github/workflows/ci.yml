@@ -189,7 +189,7 @@ jobs:
         run: python3 tests/test_all.py
 
       - name: Run Batch 2 tests
-        run: python3 -m coverage run -m unittest tests/test_batch2.py
+        run: python3 -m coverage run tests/test_batch2.py
 
       - name: Batch 1 + 2 combined coverage
         run: |

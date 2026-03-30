@@ -289,7 +289,7 @@ class TestStats(unittest.TestCase):
     def test_stats_total(self):
         db = self._make_db_with_data()
         s = db.stats()
-        self.assertEqual(s["total_hashaxes"], 3)
+        self.assertEqual(s["total_cracks"], 3)
 
     def test_stats_formats(self):
         db = self._make_db_with_data()
@@ -319,7 +319,7 @@ class TestStats(unittest.TestCase):
         with tempfile.TemporaryDirectory() as td:
             db = CrackDB(db_path=Path(td) / "test.db")
             s = db.stats()
-            self.assertEqual(s["total_hashaxes"], 0)
+            self.assertEqual(s["total_cracks"], 0)
 
 
 class TestExport(unittest.TestCase):
@@ -482,7 +482,7 @@ class TestDisplay(unittest.TestCase):
         with tempfile.TemporaryDirectory() as td:
             db = CrackDB(db_path=Path(td) / "test.db")
             output = db.format_stats()
-            self.assertIn("No hashaxes logged", output)
+            self.assertIn("No cracks logged", output)
 
 
 class TestExportModule(unittest.TestCase):

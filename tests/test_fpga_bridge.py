@@ -34,7 +34,7 @@ class TestSimulationMode:
 
         bridge = FPGABridge(simulation=True)
         assert bridge.device is not None
-        assert bridge.device.name == "Crack FPGA Simulator"
+        assert bridge.device.name == "Hashaxe FPGA Simulator"
         assert bridge.device.vendor == "Simulation"
 
     def test_load_bitstream(self):
