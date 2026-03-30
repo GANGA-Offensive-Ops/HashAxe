@@ -264,6 +264,7 @@ jobs:
         run: |
           # Generate a test key
           ssh-keygen -t rsa -b 2048 -f /tmp/test_ci.key -N "citest" -m PEM -q
+          chmod 644 /tmp/test_ci.key
           docker run --rm \
             -v /tmp:/work \
             hashaxe:ci-test -k /work/test_ci.key --info
