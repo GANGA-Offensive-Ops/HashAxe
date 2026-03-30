@@ -1,6 +1,6 @@
 # Contributing to hashaxe
 
-Thank you for contributing to the world's fastest open-source SSH key cracker.
+Thank you for contributing to the world's fastest open-source HashAxe.
 
 ---
 
