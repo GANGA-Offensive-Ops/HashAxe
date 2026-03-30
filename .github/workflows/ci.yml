@@ -170,7 +170,7 @@ jobs:
           pip install -e ".[dev]"
           pip install pytest pytest-cov coverage==7.5.3
 
-      - name: Generate test SSH keys
+      - name: Generate test SSH keys and configurations
         run: |
           mkdir -p test_files
           cd test_files
@@ -183,6 +183,29 @@ jobs:
           # ECDSA legacy PEM encrypted with 'abc123'
           ssh-keygen -t ecdsa -b 256 -f ecdsa_legacy_abc123.key \
             -N "abc123" -m PEM -q 2>/dev/null || true
+          # Bad fixture for test_rejects_pubkey_only
+          echo "ecdsa-sha2-nistp256 AAAAE2VjZHNhLXNoYTItbmlzdHAyNTYAAABBB" > openssh_bad_fixture.key
+          
+          # Generate custom OpenSSL conf to enable MD4 (required for NTLM testing on Ubuntu 22.04/24.04)
+          cat << 'EOF' > openssl_legacy.cnf
+          openssl_conf = openssl_init
+
+          [openssl_init]
+          providers = provider_sect
+
+          [provider_sect]
+          default = default_sect
+          legacy = legacy_sect
+
+          [default_sect]
+          activate = 1
+
+          [legacy_sect]
+          activate = 1
+          EOF
+          
+          # Dynamically set OpenSSL conf to the pipeline
+          echo "OPENSSL_CONF=$(pwd)/openssl_legacy.cnf" >> $GITHUB_ENV
           ls -la
 
       - name: Run test suite with coverage
