@@ -338,4 +338,7 @@ MIT — see [LICENSE](LICENSE)
 
 <p align="center">
   Developed under <b>GANGA Offensive Ops</b><br/>
+  By: Bhanu Guragain
+      Shrijesh Pokharel
+      Aashish Panthi
 </p>
