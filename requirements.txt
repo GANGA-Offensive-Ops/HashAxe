@@ -38,6 +38,7 @@ rich>=13.7.0
 # Archive Support
 py7zr>=0.20.0              # 7z archive extraction
 pikepdf>=8.0.0             # PDF encryption support
+rarfile>=4.2
 
 # Password Manager Support
 pykeepass>=4.0.0           # KeePass database support

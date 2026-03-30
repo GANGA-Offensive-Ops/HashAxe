@@ -30,10 +30,10 @@ echo -e "\n${BLUE}[1/5] Checking System Dependencies...${NC}"
 if command -v apt &> /dev/null; then
     echo -e "Debian/Ubuntu/Kali detected. Installing dependencies (this may ask for your password)..."
     sudo apt-get update -y
-    sudo apt-get install -y git python3 python3-pip python3-venv build-essential libssl-dev pkg-config
+    sudo apt-get install -y git libreoffice unrar python3 python3-pip python3-venv build-essential libssl-dev pkg-config
 elif command -v pacman &> /dev/null; then
     echo -e "Arch Linux detected. Installing dependencies..."
-    sudo pacman -Sy --noconfirm git python python-pip base-devel openssl
+    sudo pacman -Sy --noconfirm git libreoffice unrar python python-pip base-devel openssl
 else
     echo -e "${RED}Unsupported package manager. Please ensure Python 3, Git, and build tools are installed manually.${NC}"
 fi

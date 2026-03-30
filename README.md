@@ -48,10 +48,19 @@
 
 > **Prerequisites:** See [docs/MANUAL.md → Installation](docs/MANUAL.md#installation) for full system dependency setup (Rust toolchain, CUDA drivers, Docker, etc. Covering all 43 formats, 11 attack modes, GPU setup, distributed cracking, AI/OSINT engine, benchmarks, and more.)
 
-### 🛠️ From Source
+### 🛠️ Install from Source
+
 ```bash
 git clone https://github.com/BhanuGuragain0/HashAxe.git
 cd HashAxe
+
+# Option 1 — Recommended (full setup)
+./install.sh
+
+# Option 2 — Manual Python setup
+pip install -r requirements.txt --break-system-packages
+
+# Note: If installing manually, you must also install LibreOffice for ODF document support.
 ```
 
 ---
@@ -67,13 +76,16 @@ cd HashAxe
 ### 🔍 Identify & Benchmark
 
 > **Already installed via `install.sh`?** Run directly with:
+
 ```bash
 hashaxe --help
 hashaxe --hash 'a8dd1a70bd4598e612bb25a000367da5' --info
 hashaxe --hash "a8dd1a70bd4598e612bb25a000367da5" -w test_files/password.txt
 hashaxe -k test_files/test_key.ppk -w test_files/password.txt
 ```
+
 > **From Source**
+
 ```bash
 # Identify hash type and show encryption details
 python3 -m hashaxe --hash a8dd1a70bd4598e612bb25a000367da5 --info
@@ -82,9 +94,11 @@ python3 -m hashaxe -k test_files/test_key.ppk -w test_files/password.txt
 # Benchmark speed against a target format
 python3 -m hashaxe -k test_files/md5hash.txt --benchmark
 ```
+
 > 💡 The `--hash` value accepts no quotes, single quotes, or double quotes.
 
 ### 📖 Wordlist Attacks
+
 ```bash
 # Crack an inline MD5 hash
 python3 -m hashaxe --hash 'a8dd1a70bd4598e612bb25a000367da5' -w test_files/password.txt
@@ -100,6 +114,7 @@ python3 -m hashaxe -k id_rsa -w passwords.txt --rules
 ```
 
 ### 🎭 Mask Attacks
+
 ```bash
 # Full mask uppercase + lowercase + special + digits
 python3 -m hashaxe --hash 'a8dd1a70bd4598e612bb25a000367da5' --mask '?u?l?l?l?s?d?d?d?d'
@@ -112,6 +127,7 @@ python3 -m hashaxe -k id_ed25519 -w rockyou.txt --mask '?d?d?d'
 ```
 
 ### 📏 Rule-Based Attacks
+
 ```bash
 # Built-in rules (~100 mutations per word)
 python3 -m hashaxe -k test_files/test_key.ppk -w test_files/password.txt --rules
@@ -122,6 +138,7 @@ python3 -m hashaxe -k test_files/test_key.ppk -w test_files/password.txt \
 ```
 
 ### 🤖 AI & OSINT
+
 ```bash
 # AI-powered candidate generation
 python3 -m hashaxe --hash 'a8dd1a70bd4598e612bb25a000367da5' -w test_files/password.txt --ai
@@ -131,6 +148,7 @@ python3 -m hashaxe -k id_rsa --osint-file target_profile.txt -w rockyou.txt
 ```
 
 ### ⚡ Advanced Modes
+
 ```bash
 # Auto-Pwn fully autonomous pipeline
 python3 -m hashaxe -k id_rsa --auto-pwn -w rockyou.txt
@@ -150,6 +168,7 @@ python3 -m hashaxe -k id_rsa --attack policy -w rockyou.txt \
 ```
 
 ### 💾 Session Management
+
 ```bash
 # Named session auto-saves every 30s
 python3 -m hashaxe -k key -w rockyou.txt --rules --session engagement_htb
@@ -163,6 +182,7 @@ python3 -m hashaxe --delete-session engagement_htb
 ```
 
 ### 📊 Results & Export
+
 ```bash
 # View all cracked entries
 python3 -m hashaxe --show-results
@@ -176,6 +196,7 @@ python3 -m hashaxe --export-results results.json
 ```
 
 ### 🌐 Distributed & Infrastructure
+
 ```bash
 # GPU info
 python3 -m hashaxe --gpu-info
@@ -343,6 +364,7 @@ Contributions are welcome from the community.
 - 🇳🇵 Developed responsibly under **GANGA Offensive Ops**, Nepal
 
 ---
+
 ## 📄 License
 
 HashAxe is licensed under the **Apache License 2.0** see the LICENSE [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg?style=flat-square)](LICENSE)
